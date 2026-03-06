@@ -1,11 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>TEST</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Junyong Portfolio</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #0f0f0f;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 40px;
+    }
+
+    .title {
+      font-size: 56px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      font-size: 18px;
+      color: #bdbdbd;
+      margin-bottom: 50px;
+    }
+
+    .works {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    .card {
+      background: #1b1b1b;
+      border: 1px solid #2a2a2a;
+      border-radius: 20px;
+      padding: 28px;
+      min-height: 220px;
+      transition: transform 0.35s ease, background 0.35s ease, border-color 0.35s ease;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      transform: translateY(-8px) scale(1.02);
+      background: #252525;
+      border-color: #666;
+    }
+
+    .card-number {
+      font-size: 14px;
+      color: #8d8d8d;
+      margin-bottom: 18px;
+    }
+
+    .card-title {
+      font-size: 30px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .card-desc {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #cfcfcf;
+    }
+
+    @media (max-width: 768px) {
+      .title {
+        font-size: 40px;
+      }
+
+      .works {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>This is Test Page!</h1>
-  <p>my first git push</p>
+  <h1 class="title">Junyong TouchDesigner Portfolio</h1>
+  <p class="subtitle">Interactive experiments, visual systems, and real-time media works.</p>
+
+  <section class="works">
+    <div class="card">
+      <div class="card-number">01</div>
+      <h2 class="card-title">Audio Reactive</h2>
+      <p class="card-desc">
+        A real-time visual experiment that reacts to sound and transforms rhythm into motion and light.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-number">02</div>
+      <h2 class="card-title">Scanner</h2>
+      <p class="card-desc">
+        A scan-based visual composition exploring distortion, repetition, and digital surface.
+      </p>
+    </div>
+  </section>
 </body>
 </html>
