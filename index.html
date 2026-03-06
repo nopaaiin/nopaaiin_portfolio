@@ -4,104 +4,88 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NOPAAIIN</title>
-
 <style>
-
 *{
-box-sizing:border-box;
-margin:0;
-padding:0;
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
 }
-
 body{
-background:#050505;
-color:white;
-font-family:Arial, sans-serif;
-padding:40px;
+  background:#050505;
+  color:white;
+  font-family:Arial, sans-serif;
+  padding:40px;
 }
-
 .title{
-font-size:64px;
-font-weight:900;
-color:#ff2aa6;
-margin-bottom:14px;
+  font-size:64px;
+  font-weight:900;
+  color:#ff2aa6;
+  margin-bottom:14px;
 }
-
 .subtitle{
-font-size:20px;
-color:#bdbdbd;
-margin-bottom:50px;
+  font-size:20px;
+  color:#bdbdbd;
+  margin-bottom:50px;
 }
-
 .works{
-display:grid;
-grid-template-columns:repeat(2,1fr);
-gap:28px;
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:28px;
 }
-
 .card{
-position:relative;
-display:block;
-min-height:320px;
-border-radius:24px;
-overflow:hidden;
-background:#1b1b1b;
-border:1px solid #3a3a3a;
-text-decoration:none;
-transition:transform .35s ease,border-color .35s ease;
-cursor:pointer;
+  position:relative;
+  display:block;
+  min-height:320px;
+  border-radius:24px;
+  overflow:hidden;
+  background:#1b1b1b;
+  border:1px solid #3a3a3a;
+  text-decoration:none;
+  transition:transform .35s ease,border-color .35s ease;
+  cursor:pointer;
 }
-
 .card:hover{
-transform:translateY(-8px) scale(1.01);
-border-color:#ff2aa6;
+  transform:translateY(-8px) scale(1.01);
+  border-color:#ff2aa6;
 }
-
 .card-video{
-position:absolute;
-inset:0;
-width:100%;
-height:100%;
-object-fit:cover;
-opacity:0;
-transition:opacity .35s ease;
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  opacity:0;
+  transition:opacity .35s ease;
 }
-
 .card:hover .card-video{
-opacity:1;
+  opacity:1;
 }
-
 .card-overlay{
-position:relative;
-z-index:2;
-height:100%;
-padding:28px;
-background:linear-gradient(to top,rgba(0,0,0,.75),rgba(0,0,0,.25));
+  position:relative;
+  z-index:2;
+  height:100%;
+  padding:28px;
+  background:linear-gradient(to top,rgba(0,0,0,.75),rgba(0,0,0,.25));
 }
-
 .card-number{
-font-size:14px;
-color:#b5b5b5;
-margin-bottom:20px;
+  font-size:14px;
+  color:#b5b5b5;
+  margin-bottom:20px;
 }
-
 .card-title{
-font-size:30px;
-font-weight:800;
-color:#ff2aa6;
-margin-bottom:14px;
+  font-size:30px;
+  font-weight:800;
+  color:#ff2aa6;
+  margin-bottom:14px;
 }
-
 .card-desc{
-font-size:16px;
-line-height:1.6;
-color:#e7e7e7;
-max-width:90%;
+  font-size:16px;
+  line-height:1.6;
+  color:#e7e7e7;
+  max-width:90%;
 }
-
 </style>
 </head>
-
 <body>
 
 <h1 class="title">NOPAAIIN</h1>
@@ -109,91 +93,70 @@ max-width:90%;
 
 <section class="works">
 
-<a href="audio.html" class="card">
+  <!-- 01 Audio Reactive -->
+  <a href="audio.html" class="card">
+    <video class="card-video" muted loop playsinline>
+      <source src="audio_reactive.mov" type="video/mp4">
+    </video>
+    <div class="card-overlay">
+      <div class="card-number">01</div>
+      <h2 class="card-title">Audio Reactive</h2>
+      <p class="card-desc">A real-time visual experiment that reacts to sound and transforms rhythm into motion and light.</p>
+    </div>
+  </a>
 
-<video class="card-video" muted loop playsinline>
-<source src="audio_reactive.mov" type="video/quicktime">
-</video>
+  <!-- 02 Scanner -->
+  <a href="scanner.html" class="card">
+    <video class="card-video" muted loop playsinline>
+      <source src="scanner.mov" type="video/mp4">
+    </video>
+    <div class="card-overlay">
+      <div class="card-number">02</div>
+      <h2 class="card-title">Scanner</h2>
+      <p class="card-desc">A scan-based visual composition exploring distortion and digital surface.</p>
+    </div>
+  </a>
 
-<div class="card-overlay">
-<div class="card-number">01</div>
-<h2 class="card-title">Audio Reactive</h2>
-<p class="card-desc">
-A real-time visual experiment that reacts to sound and transforms rhythm into motion and light.
-</p>
-</div>
+  <!-- 03 Rage Beat -->
+  <a href="ragebeat.html" class="card">
+    <video class="card-video" muted loop playsinline>
+      <source src="ragebeat.mov" type="video/mp4">
+    </video>
+    <div class="card-overlay">
+      <div class="card-number">03</div>
+      <h2 class="card-title">Rage Beat</h2>
+      <p class="card-desc">Audio driven realtime visual system.</p>
+    </div>
+  </a>
 
-</a>
-
-
-<a href="scanner.html" class="card">
-
-<video class="card-video" muted loop playsinline>
-<source src="scanner.mov" type="video/quicktime">
-</video>
-
-<div class="card-overlay">
-<div class="card-number">02</div>
-<h2 class="card-title">Scanner</h2>
-<p class="card-desc">
-A scan-based visual composition exploring distortion and digital surface.
-</p>
-</div>
-
-</a>
-
-
-<a href="#" class="card">
-
-<video class="card-video" muted loop playsinline>
-  <source src="ragebeat.mov" type="video/mp4">
-</video>
-
-<div class="card-overlay">
-  <div class="card-number">03</div>
-  <h2 class="card-title">Rage Beat</h2>
-  <p class="card-desc">Audio driven realtime visual system.</p>
-</div>
-
-</a>
-
-<a href="#" class="card">
-
-<video class="card-video" muted loop playsinline>
-  <source src="keyboardreactive.mov" type="video/mp4">
-</video>
-
-<div class="card-overlay">
-  <div class="card-number">04</div>
-  <h2 class="card-title">Keyboard Reactive</h2>
-  <p class="card-desc">Keyboard input based interactive visual.</p>
-</div>
-
-</a>
+  <!-- 04 Keyboard Reactive -->
+  <a href="keyboard.html" class="card">
+    <video class="card-video" muted loop playsinline>
+      <source src="keyboardreactive.mov" type="video/mp4">
+    </video>
+    <div class="card-overlay">
+      <div class="card-number">04</div>
+      <h2 class="card-title">Keyboard Reactive</h2>
+      <p class="card-desc">Keyboard input based interactive visual.</p>
+    </div>
+  </a>
 
 </section>
 
 <script>
-
-const cards=document.querySelectorAll('.card');
-
-cards.forEach(card=>{
-const video=card.querySelector('video');
-
-if(!video) return;
-
-card.addEventListener('mouseenter',()=>{
-video.currentTime=0;
-video.play();
+const cards = document.querySelectorAll('.card');
+cards.forEach(card => {
+  const video = card.querySelector('video');
+  if (!video) return;
+  card.addEventListener('mouseenter', () => {
+    video.currentTime = 0;
+    video.play();
+  });
+  card.addEventListener('mouseleave', () => {
+    video.pause();
+    video.currentTime = 0;
+  });
 });
-
-card.addEventListener('mouseleave',()=>{
-video.pause();
-video.currentTime=0;
-});
-
-});
-
 </script>
 
 </body>
