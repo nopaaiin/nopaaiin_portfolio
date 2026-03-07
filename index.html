@@ -4,787 +4,697 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NOPAAIIN</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
-<!-- GSAP + ScrollTrigger -->
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;700;900&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <style>
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  cursor: none;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; cursor: none; }
 
 :root {
   --pink: #ff2aa6;
-  --bg: #050505;
+  --bg: #080508;
+  --pink-dim: rgba(255,42,166,0.12);
+  --pink-glow: rgba(255,42,166,0.5);
 }
 
-/* ── 커스텀 커서 (옴 문양) ── */
+/* ══ 커서 ══ */
 .cursor {
   position: fixed;
-  width: 36px;
-  height: 36px;
+  width: 32px; height: 32px;
   pointer-events: none;
-  z-index: 9999;
-  transform: translate(-50%, -50%);
-  transition: width .2s ease, height .2s ease, opacity .2s ease;
-  filter: drop-shadow(0 0 6px rgba(255, 42, 166, 0.6));
+  z-index: 99999;
+  transform: translate(-50%,-50%);
+  filter: drop-shadow(0 0 8px var(--pink-glow));
+  transition: width .18s, height .18s;
+  mix-blend-mode: screen;
 }
+.cursor svg { width:100%; height:100%; }
+.cursor.grow { width:50px; height:50px; opacity:.65; }
 
-.cursor svg {
-  width: 100%;
-  height: 100%;
-}
-
-.cursor.grow {
-  width: 52px;
-  height: 52px;
-  opacity: 0.7;
-}
-
+/* ══ BODY ══ */
 body {
   background: var(--bg);
+  color: #fff;
+  font-family: 'DM Mono', monospace;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ══ SVG 필터 숨김 ══ */
+.svg-filters { position:absolute; width:0; height:0; overflow:hidden; pointer-events:none; }
+
+/* ══ 그레인 ══ */
+.grain {
+  position: fixed; inset: -50%;
+  z-index: 3; pointer-events: none;
+  opacity: 0.055; width: 200%; height: 200%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  animation: grainMove .07s steps(1) infinite;
+}
+@keyframes grainMove {
+  0%   { transform:translate(0,0); }
+  25%  { transform:translate(-4%,-7%); }
+  50%  { transform:translate(7%,3%); }
+  75%  { transform:translate(-2%,8%); }
+  100% { transform:translate(5%,-3%); }
+}
+
+/* ══ 핑크 안개층 — 항상 존재 ══ */
+.pink-atmosphere {
+  position: fixed; inset: 0;
+  z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(255,42,166,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(255,42,166,0.055) 0%, transparent 55%),
+    radial-gradient(ellipse 30% 50% at 50% 50%, rgba(255,42,166,0.025) 0%, transparent 65%);
+  animation: atmShift 22s ease-in-out infinite alternate;
+}
+@keyframes atmShift {
+  0%   { transform: scale(1) translate(0,0); opacity:.8; }
+  50%  { transform: scale(1.06) translate(15px,8px); opacity:1; }
+  100% { transform: scale(1.03) translate(-10px,-5px); opacity:.85; }
+}
+
+/* ══ 빛번짐 (light leak) — 핑크 ══ */
+.light-leak {
+  position: fixed;
+  pointer-events: none; z-index: 2;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0;
+  animation: leakPulse 8s ease-in-out infinite;
+}
+.light-leak-1 {
+  width: 300px; height: 300px;
+  top: -80px; left: -60px;
+  background: radial-gradient(circle, rgba(255,42,166,0.18) 0%, transparent 70%);
+  animation-delay: 0s;
+}
+.light-leak-2 {
+  width: 200px; height: 400px;
+  bottom: 10%; right: -50px;
+  background: radial-gradient(circle, rgba(255,42,166,0.12) 0%, transparent 70%);
+  animation-delay: 3.5s;
+}
+@keyframes leakPulse {
+  0%,100% { opacity:0; transform:scale(.9); }
+  40%,60%  { opacity:1; transform:scale(1.1); }
+}
+
+/* ══ 네비 ══ */
+.nav {
+  position: fixed; top:0; left:0; right:0;
+  z-index: 500;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 26px 36px;
+  mix-blend-mode: normal;
+}
+.nav-logo {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .22em;
   color: white;
-  font-family: 'Space Mono', monospace;
+  text-decoration: none;
+  opacity: .9;
+}
+.nav-right { display:flex; gap:10px; align-items:center; }
+.nav-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: .12em;
+  color: #555; text-decoration: none;
+  border: 1px solid #1e1e1e;
+  padding: 7px 13px; border-radius: 2px;
+  transition: color .2s, border-color .2s;
+  cursor: none;
+}
+.nav-btn:hover { color: var(--pink); border-color: var(--pink); }
+
+/* ══ HERO ══ */
+.hero {
+  position: relative; z-index: 10;
+  padding: 130px 48px 60px;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* 배경 타이포 — ghost text */
+.hero-ghost {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -55%);
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(120px, 20vw, 260px);
+  font-weight: 900;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255,42,166,0.06);
+  white-space: nowrap;
+  letter-spacing: -.03em;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.hero-eyebrow {
+  font-size: 9px; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--pink);
+  margin-bottom: 18px; position: relative; z-index: 2;
+  opacity: 0;
+}
+.hero-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 900; line-height: .92;
+  letter-spacing: -.03em;
+  position: relative; z-index: 2;
+  opacity: 0;
+}
+.hero-title em {
+  font-style: normal;
+  color: var(--pink);
+  display: block;
+}
+.hero-sub {
+  margin-top: 24px;
+  font-size: 11px; color: #444;
+  letter-spacing: .1em; line-height: 1.8;
+  max-width: 380px;
+  position: relative; z-index: 2;
+  opacity: 0;
+}
+
+/* 가로 구분선 — 핑크 */
+.hero-line {
+  position: absolute; bottom: 0; left: 48px;
+  height: 1px; width: 0;
+  background: linear-gradient(to right, var(--pink), rgba(255,42,166,0.1), transparent);
+  z-index: 2;
+}
+
+/* ══ WORKS 섹션 ══ */
+.works-section {
+  position: relative; z-index: 10;
+  padding: 0 48px 120px;
+}
+
+/* 섹션 라벨 */
+.section-label {
+  font-size: 9px; letter-spacing: .24em;
+  text-transform: uppercase; color: #333;
+  margin-bottom: 48px;
+  display: flex; align-items: center; gap: 16px;
+}
+.section-label::after {
+  content: '';
+  flex: 1; height: 1px;
+  background: linear-gradient(to right, #1a1a1a, transparent);
+}
+
+/* ══ 프로젝트 아이템 — 수직 목록 ══ */
+.project-list { display: flex; flex-direction: column; gap: 0; }
+
+.project-item {
+  position: relative;
+  border-top: 1px solid #111;
+  padding: 0;
+  overflow: hidden;
+  cursor: none;
+  opacity: 0; /* gsap 제어 */
+}
+.project-item:last-child { border-bottom: 1px solid #111; }
+
+/* 호버 배경 — 연기 느낌 */
+.project-item::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg,
+    rgba(255,42,166,0.04) 0%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity .6s ease;
+  pointer-events: none; z-index: 0;
+}
+.project-item:hover::before { opacity: 1; }
+
+/* 호버 시 핑크 세로선 */
+.project-item::after {
+  content: '';
+  position: absolute; left: 0; top: 0;
+  width: 2px; height: 0;
+  background: linear-gradient(to bottom, var(--pink), transparent);
+  transition: height .5s cubic-bezier(.16,1,.3,1);
+  z-index: 1;
+}
+.project-item:hover::after { height: 100%; }
+
+.project-inner {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: center;
+  gap: 32px;
+  padding: 28px 24px;
+  position: relative; z-index: 2;
+  transition: padding .3s ease;
+}
+.project-item:hover .project-inner { padding: 28px 36px; }
+
+.project-num {
+  font-size: 9px; color: #2a2a2a;
+  letter-spacing: .18em;
+  font-variant-numeric: tabular-nums;
+  transition: color .3s;
+}
+.project-item:hover .project-num { color: var(--pink); }
+
+.project-info { min-width: 0; }
+.project-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(22px, 3.5vw, 44px);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1;
+  color: #ccc;
+  transition: color .3s ease;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.project-item:hover .project-title { color: white; }
+
+.project-tag {
+  font-size: 10px; color: #2e2e2e;
+  letter-spacing: .12em;
+  margin-top: 6px;
+  transition: color .3s;
+}
+.project-item:hover .project-tag { color: #555; }
+
+/* 썸네일 — 오른쪽에 작게 */
+.project-thumb-wrap {
+  width: 120px; height: 68px;
+  border-radius: 4px; overflow: hidden;
+  position: relative; flex-shrink: 0;
+  border: 1px solid #181818;
+  opacity: 0;
+  transform: translateX(12px);
+  transition: opacity .4s ease, transform .4s ease;
+}
+.project-item:hover .project-thumb-wrap {
+  opacity: 1;
+  transform: translateX(0);
+}
+.project-thumb-wrap img,
+.project-thumb-wrap video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover;
+}
+.project-thumb-wrap video { opacity: 0; transition: opacity .3s; }
+.project-item:hover .project-thumb-wrap video { opacity: 1; }
+
+/* ══ 오버레이 — 클릭 시 전체화면 레이어 ══ */
+.detail-overlay {
+  position: fixed; inset: 0;
+  z-index: 1000;
+  background: rgba(5,3,5,0);
+  pointer-events: none;
+  transition: background .5s ease;
+}
+.detail-overlay.active {
+  background: rgba(5,3,5,0.92);
+  pointer-events: all;
+}
+
+/* ══ 디테일 패널 — 콜라주 스타일 ══ */
+.detail-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  display: flex;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.detail-panel.active {
+  pointer-events: all;
+  opacity: 1;
+}
+
+/* 왼쪽 — 영상 + 설명 */
+.detail-left {
+  width: 55%;
+  height: 100%;
+  padding: 80px 48px 60px 60px;
+  display: flex; flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 디테일 배경 ghost */
+.detail-ghost {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  font-family: 'Unbounded', sans-serif;
+  font-size: 200px; font-weight: 900;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255,42,166,0.04);
+  pointer-events: none; user-select: none;
+  white-space: nowrap; letter-spacing: -.04em;
+  z-index: 0;
+}
+
+.detail-eyebrow {
+  font-size: 9px; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--pink);
+  margin-bottom: 14px; position: relative; z-index: 2;
+}
+.detail-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(36px, 5vw, 72px);
+  font-weight: 900; line-height: .9;
+  letter-spacing: -.03em; color: white;
+  margin-bottom: 36px; position: relative; z-index: 2;
+}
+
+.detail-video-wrap {
+  position: relative; z-index: 2;
+  width: 100%; max-width: 560px;
+  border-radius: 6px; overflow: hidden;
+  border: 1px solid #1e1e1e;
+  background: #060606;
+  margin-bottom: 32px;
+  box-shadow: 0 0 60px rgba(255,42,166,0.08);
+}
+.detail-video-wrap video { width:100%; display:block; }
+
+.detail-about {
+  position: relative; z-index: 2;
+  font-size: 12px; line-height: 2;
+  color: #666; max-width: 480px;
+  border-left: 1px solid rgba(255,42,166,0.25);
+  padding-left: 18px;
+}
+
+/* 오른쪽 — 노드 이미지들 */
+.detail-right {
+  width: 45%;
+  height: 100%;
+  padding: 80px 60px 60px 24px;
+  display: flex; flex-direction: column;
+  justify-content: center;
+  border-left: 1px solid #0f0f0f;
+  position: relative; overflow-y: auto;
   overflow-x: hidden;
 }
 
-/* ════════════════════════════
-   ② 그레인 노이즈
-════════════════════════════ */
-.grain {
-  position: fixed;
-  inset: -50%;
-  z-index: 1;
-  pointer-events: none;
-  opacity: 0.06;
-  width: 200%;
-  height: 200%;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-size: 256px 256px;
-  animation: grainMove .08s steps(1) infinite;
+.detail-node-label {
+  font-size: 9px; letter-spacing: .22em;
+  text-transform: uppercase; color: #2a2a2a;
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
 }
-@keyframes grainMove {
-  0%   { transform: translate(0, 0); }
-  20%  { transform: translate(-5%, -8%); }
-  40%  { transform: translate(8%, 3%); }
-  60%  { transform: translate(-3%, 9%); }
-  80%  { transform: translate(6%, -4%); }
-  100% { transform: translate(-2%, 6%); }
+.detail-node-label::after {
+  content:''; flex:1; height:1px;
+  background: linear-gradient(to right, #181818, transparent);
 }
 
-/* ════════════════════════════
-   ③ 커서 옆 프로젝트 번호
-════════════════════════════ */
-.cursor-label {
-  position: fixed;
-  pointer-events: none;
-  z-index: 9998;
-  font-family: 'Space Mono', monospace;
-  font-size: 10px;
-  color: var(--pink);
-  letter-spacing: 0.1em;
-  transform: translate(20px, -8px);
-  opacity: 0;
-  transition: opacity .2s ease;
-  white-space: nowrap;
-}
-.cursor-label.visible { opacity: 1; }
-
-
-
-/* ══════════════════════════════════
-   SMOKY REVEAL SYSTEM
-══════════════════════════════════ */
-
-/* SVG 필터 컨테이너 — 화면에 안 보이게 */
-.svg-filters { position: absolute; width: 0; height: 0; overflow: hidden; }
-
-/* 모든 reveal 대상의 초기 상태 — GSAP이 제어 */
-.smoke-reveal {
-  opacity: 0;
-  will-change: opacity, transform, filter;
+.detail-node-text {
+  font-size: 11px; line-height: 1.9;
+  color: #444; margin-bottom: 28px;
 }
 
-/* 핑크 안개 오버레이 — 전역 분위기 레이어 */
-.pink-haze {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 70% 50% at 15% 30%, rgba(255,42,166,0.055) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 60% at 85% 70%, rgba(255,42,166,0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 50% 10%, rgba(255,42,166,0.03) 0%, transparent 55%);
-  animation: hazeShift 18s ease-in-out infinite alternate;
+/* 노드 이미지 — 콜라주 배치 */
+.node-collage {
+  position: relative;
+  width: 100%; min-height: 340px;
+  margin-top: 8px;
 }
 
-@keyframes hazeShift {
-  0%   { opacity: 0.7; transform: scale(1) translateX(0); }
-  50%  { opacity: 1;   transform: scale(1.04) translateX(12px); }
-  100% { opacity: 0.8; transform: scale(1.02) translateX(-8px); }
-}
-
-/* 카드 hover 시 핑크 글로우 강화 */
-.card::after {
-  content: '';
+.node-img-slot {
   position: absolute;
-  inset: 0;
-  z-index: 3;
-  border-radius: 16px;
-  background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(255,42,166,0.12) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity .5s ease;
-  pointer-events: none;
-}
-.card:hover::after { opacity: 1; }
-
-/* 카드 reveal 초기 상태 */
-.card.smoke-reveal {
-  transform: translateY(22px);
-}
-
-/* 헤더 타이틀 reveal */
-.title.smoke-reveal,
-.subtitle.smoke-reveal {
-  transform: translateY(16px);
-}
-
-/* 핑크 라인 — 헤더 하단 */
-.header-line {
-  display: block;
-  width: 0;
-  height: 1px;
-  background: linear-gradient(to right, var(--pink), transparent);
-  margin: 0 40px 32px;
-  position: relative;
-  z-index: 2;
-}
-
-/* prefers-reduced-motion */
-@media (prefers-reduced-motion: reduce) {
-  .smoke-reveal {
-    opacity: 1 !important;
-    transform: none !important;
-    filter: none !important;
-  }
-  .pink-haze { animation: none; }
-}
-
-/* ── 헤더 영역 ── */
-.header {
-  padding: 40px 40px 0;
-}
-
-.title {
-  margin-bottom: 10px;
-}
-
-.title img {
-  height: 100px;
-  width: auto;
-  display: block;
-}
-
-.subtitle {
-  font-size: 11px;
-  color: #444;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  margin-bottom: 48px;
-}
-
-/* ────────────────────────────
-   비대칭 카드 레이아웃 (3컬럼)
-   col1: audio 큰 카드
-   col2: scanner 세로 카드
-   col3: ragebeat + keyboard 위아래
-──────────────────────────── */
-.works {
-  display: grid;
-  grid-template-columns: 1.4fr 0.8fr 0.8fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 16px;
-  padding: 0 40px;
-}
-
-/* 카드 공통 */
-.card {
-  position: relative;
-  border-radius: 16px;
-  overflow: hidden;
-  background: #111;
-  border: 1px solid #1e1e1e;
-  transition: transform .3s ease, border-color .3s ease;
+  border-radius: 4px; overflow: hidden;
+  border: 1px solid #1a1a1a;
+  background: #0a0a0a;
   cursor: none;
+  transition: z-index 0s, transform .3s ease, box-shadow .3s ease;
 }
-
-.card:hover {
-  transform: translateY(-5px) scale(1.01);
-  border-color: var(--pink);
+.node-img-slot:hover {
+  z-index: 10;
+  transform: scale(1.04) !important;
+  box-shadow: 0 0 30px rgba(255,42,166,0.15);
 }
+.node-img-slot img { width:100%; height:100%; object-fit:cover; display:block; }
 
-/* 01 audio: 왼쪽 큰 카드 */
-.card-featured {
-  grid-column: 1;
-  grid-row: 1 / 3;
-  min-height: 600px;
+/* 닫기 버튼 */
+.detail-close {
+  position: fixed; top:24px; right:32px;
+  z-index: 1002;
+  background: none; border: 1px solid #222;
+  color: #444; font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: .12em;
+  padding: 8px 14px; cursor: none;
+  transition: color .2s, border-color .2s;
+  opacity: 0; pointer-events: none;
 }
+.detail-close.active { opacity:1; pointer-events:all; }
+.detail-close:hover { color: var(--pink); border-color: var(--pink); }
 
-/* 02 scanner: 세로 영상 */
-.card-scanner {
-  grid-column: 2;
-  grid-row: 1 / 3;
-  min-height: 600px;
-}
-
-/* 03 ragebeat */
-.card-sm {
-  grid-column: 3;
-  grid-row: 1;
-  min-height: 290px;
-}
-
-/* 04 keyboard */
-.card-sm2 {
-  grid-column: 3;
-  grid-row: 2;
-  min-height: 290px;
-}
-
-/* ── 카드 썸네일 ── */
-.card-thumb {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 1;
-  transition: opacity .4s ease;
-}
-
-.card:hover .card-thumb {
-  opacity: 0;
-}
-
-.card-video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity .4s ease;
-}
-
-.card:hover .card-video {
-  opacity: 1;
-}
-
-.card-overlay {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  height: 100%;
-  padding: 24px;
-  background: linear-gradient(to top, rgba(0,0,0,.9) 0%, rgba(0,0,0,.05) 60%);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  min-height: inherit;
-}
-
-.card-number {
-  font-size: 10px;
-  color: #444;
-  margin-bottom: 8px;
-  letter-spacing: 0.14em;
-}
-
-.card-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 36px;
-  color: var(--pink);
-  margin-bottom: 6px;
-  letter-spacing: 0.04em;
-  line-height: 1;
-}
-
-.card-featured .card-title {
-  font-size: 52px;
-}
-
-.card-desc {
-  font-size: 11px;
-  line-height: 1.7;
-  color: #777;
-}
-
-/* ── 하단 marquee ── */
+/* ══ Marquee ══ */
 .marquee-wrap {
-  width: 100%;
-  overflow: hidden;
-  border-top: 1px solid #1a1a1a;
-  border-bottom: 1px solid #1a1a1a;
-  padding: 14px 0;
-  margin-top: 40px;
+  width:100%; overflow:hidden;
+  border-top: 1px solid #0f0f0f;
+  padding: 13px 0;
+  position: relative; z-index: 10;
 }
-
 .marquee-track {
-  display: flex;
-  white-space: nowrap;
-  animation: marquee 18s linear infinite;
+  display:flex; white-space:nowrap;
+  animation: marquee 22s linear infinite;
 }
-
 .marquee-track span {
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #333;
-  padding: 0 40px;
+  font-size: 10px; letter-spacing: .18em;
+  text-transform:uppercase; color: #1e1e1e;
+  padding: 0 36px;
 }
-
-.marquee-track span em {
-  color: var(--pink);
-  font-style: normal;
-}
-
+.marquee-track span em { color:var(--pink); font-style:normal; }
 @keyframes marquee {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
 
-/* ────────────────────────────
-   블러 배경
-──────────────────────────── */
-.overlay-bg {
-  position: fixed;
-  inset: 0;
-  background: rgba(5, 0, 3, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  z-index: 100;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .4s ease;
-}
-
-.overlay-bg.active {
-  opacity: 1;
-  pointer-events: all;
-}
-
-/* ────────────────────────────
-   사이드 패널
-──────────────────────────── */
-.panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 500px;
-  max-width: 92vw;
-  height: 100vh;
-  background: rgba(8, 2, 5, 0.85);
-  border-left: 1px solid var(--pink);
-  z-index: 200;
-  transform: translateX(100%);
-  transition: transform .45s cubic-bezier(.16,1,.3,1);
-  overflow-y: auto;
-  padding: 48px 32px 60px;
-}
-
-.panel.active {
-  transform: translateX(0);
-}
-
-.panel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 2px;
-  height: 35%;
-  background: linear-gradient(to bottom, var(--pink), transparent);
-}
-
-.panel-close {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: none;
-  border: 1px solid #222;
-  color: #555;
-  font-family: 'Space Mono', monospace;
-  font-size: 10px;
-  padding: 6px 12px;
-  cursor: none;
-  letter-spacing: 0.12em;
-  transition: border-color .2s, color .2s;
-}
-
-.panel-close:hover {
-  border-color: var(--pink);
-  color: var(--pink);
-}
-
-.panel-number {
-  font-size: 11px;
-  color: #444;
-  letter-spacing: 0.14em;
-  margin-bottom: 8px;
-}
-
-.panel-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 56px;
-  color: var(--pink);
-  line-height: 1;
-  margin-bottom: 24px;
-}
-
-.panel-video-wrap {
-  width: 100%;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid #1e1e1e;
-  background: #060606;
-  margin-bottom: 28px;
-}
-
-.panel-video-wrap video {
-  width: 100%;
-  display: block;
-}
-
-.panel-section { margin-bottom: 24px; }
-
-.panel-label {
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--pink);
-  margin-bottom: 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #181818;
-}
-
-.panel-text {
-  font-size: 12px;
-  line-height: 2;
-  color: #999;
-}
-
-.screenshots {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.screenshot-slot {
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #222;
-  background: #0a0a0a;
-  cursor: none;
-}
-
-.screenshot-slot img {
-  width: 100%;
-  display: block;
-  border-radius: 8px;
-  transition: opacity .2s;
-}
-
-.screenshot-slot:hover img {
-  opacity: 0.8;
-}
-
-/* ── 라이트박스 ── */
+/* ══ 라이트박스 ══ */
 .lightbox {
-  position: fixed;
-  inset: 0;
-  z-index: 9000;
-  background: rgba(0,0,0,0.92);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .3s ease;
-  cursor: none;
+  position:fixed; inset:0; z-index:9000;
+  background: rgba(0,0,0,.94);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none;
+  transition: opacity .3s;
 }
-
-.lightbox.active {
-  opacity: 1;
-  pointer-events: all;
-}
-
+.lightbox.active { opacity:1; pointer-events:all; }
 .lightbox img {
-  max-width: 90vw;
-  max-height: 90vh;
-  border-radius: 8px;
-  border: 1px solid #333;
-  object-fit: contain;
+  max-width:88vw; max-height:88vh;
+  border-radius:4px; border:1px solid #222; object-fit:contain;
 }
-
 .lightbox-close {
-  position: absolute;
-  top: 24px;
-  right: 32px;
-  background: none;
-  border: 1px solid #333;
-  color: #666;
-  font-family: 'Space Mono', monospace;
-  font-size: 10px;
-  padding: 6px 12px;
-  letter-spacing: 0.12em;
-  cursor: none;
+  position:absolute; top:24px; right:32px;
+  background:none; border:1px solid #333; color:#555;
+  font-family:'DM Mono',monospace; font-size:10px;
+  padding:6px 12px; letter-spacing:.12em; cursor:none;
   transition: color .2s, border-color .2s;
 }
+.lightbox-close:hover { color:var(--pink); border-color:var(--pink); }
 
-.lightbox-close:hover {
-  color: var(--pink);
-  border-color: var(--pink);
+/* ══ 반응형 ══ */
+@media (max-width: 768px) {
+  .hero { padding: 110px 24px 48px; }
+  .works-section { padding: 0 24px 80px; }
+  .detail-panel { flex-direction: column; }
+  .detail-left { width:100%; height:auto; padding:80px 24px 24px; }
+  .detail-right { width:100%; height:auto; padding:24px; border-left:none; border-top:1px solid #0f0f0f; }
+  .project-title { font-size: 22px; }
+  .project-thumb-wrap { display:none; }
+  .node-collage { min-height: 220px; }
 }
 
-/* ── 인스타 고정 버튼 ── */
-.insta-btn {
-  position: fixed;
-  top: 28px;
-  right: 32px;
-  z-index: 300;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-family: 'Space Mono', monospace;
-  font-size: 11px;
-  color: #666;
-  text-decoration: none;
-  letter-spacing: 0.1em;
-  border: 1px solid #222;
-  padding: 8px 14px;
-  border-radius: 2px;
-  transition: color .2s, border-color .2s;
-  cursor: none;
-}
-
-.insta-btn:hover {
-  color: var(--pink);
-  border-color: var(--pink);
-}
-
-/* ── About 버튼 ── */
-.about-btn {
-  position: fixed;
-  top: 28px;
-  right: 160px;
-  z-index: 300;
-  display: inline-flex;
-  align-items: center;
-  font-family: 'Space Mono', monospace;
-  font-size: 11px;
-  color: #555;
-  text-decoration: none;
-  letter-spacing: 0.1em;
-  border: 1px solid #222;
-  padding: 8px 14px;
-  border-radius: 2px;
-  transition: color .2s, border-color .2s;
-  cursor: none;
-}
-
-.about-btn:hover {
-  color: var(--pink);
-  border-color: var(--pink);
+@media (prefers-reduced-motion: reduce) {
+  .grain, .pink-atmosphere { animation:none; }
+  .light-leak { display:none; }
 }
 
 </style>
 </head>
 <body>
 
-<!-- SVG 필터 정의 (smoky blur 효과용) -->
+<!-- SVG 필터 -->
 <svg class="svg-filters" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <filter id="smoky-in" x="-20%" y="-20%" width="140%" height="140%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.018 0.025" numOctaves="3" seed="8" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="14" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
-      <feGaussianBlur in="displaced" stdDeviation="3.5" result="blurred"/>
-      <feComposite in="blurred" in2="SourceGraphic" operator="in"/>
+    <filter id="smoke-disp" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.016 0.022" numOctaves="3" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+      <feGaussianBlur in="disp" stdDeviation="5" result="blur"/>
+      <feComposite in="blur" in2="SourceGraphic" operator="in"/>
     </filter>
-    <filter id="smoky-card" x="-10%" y="-10%" width="120%" height="120%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.022 0.018" numOctaves="2" seed="14" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
-      <feGaussianBlur in="displaced" stdDeviation="2.5" result="blurred"/>
-      <feComposite in="blurred" in2="SourceGraphic" operator="in"/>
+    <filter id="smoke-soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02 0.016" numOctaves="2" seed="13" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+      <feGaussianBlur in="disp" stdDeviation="3" result="blur"/>
+      <feComposite in="blur" in2="SourceGraphic" operator="in"/>
     </filter>
   </defs>
 </svg>
 
-<!-- 핑크 헤이즈 분위기 레이어 -->
-<div class="pink-haze"></div>
-
-
-
-<!-- ② 그레인 -->
+<!-- 분위기 레이어들 -->
 <div class="grain"></div>
+<div class="pink-atmosphere"></div>
+<div class="light-leak light-leak-1"></div>
+<div class="light-leak light-leak-2"></div>
 
-<!-- ③ 커서 라벨 -->
-<div class="cursor-label" id="cursorLabel"></div>
-
-
-
-<!-- 커스텀 커서 (옴 문양) -->
+<!-- 커서 -->
 <div class="cursor" id="cursor">
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- 옴(ॐ) 문양 -->
-    <text
-      x="50" y="72"
-      text-anchor="middle"
-      font-size="72"
-      font-family="serif"
-      fill="#ff2aa6"
-    >ॐ</text>
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <text x="50" y="72" text-anchor="middle" font-size="72" font-family="serif" fill="#ff2aa6">ॐ</text>
   </svg>
 </div>
 
-<!-- 인스타 고정 버튼 -->
-<a href="https://instagram.com/nopaaiin" target="_blank" class="insta-btn">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-    <circle cx="12" cy="12" r="4"/>
-    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
-  </svg>
-  @nopaaiin
-</a>
-
-<!-- About 버튼 -->
-<a href="about.html" class="about-btn">About</a>
-
-<!-- 헤더 -->
-<div class="header">
-  <h1 class="title smoke-reveal"><img src="logo.png" alt="NOPAAIIN"></h1>
-  <p class="subtitle smoke-reveal">Interactive experiments · Visual systems · Real-time media</p>
-</div>
-<span class="header-line" id="headerLine"></span>
-
-<!-- 비대칭 카드 그리드 -->
-<section class="works">
-
-  <!-- 01 audio — 왼쪽 큰 카드 -->
-  <div class="card card-featured smoke-reveal" data-project="audio">
-    <img class="card-thumb" src="thumb_audio.png" alt="">
-    <video class="card-video" muted loop playsinline>
-      <source src="audio_reactive.mov" type="video/mp4">
-    </video>
-    <div class="card-overlay">
-      <div class="card-number">01 / 04</div>
-      <h2 class="card-title">Audio Reactive</h2>
-      <p class="card-desc">Real-time visual driven by kick frequency.</p>
-    </div>
+<!-- 네비 -->
+<nav class="nav">
+  <a href="index.html" class="nav-logo">NOPAAIIN</a>
+  <div class="nav-right">
+    <a href="about.html" class="nav-btn">About</a>
+    <a href="https://instagram.com/nopaaiin" target="_blank" class="nav-btn">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:middle;margin-right:5px">
+        <rect x="2" y="2" width="20" height="20" rx="5"/>
+        <circle cx="12" cy="12" r="4"/>
+        <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+      </svg>@nopaaiin
+    </a>
   </div>
+</nav>
 
-  <!-- 02 scanner — 세로 카드 -->
-  <div class="card card-scanner smoke-reveal" data-project="scanner">
-    <img class="card-thumb" src="thumb_scanner.png" alt="">
-    <video class="card-video" muted loop playsinline>
-      <source src="scanner.mov" type="video/mp4">
-    </video>
-    <div class="card-overlay">
-      <div class="card-number">02 / 04</div>
-      <h2 class="card-title">Scanner</h2>
-      <p class="card-desc">Particle scan via POP node.</p>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-ghost" id="heroGhost">NOPAAIIN</div>
+  <span class="hero-eyebrow" id="heroEyebrow">— Visual Systems · Real-time Media · 2026</span>
+  <h1 class="hero-title" id="heroTitle">
+    NOPAAIIN<em>WORKS</em>
+  </h1>
+  <p class="hero-sub" id="heroSub">Interactive experiments.<br>TouchDesigner · Audio reactive · Real-time visual.</p>
+  <div class="hero-line" id="heroLine"></div>
+</section>
+
+<!-- WORKS -->
+<section class="works-section">
+  <div class="section-label">Selected Works</div>
+
+  <div class="project-list">
+
+    <!-- 01 -->
+    <div class="project-item" data-project="audio">
+      <div class="project-inner">
+        <span class="project-num">01 / 04</span>
+        <div class="project-info">
+          <div class="project-title">Audio Reactive</div>
+          <div class="project-tag">TouchDesigner · Real-time · 2026</div>
+        </div>
+        <div class="project-thumb-wrap">
+          <img src="thumb_audio.png" alt="">
+          <video muted loop playsinline><source src="audio_reactive.mov" type="video/mp4"></video>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- 03 ragebeat — 오른쪽 위 -->
-  <div class="card card-sm smoke-reveal" data-project="ragebeat">
-    <img class="card-thumb" src="thumb_rage.png" alt="">
-    <video class="card-video" muted loop playsinline>
-      <source src="ragebeat.mov" type="video/mp4">
-    </video>
-    <div class="card-overlay">
-      <div class="card-number">03 / 04</div>
-      <h2 class="card-title">Rage Beat</h2>
-      <p class="card-desc">Beat visualized with Noise TOP.</p>
+    <!-- 02 -->
+    <div class="project-item" data-project="scanner">
+      <div class="project-inner">
+        <span class="project-num">02 / 04</span>
+        <div class="project-info">
+          <div class="project-title">Scanner</div>
+          <div class="project-tag">TouchDesigner · Particle · 2026</div>
+        </div>
+        <div class="project-thumb-wrap">
+          <img src="thumb_scanner.png" alt="">
+          <video muted loop playsinline><source src="scanner.mov" type="video/mp4"></video>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- 04 keyboard — 오른쪽 아래 -->
-  <div class="card card-sm2 smoke-reveal" data-project="keyboard">
-    <img class="card-thumb" src="thumb_key.png" alt="">
-    <video class="card-video" muted loop playsinline>
-      <source src="keyboardreactive.mov" type="video/mp4">
-    </video>
-    <div class="card-overlay">
-      <div class="card-number">04 / 04</div>
-      <h2 class="card-title">Keyboard Reactive</h2>
-      <p class="card-desc">Grid visual system controlled by keyboard.</p>
+    <!-- 03 -->
+    <div class="project-item" data-project="ragebeat">
+      <div class="project-inner">
+        <span class="project-num">03 / 04</span>
+        <div class="project-info">
+          <div class="project-title">Rage Beat</div>
+          <div class="project-tag">TouchDesigner · Noise TOP · 2026</div>
+        </div>
+        <div class="project-thumb-wrap">
+          <img src="thumb_rage.png" alt="">
+          <video muted loop playsinline><source src="ragebeat.mov" type="video/mp4"></video>
+        </div>
+      </div>
     </div>
-  </div>
 
+    <!-- 04 -->
+    <div class="project-item" data-project="keyboard">
+      <div class="project-inner">
+        <span class="project-num">04 / 04</span>
+        <div class="project-info">
+          <div class="project-title">Keyboard Reactive</div>
+          <div class="project-tag">TouchDesigner · Interactive · 2026</div>
+        </div>
+        <div class="project-thumb-wrap">
+          <img src="thumb_key.png" alt="">
+          <video muted loop playsinline><source src="keyboardreactive.mov" type="video/mp4"></video>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </section>
 
 <!-- Marquee -->
 <div class="marquee-wrap">
   <div class="marquee-track">
-    <span>NOPAAIIN</span>
-    <span><em>·</em></span>
-    <span>TOUCHDESIGNER</span>
-    <span><em>·</em></span>
-    <span>REALTIME VISUAL</span>
-    <span><em>·</em></span>
-    <span>AUDIO REACTIVE</span>
-    <span><em>·</em></span>
-    <span>INTERACTIVE MEDIA</span>
-    <span><em>·</em></span>
-    <span>2026</span>
-    <span><em>·</em></span>
-    <!-- 반복 (seamless loop) -->
-    <span>NOPAAIIN</span>
-    <span><em>·</em></span>
-    <span>TOUCHDESIGNER</span>
-    <span><em>·</em></span>
-    <span>REALTIME VISUAL</span>
-    <span><em>·</em></span>
-    <span>AUDIO REACTIVE</span>
-    <span><em>·</em></span>
-    <span>INTERACTIVE MEDIA</span>
-    <span><em>·</em></span>
-    <span>2026</span>
-    <span><em>·</em></span>
+    <span>NOPAAIIN</span><span><em>·</em></span>
+    <span>TOUCHDESIGNER</span><span><em>·</em></span>
+    <span>REALTIME VISUAL</span><span><em>·</em></span>
+    <span>AUDIO REACTIVE</span><span><em>·</em></span>
+    <span>INTERACTIVE MEDIA</span><span><em>·</em></span>
+    <span>2026</span><span><em>·</em></span>
+    <span>NOPAAIIN</span><span><em>·</em></span>
+    <span>TOUCHDESIGNER</span><span><em>·</em></span>
+    <span>REALTIME VISUAL</span><span><em>·</em></span>
+    <span>AUDIO REACTIVE</span><span><em>·</em></span>
+    <span>INTERACTIVE MEDIA</span><span><em>·</em></span>
+    <span>2026</span><span><em>·</em></span>
   </div>
 </div>
 
-<!-- 블러 배경 -->
-<div class="overlay-bg" id="overlayBg"></div>
+<!-- 오버레이 -->
+<div class="detail-overlay" id="detailOverlay"></div>
 
-<!-- 사이드 패널 -->
-<div class="panel" id="panel">
-  <button class="panel-close" id="panelClose">✕ CLOSE</button>
-  <p class="panel-number" id="panelNumber"></p>
-  <h2 class="panel-title" id="panelTitle"></h2>
-
-  <div class="panel-video-wrap">
-    <video id="panelVideo" controls playsinline>
-      <source id="panelVideoSrc" src="" type="video/mp4">
-    </video>
+<!-- 디테일 패널 -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-left">
+    <div class="detail-ghost" id="detailGhost"></div>
+    <div class="detail-eyebrow" id="detailNum"></div>
+    <div class="detail-title" id="detailTitle"></div>
+    <div class="detail-video-wrap">
+      <video id="detailVideo" controls playsinline>
+        <source id="detailVideoSrc" src="" type="video/mp4">
+      </video>
+    </div>
+    <p class="detail-about" id="detailAbout"></p>
   </div>
-
-  <div class="panel-section">
-    <p class="panel-label">About</p>
-    <p class="panel-text" id="panelAbout"></p>
-  </div>
-
-  <div class="panel-section">
-    <p class="panel-label">TouchDesigner Network</p>
-    <p class="panel-text" id="panelNode" style="margin-bottom:16px;"></p>
-    <div class="screenshots" id="panelScreenshots"></div>
+  <div class="detail-right">
+    <div class="detail-node-label">TouchDesigner Network</div>
+    <p class="detail-node-text" id="detailNode"></p>
+    <div class="node-collage" id="nodeCollage"></div>
   </div>
 </div>
+
+<!-- 닫기 -->
+<button class="detail-close" id="detailClose">✕ CLOSE</button>
 
 <!-- 라이트박스 -->
 <div class="lightbox" id="lightbox">
@@ -793,248 +703,259 @@ body {
 </div>
 
 <script>
-// ════════════════════════════════════════
-//  SMOKY REVEAL SYSTEM — GSAP + ScrollTrigger
-// ════════════════════════════════════════
-
 gsap.registerPlugin(ScrollTrigger);
 
-// prefers-reduced-motion 체크
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-if (!reducedMotion) {
-
-  // ── 헤더 라인 reveal ──
-  gsap.to('#headerLine', {
-    width: 'calc(100% - 80px)',
-    duration: 1.6,
-    ease: 'power2.out',
-    delay: 0.3
-  });
-
-  // ── 타이틀 smoky reveal (페이지 로드 즉시) ──
-  gsap.fromTo('.title.smoke-reveal', {
-    opacity: 0,
-    y: 20,
-    filter: 'blur(14px) url(#smoky-in)',
-  }, {
-    opacity: 1,
-    y: 0,
-    filter: 'blur(0px)',
-    duration: 1.4,
-    ease: 'power3.out',
-    delay: 0.15,
-    clearProps: 'filter'
-  });
-
-  gsap.fromTo('.subtitle.smoke-reveal', {
-    opacity: 0,
-    y: 14,
-    filter: 'blur(10px)',
-  }, {
-    opacity: 1,
-    y: 0,
-    filter: 'blur(0px)',
-    duration: 1.2,
-    ease: 'power3.out',
-    delay: 0.45,
-    clearProps: 'filter'
-  });
-
-  // ── 카드 smoky reveal — ScrollTrigger 기반, stagger ──
-  const cards = gsap.utils.toArray('.card.smoke-reveal');
-
-  cards.forEach((card, i) => {
-    // 각 카드마다 약간 다른 displacement seed로 개성 부여
-    const delay = i * 0.11;
-
-    gsap.fromTo(card, {
-      opacity: 0,
-      y: 28,
-      filter: 'blur(12px) url(#smoky-card)',
-      scale: 0.985,
-    }, {
-      opacity: 1,
-      y: 0,
-      filter: 'blur(0px)',
-      scale: 1,
-      duration: 1.3,
-      ease: 'power2.out',
-      delay: delay,
-      clearProps: 'filter,scale',
-      scrollTrigger: {
-        trigger: card,
-        start: 'top 88%',
-        once: true,
-      }
-    });
-  });
-
-  // ── marquee 라인 reveal ──
-  gsap.fromTo('.marquee-wrap', {
-    opacity: 0,
-  }, {
-    opacity: 1,
-    duration: 1.0,
-    ease: 'power2.out',
-    scrollTrigger: {
-      trigger: '.marquee-wrap',
-      start: 'top 95%',
-      once: true,
-    }
-  });
-
-} else {
-  // 모션 감소 환경 — 즉시 표시
-  gsap.set('.smoke-reveal', { opacity: 1, y: 0 });
-  gsap.set('#headerLine', { width: 'calc(100% - 80px)' });
-}
-
-// ════════════════════════════════════════
-//  기존 커서 + 패널 로직
-// ════════════════════════════════════════
-
-// ── 커서 라벨 ──
-const cursorLabel = document.getElementById('cursorLabel');
-
-// ── 커스텀 커서 ──
-const cursor = document.getElementById('cursor');
-document.addEventListener('mousemove', e => {
-  cursor.style.left = e.clientX + 'px';
-  cursor.style.top  = e.clientY + 'px';
-  cursorLabel.style.left = e.clientX + 'px';
-  cursorLabel.style.top  = e.clientY + 'px';
-});
-document.querySelectorAll('.card, .panel-close, button').forEach(el => {
-  el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
-  el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
-});
-
-document.querySelectorAll('.card').forEach(card => {
-  const num = card.querySelector('.card-number');
-  const title = card.querySelector('.card-title');
-  card.addEventListener('mouseenter', () => {
-    if (num && title) {
-      cursorLabel.textContent = num.textContent + ' ' + title.textContent;
-      cursorLabel.classList.add('visible');
-    }
-  });
-  card.addEventListener('mouseleave', () => {
-    cursorLabel.classList.remove('visible');
-  });
-});
-
-// ── 프로젝트 데이터 ──
+// ══ 프로젝트 데이터 ══
 const projects = {
   audio: {
     number: '01 / 04',
     title: 'Audio Reactive',
     video: 'audio_reactive.mov',
-    about: '킥 드럼의 저음역대 주파수를 TouchDesigner 내에서 실시간으로 감지하고, 그 신호값에 따라 원형 그래픽의 크기·형태·밀도가 동적으로 변화하는 반응형 비주얼 시스템입니다. 사운드와 이미지 사이의 물리적 연결을 노드 기반 로직으로 구현하였으며, 음악의 에너지가 시각 언어로 번역되는 순간을 포착하는 데 초점을 맞추었습니다.',
-    node: 'Grid SOP → Sprinkle SOP으로 파티클 포인트를 생성하고, Noise SOP으로 유기적인 변위를 만든 뒤 CHOP을 통해 오디오 신호값을 geometry의 transform에 실시간으로 연결했습니다. audioreactive CHOP이 주파수 대역별 진폭을 추출해 Sphere SOP의 스케일과 Displace SOP의 강도를 구동합니다.',
+    about: '킥 드럼의 저음역대 주파수를 TouchDesigner 내에서 실시간으로 감지하고, 그 신호값에 따라 원형 그래픽의 크기·형태·밀도가 동적으로 변화하는 반응형 비주얼 시스템입니다. 사운드와 이미지 사이의 물리적 연결을 노드 기반 로직으로 구현했습니다.',
+    node: 'Grid SOP → Sprinkle SOP으로 파티클 포인트를 생성하고 Noise SOP으로 유기적인 변위를 만든 뒤 CHOP을 통해 오디오 신호값을 geometry의 transform에 실시간으로 연결했습니다.',
     images: ['audio_node_1.png', 'audio_node_2.png']
   },
   scanner: {
     number: '02 / 04',
     title: 'Scanner',
     video: 'scanner.mov',
-    about: 'TouchDesigner의 POP(Particle Operator) 노드를 활용해 무작위로 생성·소멸을 반복하는 파티클 시스템을 구축하고, 그 위를 스캐닝하듯 가로지르는 시선의 흐름을 시각화한 작업입니다. 통제되지 않는 입자들의 운동과 기계적으로 반복되는 스캔 모션 사이의 긴장감을 통해, 디지털 표면 위에서 발생하는 질서와 무질서의 공존을 탐구합니다.',
-    node: 'Point Generator SOP에서 생성된 파티클이 Noise CHOP의 흐름을 따라 이동하며, Feedback TOP을 통해 이전 프레임이 잔상처럼 누적됩니다. LFO CHOP 3개가 각각 위치·속도·밀도를 독립적으로 제어하며, Bloom TOP으로 파티클의 발광 효과를 마무리합니다.',
+    about: 'TouchDesigner의 POP 노드를 활용해 무작위로 생성·소멸을 반복하는 파티클 시스템을 구축하고, 그 위를 스캐닝하듯 가로지르는 시선의 흐름을 시각화한 작업입니다.',
+    node: 'Point Generator SOP에서 생성된 파티클이 Noise CHOP의 흐름을 따라 이동하며 Feedback TOP을 통해 이전 프레임이 잔상처럼 누적됩니다. LFO CHOP 3개가 각각 위치·속도·밀도를 독립적으로 제어합니다.',
     images: ['scanner_node.png']
   },
   ragebeat: {
     number: '03 / 04',
     title: 'Rage Beat',
     video: 'ragebeat.mov',
-    about: 'Rage 장르는 Playboi Carti, Ken Carson 등으로 대표되는 하이퍼팝 계열의 음악 장르로, 과포화된 사운드와 공격적인 비트 패턴이 특징입니다. 이 작업은 그 비트의 리듬 구조를 TouchDesigner의 Noise TOP 노드를 통해 실시간 비주얼 신호로 변환한 시스템입니다.',
-    node: 'Audio File In → Audio Spectrum Analyze → Math → Filter → Select CHOP 체인으로 특정 주파수 대역의 에너지를 추출합니다. 추출된 값이 Tube SOP에 연결된 Twist SOP의 강도를 구동하고, Mirror SOP 5개를 직렬로 연결해 대칭 구조를 만든 뒤 RGB Key TOP으로 색상을 분리해 최종 출력합니다.',
+    about: 'Rage 장르의 비트 리듬 구조를 TouchDesigner의 Noise TOP 노드를 통해 실시간 비주얼 신호로 변환한 시스템입니다. 과포화된 사운드와 공격적인 비트 패턴의 에너지를 시각화합니다.',
+    node: 'Audio File In → Audio Spectrum Analyze → Math → Filter → Select CHOP 체인으로 특정 주파수 대역의 에너지를 추출. Mirror SOP 5개를 직렬 연결해 대칭 구조를 만든 뒤 RGB Key TOP으로 색상을 분리합니다.',
     images: ['rage_node.png']
   },
   keyboard: {
     number: '04 / 04',
     title: 'Keyboard Reactive',
     video: 'keyboardreactive.mov',
-    about: '균일한 사각형 그리드 위에서 비정형적인 그래픽이 무작위로 생성되며, 루프의 주기와 활성화되는 셀의 수가 키보드 입력에 실시간으로 반응해 끊임없이 재편되는 인터랙티브 비주얼 시스템입니다. 궁극적으로는 런치패드와 같은 악기의 형태로, 시각과 음악을 동시에 연주할 수 있는 새로운 도구로 확장하고자 합니다.',
-    node: 'Keyboard In CHOP이 키 입력을 실시간으로 감지해 신호를 발생시키고, Noise TOP → Edge TOP 체인이 그리드 위의 비정형 패턴을 생성합니다. Feedback TOP으로 이전 프레임이 누적되며, Displace TOP과 Composite TOP이 각 셀의 변형과 합성을 처리합니다. RGB Key TOP → Level TOP으로 색상과 명도를 최종 조정합니다.',
+    about: '균일한 사각형 그리드 위에서 비정형적인 그래픽이 무작위로 생성되며, 루프의 주기와 활성화되는 셀의 수가 키보드 입력에 실시간으로 반응하는 인터랙티브 비주얼 시스템입니다.',
+    node: 'Keyboard In CHOP이 키 입력을 실시간으로 감지해 신호를 발생시키고, Noise TOP → Edge TOP 체인이 그리드 위의 비정형 패턴을 생성합니다. Feedback TOP으로 이전 프레임이 누적됩니다.',
     images: ['keyboard_node.png']
   }
 };
 
-const panel      = document.getElementById('panel');
-const overlayBg  = document.getElementById('overlayBg');
-const panelVideo = document.getElementById('panelVideo');
-const panelVideoSrc = document.getElementById('panelVideoSrc');
-
-document.querySelectorAll('.card').forEach(card => {
-  const video = card.querySelector('.card-video');
-
-  card.addEventListener('mouseenter', () => {
-    if (video) { video.currentTime = 0; video.play(); }
-  });
-  card.addEventListener('mouseleave', () => {
-    if (video) { video.pause(); video.currentTime = 0; }
-  });
-
-  card.addEventListener('click', () => {
-    const key = card.dataset.project;
-    const p = projects[key];
-    if (!p) return;
-
-    document.getElementById('panelNumber').textContent = p.number;
-    document.getElementById('panelTitle').textContent  = p.title;
-    document.getElementById('panelAbout').textContent  = p.about;
-    document.getElementById('panelNode').textContent   = p.node;
-    panelVideoSrc.src = p.video;
-    panelVideo.load();
-
-    const screenshots = document.getElementById('panelScreenshots');
-    screenshots.innerHTML = '';
-    p.images.forEach(src => {
-      const slot = document.createElement('div');
-      slot.className = 'screenshot-slot';
-      const img = document.createElement('img');
-      img.src = src;
-      img.alt = p.title + ' node';
-      img.addEventListener('click', () => openLightbox(src));
-      slot.appendChild(img);
-      screenshots.appendChild(slot);
-    });
-
-    panel.classList.add('active');
-    overlayBg.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  });
+// ══ 커서 ══
+const cursor = document.getElementById('cursor');
+let mx = 0, my = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  gsap.to(cursor, { left: mx, top: my, duration: .08, ease:'none' });
 });
-
-function closePanel() {
-  panel.classList.remove('active');
-  overlayBg.classList.remove('active');
-  document.body.style.overflow = '';
-  panelVideo.pause();
+function cursorGrow(els) {
+  els.forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
+    el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+  });
 }
 
-// ── 라이트박스 ──
+// ══ HERO reveal ══
+if (!reduced) {
+  const tl = gsap.timeline({ delay: .1 });
+
+  tl.fromTo('#heroEyebrow',
+    { opacity:0, y:12, filter:'blur(8px)' },
+    { opacity:1, y:0, filter:'blur(0px)', duration:1.2, ease:'power3.out', clearProps:'filter' }
+  )
+  .fromTo('#heroTitle',
+    { opacity:0, y:28, filter:'blur(20px) url(#smoke-disp)' },
+    { opacity:1, y:0, filter:'blur(0px)', duration:1.6, ease:'power3.out', clearProps:'filter' },
+    '-=.8'
+  )
+  .fromTo('#heroSub',
+    { opacity:0, y:16, filter:'blur(10px)' },
+    { opacity:1, y:0, filter:'blur(0px)', duration:1.1, ease:'power2.out', clearProps:'filter' },
+    '-=.9'
+  )
+  .to('#heroLine',
+    { width:'calc(100% - 96px)', duration:1.8, ease:'power2.inOut' },
+    '-=1.0'
+  )
+  .fromTo('#heroGhost',
+    { opacity:0, scale:1.05 },
+    { opacity:1, scale:1, duration:2.4, ease:'power3.out' },
+    0
+  );
+
+  // ══ 프로젝트 목록 reveal — 순차적 ══
+  gsap.utils.toArray('.project-item').forEach((item, i) => {
+    gsap.fromTo(item,
+      { opacity:0, y:20, filter:'blur(8px) url(#smoke-soft)' },
+      {
+        opacity:1, y:0, filter:'blur(0px)',
+        duration:1.1, ease:'power2.out',
+        delay: i * 0.1,
+        clearProps:'filter',
+        scrollTrigger: {
+          trigger: item,
+          start: 'top 88%',
+          once: true
+        }
+      }
+    );
+  });
+
+  // marquee
+  gsap.fromTo('.marquee-wrap',
+    { opacity:0 },
+    { opacity:1, duration:1, ease:'power2.out',
+      scrollTrigger: { trigger:'.marquee-wrap', start:'top 95%', once:true } }
+  );
+
+} else {
+  gsap.set(['#heroEyebrow','#heroTitle','#heroSub','.project-item'], { opacity:1, y:0 });
+  gsap.set('#heroLine', { width:'calc(100% - 96px)' });
+}
+
+// ══ 호버 시 썸네일 비디오 재생 ══
+document.querySelectorAll('.project-item').forEach(item => {
+  const video = item.querySelector('video');
+  item.addEventListener('mouseenter', () => { if (video) { video.currentTime=0; video.play(); } });
+  item.addEventListener('mouseleave', () => { if (video) { video.pause(); video.currentTime=0; } });
+});
+cursorGrow(document.querySelectorAll('.project-item, button, .nav-btn, a'));
+
+// ══ 디테일 열기/닫기 ══
+const overlay = document.getElementById('detailOverlay');
+const panel   = document.getElementById('detailPanel');
+const closeBtn = document.getElementById('detailClose');
+const detailVideo = document.getElementById('detailVideo');
+const detailVideoSrc = document.getElementById('detailVideoSrc');
+
+let isOpen = false;
+
+function openDetail(key) {
+  const p = projects[key];
+  if (!p) return;
+  isOpen = true;
+
+  // 데이터 주입
+  document.getElementById('detailGhost').textContent = p.title.toUpperCase();
+  document.getElementById('detailNum').textContent   = p.number;
+  document.getElementById('detailTitle').textContent = p.title;
+  document.getElementById('detailAbout').textContent = p.about;
+  document.getElementById('detailNode').textContent  = p.node;
+  detailVideoSrc.src = p.video;
+  detailVideo.load();
+
+  // 노드 이미지 콜라주
+  const collage = document.getElementById('nodeCollage');
+  collage.innerHTML = '';
+
+  const layouts = [
+    { top:'0%',    left:'0%',   width:'62%', height:'48%', rotate:'-1.5deg' },
+    { top:'5%',    left:'58%',  width:'42%', height:'40%', rotate:'1.2deg'  },
+    { top:'52%',   left:'8%',   width:'50%', height:'46%', rotate:'0.8deg'  },
+    { top:'48%',   left:'55%',  width:'40%', height:'44%', rotate:'-1deg'   },
+  ];
+
+  p.images.forEach((src, i) => {
+    const layout = layouts[i % layouts.length];
+    const slot = document.createElement('div');
+    slot.className = 'node-img-slot';
+    Object.assign(slot.style, {
+      top: layout.top, left: layout.left,
+      width: layout.width, height: layout.height,
+      transform: `rotate(${layout.rotate})`,
+      zIndex: i + 1
+    });
+    const img = document.createElement('img');
+    img.src = src; img.alt = p.title;
+    img.addEventListener('click', () => openLightbox(src));
+    slot.appendChild(img);
+    collage.appendChild(slot);
+  });
+
+  // 오버레이 활성화
+  overlay.classList.add('active');
+  closeBtn.classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  // 패널 smoky reveal
+  panel.classList.add('active');
+
+  if (!reduced) {
+    // 왼쪽 요소들 순차 reveal
+    gsap.fromTo('.detail-left', 
+      { x: -30, opacity:0, filter:'blur(18px) url(#smoke-disp)' },
+      { x:0, opacity:1, filter:'blur(0px)', duration:1.0, ease:'power3.out', clearProps:'filter' }
+    );
+    gsap.fromTo('.detail-right',
+      { x: 30, opacity:0, filter:'blur(14px)' },
+      { x:0, opacity:1, filter:'blur(0px)', duration:1.0, ease:'power3.out', delay:.12, clearProps:'filter' }
+    );
+    gsap.fromTo('#detailTitle',
+      { opacity:0, y:20, filter:'blur(12px) url(#smoke-soft)' },
+      { opacity:1, y:0, filter:'blur(0px)', duration:.9, ease:'power2.out', delay:.2, clearProps:'filter' }
+    );
+    gsap.fromTo('.detail-video-wrap',
+      { opacity:0, scale:.97 },
+      { opacity:1, scale:1, duration:.9, ease:'power2.out', delay:.32 }
+    );
+    gsap.fromTo('.detail-about',
+      { opacity:0, y:14 },
+      { opacity:1, y:0, duration:.8, ease:'power2.out', delay:.44 }
+    );
+    // 콜라주 이미지들 stagger
+    gsap.fromTo('.node-img-slot',
+      { opacity:0, scale:.92, filter:'blur(10px)' },
+      { opacity:1, scale:1, filter:'blur(0px)', duration:.8, ease:'power2.out',
+        stagger:.1, delay:.3, clearProps:'filter' }
+    );
+  }
+}
+
+function closeDetail() {
+  if (!isOpen) return;
+  isOpen = false;
+
+  if (!reduced) {
+    gsap.to(['.detail-left', '.detail-right'], {
+      opacity:0, filter:'blur(12px)', duration:.45, ease:'power2.in',
+      onComplete: () => {
+        panel.classList.remove('active');
+        overlay.classList.remove('active');
+        closeBtn.classList.remove('active');
+        document.body.style.overflow = '';
+        detailVideo.pause();
+        gsap.set(['.detail-left','.detail-right'], { opacity:1, filter:'none', clearProps:'all' });
+      }
+    });
+  } else {
+    panel.classList.remove('active');
+    overlay.classList.remove('active');
+    closeBtn.classList.remove('active');
+    document.body.style.overflow = '';
+    detailVideo.pause();
+  }
+}
+
+document.querySelectorAll('.project-item').forEach(item => {
+  item.addEventListener('click', () => openDetail(item.dataset.project));
+});
+closeBtn.addEventListener('click', closeDetail);
+overlay.addEventListener('click', closeDetail);
+
+// ══ 라이트박스 ══
 const lightbox = document.getElementById('lightbox');
 const lightboxImg = document.getElementById('lightboxImg');
 
-function openLightbox(src) {
-  lightboxImg.src = src;
-  lightbox.classList.add('active');
-}
-
-function closeLightbox() {
-  lightbox.classList.remove('active');
-  lightboxImg.src = '';
-}
+function openLightbox(src) { lightboxImg.src = src; lightbox.classList.add('active'); }
+function closeLightbox() { lightbox.classList.remove('active'); lightboxImg.src=''; }
 
 document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
-lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+lightbox.addEventListener('click', e => { if(e.target === lightbox) closeLightbox(); });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closePanel(); closeLightbox(); }
+  if (e.key === 'Escape') { closeDetail(); closeLightbox(); }
 });
-
-document.getElementById('panelClose').addEventListener('click', closePanel);
-overlayBg.addEventListener('click', closePanel);
 </script>
 
 </body>
