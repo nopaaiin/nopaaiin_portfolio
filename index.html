@@ -705,14 +705,6 @@ body {
 </div>
 
 <script>
-// ── ① 인트로 ──
-const intro = document.getElementById('intro');
-const introVideo = document.getElementById('introVideo');
-introVideo.addEventListener('ended', () => {
-  intro.classList.add('hide');
-  setTimeout(() => intro.remove(), 900);
-});
-// 영상이 안 재생될 경우 fallback
 // ── ③ 커서 라벨 ──
 const cursorLabel = document.getElementById('cursorLabel');
 
