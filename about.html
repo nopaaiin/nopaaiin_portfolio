@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>About — NOPAAIIN</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;700;900&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <style>
 
 * {
@@ -19,7 +19,7 @@
   --bg: #050505;
 }
 
-/* ── 커스텀 커서 (옴 문양) ── */
+/* ── 커서 ── */
 .cursor {
   position: fixed;
   width: 36px;
@@ -28,7 +28,7 @@
   z-index: 9999;
   transform: translate(-50%, -50%);
   transition: width .2s ease, height .2s ease;
-  filter: drop-shadow(0 0 6px rgba(255, 42, 166, 0.6));
+  filter: drop-shadow(0 0 6px rgba(255,42,166,0.6));
 }
 .cursor svg { width: 100%; height: 100%; }
 .cursor.grow { width: 52px; height: 52px; opacity: 0.7; }
@@ -36,36 +36,55 @@
 body {
   background: var(--bg);
   color: white;
-  font-family: 'Space Mono', monospace;
-  min-height: 100vh;
+  font-family: 'DM Mono', monospace;
   overflow-x: hidden;
 }
 
-/* ── 페이드인 ── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.fade-up {
-  opacity: 0;
-  animation: fadeUp .7s ease forwards;
-}
-.fade-up:nth-child(1) { animation-delay: .1s; }
-.fade-up:nth-child(2) { animation-delay: .25s; }
-.fade-up:nth-child(3) { animation-delay: .4s; }
-
-/* ── 뒤로가기 ── */
-.back {
+/* ── 전체화면 영상 배경 ── */
+.video-bg {
   position: fixed;
-  top: 28px;
-  left: 32px;
-  z-index: 300;
+  inset: 0;
+  z-index: 0;
+}
+
+.video-bg video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.35;
+  filter: saturate(1.4) contrast(1.1);
+}
+
+/* 영상 위 그라디언트 오버레이 */
+.video-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 50%, rgba(255,42,166,0.08) 0%, transparent 60%),
+    linear-gradient(to bottom, rgba(5,0,5,0.3) 0%, rgba(5,0,5,0.5) 100%);
+}
+
+/* ── 네비 ── */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28px 36px;
+}
+
+.back {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Space Mono', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 11px;
-  color: #555;
+  color: #666;
   text-decoration: none;
   letter-spacing: 0.1em;
   border: 1px solid #222;
@@ -75,20 +94,15 @@ body {
   cursor: none;
 }
 .back:hover { color: var(--pink); border-color: var(--pink); }
-.back::before { content: '←'; font-size: 13px; }
+.back::before { content: '←'; margin-right: 4px; }
 
-/* ── 인스타 버튼 ── */
 .insta-btn {
-  position: fixed;
-  top: 28px;
-  right: 32px;
-  z-index: 300;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-family: 'Space Mono', monospace;
+  font-family: 'DM Mono', monospace;
   font-size: 11px;
-  color: #555;
+  color: #666;
   text-decoration: none;
   letter-spacing: 0.1em;
   border: 1px solid #222;
@@ -99,182 +113,216 @@ body {
 }
 .insta-btn:hover { color: var(--pink); border-color: var(--pink); }
 
-/* ── 메인 레이아웃 ── */
-.container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+/* ── 메인 컨텐츠 ── */
+.content {
+  position: relative;
+  z-index: 10;
   min-height: 100vh;
-  gap: 0;
+  padding: 140px 48px 80px;
 }
 
-/* ── 왼쪽: 영상 ── */
-.video-side {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 40px 40px;
-  border-right: 1px solid #1a1a1a;
+/* ── 이름 — 크고 대담하게 ── */
+.name-block {
+  margin-bottom: 0;
 }
 
-.video-wrap {
-  width: 100%;
-  max-width: 420px;
-  aspect-ratio: 1 / 1;
-  border-radius: 20px;
-  overflow: hidden;
-  border: 1px solid #2a2a2a;
-  background: #0a0a0a;
-}
-
-.video-wrap video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.name-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--pink);
+  text-transform: uppercase;
+  margin-bottom: 12px;
   display: block;
 }
 
-/* ── 오른쪽: 텍스트 ── */
-.text-side {
-  padding: 120px 56px 80px 56px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.label {
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--pink);
-  margin-bottom: 20px;
-}
-
 .name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 72px;
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(56px, 10vw, 120px);
+  font-weight: 900;
   color: white;
-  line-height: 0.95;
-  margin-bottom: 6px;
-  letter-spacing: 0.02em;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 60px rgba(255,42,166,0.2);
+  margin-bottom: 0;
 }
 
-.school {
-  font-size: 12px;
-  color: #555;
-  letter-spacing: 0.1em;
+.name-sub {
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(12px, 1.6vw, 18px);
+  font-weight: 300;
+  color: #444;
+  letter-spacing: 0.06em;
+  margin-top: 16px;
   text-transform: uppercase;
-  margin-bottom: 40px;
+}
+
+/* ── 중간 섹션들 — 흩어진 레이아웃 ── */
+.mid-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  margin-top: 80px;
+  align-items: start;
+}
+
+/* tagline */
+.tagline-block {
+  grid-column: 1 / 2;
+  padding-right: 48px;
 }
 
 .tagline {
-  font-size: 14px;
-  color: #bbb;
+  font-family: 'DM Mono', monospace;
+  font-style: italic;
+  font-size: 15px;
+  color: #ccc;
   line-height: 1.9;
-  margin-bottom: 48px;
-  padding-left: 16px;
-  border-left: 2px solid var(--pink);
+  border-left: 1px solid var(--pink);
+  padding-left: 20px;
 }
 
-/* ── 구분선 ── */
-.divider {
-  border: none;
-  border-top: 1px solid #1a1a1a;
-  margin-bottom: 32px;
+/* tools */
+.tools-block {
+  grid-column: 2 / 3;
+  padding: 0 24px;
 }
 
-/* ── 툴 섹션 ── */
 .section-label {
-  font-size: 10px;
-  letter-spacing: 0.18em;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--pink);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+  display: block;
 }
 
 .tools {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 40px;
-}
-
-.tool-tag {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  color: #888;
-  border: 1px solid #2a2a2a;
-  padding: 5px 12px;
-  border-radius: 2px;
-  text-transform: uppercase;
-  transition: color .2s, border-color .2s;
-}
-
-.tool-tag:hover {
-  color: var(--pink);
-  border-color: var(--pink);
-}
-
-/* ── 전시 섹션 ── */
-.exhibitions {
-  display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 48px;
+  gap: 8px;
+}
+
+.tool-item {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: #666;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: color .2s;
+}
+
+.tool-item::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: #333;
+  transition: background .2s, width .2s;
+}
+
+.tool-item:hover { color: white; }
+.tool-item:hover::before { background: var(--pink); width: 30px; }
+
+/* exhibitions */
+.exhibitions-block {
+  grid-column: 3 / 4;
+  padding-left: 24px;
+  border-left: 1px solid #1a1a1a;
 }
 
 .exhibition-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
+  margin-bottom: 32px;
+  display: block;
+  text-decoration: none;
+  transition: opacity .2s;
 }
 
-.exhibition-item::before {
-  content: '↗';
-  color: var(--pink);
-  font-size: 12px;
-  margin-top: 2px;
-  flex-shrink: 0;
+.exhibition-item:hover { opacity: 0.7; }
+
+.exh-number {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: #333;
+  letter-spacing: 0.16em;
+  margin-bottom: 6px;
 }
 
-.exhibition-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px;
+.exh-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
   color: white;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+  line-height: 1.1;
 }
 
-.exhibition-desc {
+.exh-desc {
+  font-family: 'DM Mono', monospace;
   font-size: 11px;
   color: #555;
   line-height: 1.7;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
 }
 
-/* ── 하단 marquee ── */
+.exh-link {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--pink);
+  letter-spacing: 0.14em;
+  margin-top: 8px;
+  display: block;
+}
+
+/* ── 하단 대형 텍스트 ── */
+.bottom-text {
+  margin-top: 100px;
+  overflow: hidden;
+}
+
+.bottom-text p {
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(40px, 7vw, 88px);
+  font-weight: 900;
+  color: transparent;
+  -webkit-text-stroke: 1px #222;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  transition: -webkit-text-stroke .3s, color .3s;
+}
+
+.bottom-text p:hover {
+  color: var(--pink);
+  -webkit-text-stroke: 1px var(--pink);
+}
+
+/* ── marquee ── */
 .marquee-wrap {
   width: 100%;
   overflow: hidden;
-  border-top: 1px solid #1a1a1a;
+  border-top: 1px solid #111;
   padding: 14px 0;
-  margin-top: auto;
+  margin-top: 60px;
+  position: relative;
+  z-index: 10;
 }
 
 .marquee-track {
   display: flex;
   white-space: nowrap;
-  animation: marquee 18s linear infinite;
+  animation: marquee 20s linear infinite;
 }
 
 .marquee-track span {
-  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #2a2a2a;
+  color: #222;
   padding: 0 32px;
 }
 
@@ -288,83 +336,107 @@ body {
   to   { transform: translateX(-50%); }
 }
 
+/* ── 페이드인 ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade { opacity: 0; animation: fadeUp .8s ease forwards; }
+.fade:nth-child(1) { animation-delay: .1s; }
+.fade:nth-child(2) { animation-delay: .25s; }
+.fade:nth-child(3) { animation-delay: .4s; }
+.fade:nth-child(4) { animation-delay: .55s; }
+
 </style>
 </head>
 <body>
 
 <!-- 커서 -->
 <div class="cursor" id="cursor">
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
     <text x="50" y="72" text-anchor="middle" font-size="72" font-family="serif" fill="#ff2aa6">ॐ</text>
   </svg>
 </div>
 
-<!-- 뒤로가기 -->
-<a href="index.html" class="back">Works</a>
+<!-- 전체화면 영상 배경 -->
+<div class="video-bg">
+  <video autoplay muted loop playsinline>
+    <source src="self_introduce.MOV" type="video/mp4">
+  </video>
+</div>
 
-<!-- 인스타 -->
-<a href="https://instagram.com/nopaaiin" target="_blank" class="insta-btn">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-    <circle cx="12" cy="12" r="4"/>
-    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
-  </svg>
-  @nopaaiin
-</a>
+<!-- 네비 -->
+<nav class="nav">
+  <a href="index.html" class="back">Works</a>
+  <a href="https://instagram.com/nopaaiin" target="_blank" class="insta-btn">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <rect x="2" y="2" width="20" height="20" rx="5"/>
+      <circle cx="12" cy="12" r="4"/>
+      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+    </svg>
+    @nopaaiin
+  </a>
+</nav>
 
-<!-- 메인 -->
-<div class="container">
+<!-- 메인 컨텐츠 -->
+<div class="content">
 
-  <!-- 왼쪽: 영상 -->
-  <div class="video-side">
-    <div class="video-wrap fade-up">
-      <video autoplay muted loop playsinline>
-        <source src="self_introduce.MOV" type="video/mp4">
-      </video>
-    </div>
+  <!-- 이름 -->
+  <div class="name-block fade">
+    <span class="name-tag">— About</span>
+    <h1 class="name">JUNG<br>JUNYONG</h1>
+    <p class="name-sub">Hongik Univ. · Visual Communication Design</p>
   </div>
 
-  <!-- 오른쪽: 텍스트 -->
-  <div class="text-side">
+  <!-- 중간 3컬럼 -->
+  <div class="mid-section">
 
-    <p class="label fade-up">About</p>
-
-    <h1 class="name fade-up">JUNG<br>JUNYONG</h1>
-    <p class="school fade-up">Hongik Univ. · Visual Communication Design</p>
-
-    <p class="tagline fade-up">
-      Real-time visuals & photography.<br>
-      Hongik Univ. Visual Communication Design.
-    </p>
-
-    <hr class="divider">
-
-    <p class="section-label fade-up">Tools</p>
-    <div class="tools fade-up">
-      <span class="tool-tag">TouchDesigner</span>
-      <span class="tool-tag">Adobe Illustrator</span>
-      <span class="tool-tag">Photoshop</span>
-      <span class="tool-tag">Lightroom</span>
+    <!-- tagline -->
+    <div class="tagline-block fade">
+      <p class="tagline">
+        Real-time visuals &amp; photography.<br>
+        Hongik Univ.<br>
+        Visual Communication Design.
+      </p>
     </div>
 
-    <hr class="divider">
-
-    <p class="section-label fade-up">Exhibitions</p>
-    <div class="exhibitions fade-up">
-      <div class="exhibition-item">
-        <div>
-          <p class="exhibition-title">보행</p>
-          <p class="exhibition-desc">HIPS 사진 소모임 · 집착과 강박을 주제로 한 사진 전시</p>
-        </div>
-      </div>
-      <div class="exhibition-item">
-        <div>
-          <p class="exhibition-title">DEMONSTRATION</p>
-          <p class="exhibition-desc">HIPS 사진 소모임 · 집착과 강박의 연장선에서 탐구한 시각 작업</p>
-        </div>
+    <!-- tools -->
+    <div class="tools-block fade">
+      <span class="section-label">Tools</span>
+      <div class="tools">
+        <span class="tool-item">TouchDesigner</span>
+        <span class="tool-item">Adobe Illustrator</span>
+        <span class="tool-item">Photoshop</span>
+        <span class="tool-item">Lightroom</span>
       </div>
     </div>
 
+    <!-- exhibitions -->
+    <div class="exhibitions-block fade">
+      <span class="section-label">Exhibitions</span>
+
+      <a href="https://instagram.com/hips_official" target="_blank" class="exhibition-item">
+        <p class="exh-number">01</p>
+        <p class="exh-title">보행</p>
+        <p class="exh-desc">청결에 대한 강박을 일상의 반복적 행위로 시각화한 사진 작업. 씻고, 닦고, 지우는 행동의 이면에 내재된 집착의 구조를 포착합니다.</p>
+        <span class="exh-link">↗ @hips_official</span>
+      </a>
+
+      <a href="https://instagram.com/hips_official" target="_blank" class="exhibition-item">
+        <p class="exh-number">02</p>
+        <p class="exh-title">DEMONSTRATION</p>
+        <p class="exh-desc">연기(煙氣)의 일시성을 매개로, 형태를 갖추는 순간과 사라지는 순간 사이의 불안한 경계를 탐구한 사진 연작.</p>
+        <span class="exh-link">↗ @hips_official</span>
+      </a>
+    </div>
+
+  </div>
+
+  <!-- 하단 아웃라인 텍스트 -->
+  <div class="bottom-text">
+    <p>OBSESSION</p>
+    <p>AS A MEDIUM</p>
   </div>
 
 </div>
@@ -377,26 +449,25 @@ body {
     <span>VISUAL COMMUNICATION DESIGN</span><span><em>·</em></span>
     <span>HONGIK UNIV</span><span><em>·</em></span>
     <span>PHOTOGRAPHY</span><span><em>·</em></span>
-    <span>REALTIME VISUAL</span><span><em>·</em></span>
+    <span>OBSESSION AS A MEDIUM</span><span><em>·</em></span>
     <span>2026</span><span><em>·</em></span>
     <span>NOPAAIIN</span><span><em>·</em></span>
     <span>TOUCHDESIGNER</span><span><em>·</em></span>
     <span>VISUAL COMMUNICATION DESIGN</span><span><em>·</em></span>
     <span>HONGIK UNIV</span><span><em>·</em></span>
     <span>PHOTOGRAPHY</span><span><em>·</em></span>
-    <span>REALTIME VISUAL</span><span><em>·</em></span>
+    <span>OBSESSION AS A MEDIUM</span><span><em>·</em></span>
     <span>2026</span><span><em>·</em></span>
   </div>
 </div>
 
 <script>
-// 커서
 const cursor = document.getElementById('cursor');
 document.addEventListener('mousemove', e => {
   cursor.style.left = e.clientX + 'px';
   cursor.style.top  = e.clientY + 'px';
 });
-document.querySelectorAll('a, button, .tool-tag').forEach(el => {
+document.querySelectorAll('a, .tool-item, .bottom-text p').forEach(el => {
   el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
   el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
 });
