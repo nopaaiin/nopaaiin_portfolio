@@ -379,12 +379,66 @@ body {
   overflow: hidden;
   border: 1px solid #222;
   background: #0a0a0a;
+  cursor: none;
 }
 
 .screenshot-slot img {
   width: 100%;
   display: block;
   border-radius: 8px;
+  transition: opacity .2s;
+}
+
+.screenshot-slot:hover img {
+  opacity: 0.8;
+}
+
+/* ── 라이트박스 ── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(0,0,0,0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s ease;
+  cursor: none;
+}
+
+.lightbox.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  border: 1px solid #333;
+  object-fit: contain;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 24px;
+  right: 32px;
+  background: none;
+  border: 1px solid #333;
+  color: #666;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  padding: 6px 12px;
+  letter-spacing: 0.12em;
+  cursor: none;
+  transition: color .2s, border-color .2s;
+}
+
+.lightbox-close:hover {
+  color: var(--pink);
+  border-color: var(--pink);
 }
 
 /* ── 인스타 고정 버튼 ── */
@@ -590,6 +644,12 @@ body {
   </div>
 </div>
 
+<!-- 라이트박스 -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">✕ CLOSE</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
 <script>
 // ── 커스텀 커서 ──
 const cursor = document.getElementById('cursor');
@@ -674,6 +734,7 @@ document.querySelectorAll('.card').forEach(card => {
       const img = document.createElement('img');
       img.src = src;
       img.alt = p.title + ' node';
+      img.addEventListener('click', () => openLightbox(src));
       slot.appendChild(img);
       screenshots.appendChild(slot);
     });
@@ -691,9 +752,28 @@ function closePanel() {
   panelVideo.pause();
 }
 
+// ── 라이트박스 ──
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightboxImg');
+
+function openLightbox(src) {
+  lightboxImg.src = src;
+  lightbox.classList.add('active');
+}
+
+function closeLightbox() {
+  lightbox.classList.remove('active');
+  lightboxImg.src = '';
+}
+
+document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closePanel(); closeLightbox(); }
+});
+
 document.getElementById('panelClose').addEventListener('click', closePanel);
 overlayBg.addEventListener('click', closePanel);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 </script>
 
 </body>
