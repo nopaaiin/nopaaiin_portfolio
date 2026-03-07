@@ -375,16 +375,16 @@ body {
 }
 
 .screenshot-slot {
-  aspect-ratio: 16/9;
   border-radius: 8px;
-  border: 1px dashed #222;
+  overflow: hidden;
+  border: 1px solid #222;
   background: #0a0a0a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #2a2a2a;
-  font-size: 10px;
-  letter-spacing: 0.1em;
+}
+
+.screenshot-slot img {
+  width: 100%;
+  display: block;
+  border-radius: 8px;
 }
 
 /* ── 인스타 고정 버튼 ── */
@@ -585,10 +585,8 @@ body {
 
   <div class="panel-section">
     <p class="panel-label">TouchDesigner Network</p>
-    <div class="screenshots">
-      <div class="screenshot-slot">Screenshot 1</div>
-      <div class="screenshot-slot">Screenshot 2</div>
-    </div>
+    <p class="panel-text" id="panelNode" style="margin-bottom:16px;"></p>
+    <div class="screenshots" id="panelScreenshots"></div>
   </div>
 </div>
 
@@ -610,25 +608,33 @@ const projects = {
     number: '01 / 04',
     title: 'Audio Reactive',
     video: 'audio_reactive.mov',
-    about: '킥 드럼의 저음역대 주파수를 TouchDesigner 내에서 실시간으로 감지하고, 그 신호값에 따라 원형 그래픽의 크기·형태·밀도가 동적으로 변화하는 반응형 비주얼 시스템입니다. 사운드와 이미지 사이의 물리적 연결을 노드 기반 로직으로 구현하였으며, 음악의 에너지가 시각 언어로 번역되는 순간을 포착하는 데 초점을 맞추었습니다.'
+    about: '킥 드럼의 저음역대 주파수를 TouchDesigner 내에서 실시간으로 감지하고, 그 신호값에 따라 원형 그래픽의 크기·형태·밀도가 동적으로 변화하는 반응형 비주얼 시스템입니다. 사운드와 이미지 사이의 물리적 연결을 노드 기반 로직으로 구현하였으며, 음악의 에너지가 시각 언어로 번역되는 순간을 포착하는 데 초점을 맞추었습니다.',
+    node: 'Grid SOP → Sprinkle SOP으로 파티클 포인트를 생성하고, Noise SOP으로 유기적인 변위를 만든 뒤 CHOP을 통해 오디오 신호값을 geometry의 transform에 실시간으로 연결했습니다. audioreactive CHOP이 주파수 대역별 진폭을 추출해 Sphere SOP의 스케일과 Displace SOP의 강도를 구동합니다.',
+    images: ['audio_node_1.png', 'audio_node_2.png']
   },
   scanner: {
     number: '02 / 04',
     title: 'Scanner',
     video: 'scanner.mov',
-    about: 'TouchDesigner의 POP(Particle Operator) 노드를 활용해 무작위로 생성·소멸을 반복하는 파티클 시스템을 구축하고, 그 위를 스캐닝하듯 가로지르는 시선의 흐름을 시각화한 작업입니다. 통제되지 않는 입자들의 운동과 기계적으로 반복되는 스캔 모션 사이의 긴장감을 통해, 디지털 표면 위에서 발생하는 질서와 무질서의 공존을 탐구합니다.'
+    about: 'TouchDesigner의 POP(Particle Operator) 노드를 활용해 무작위로 생성·소멸을 반복하는 파티클 시스템을 구축하고, 그 위를 스캐닝하듯 가로지르는 시선의 흐름을 시각화한 작업입니다. 통제되지 않는 입자들의 운동과 기계적으로 반복되는 스캔 모션 사이의 긴장감을 통해, 디지털 표면 위에서 발생하는 질서와 무질서의 공존을 탐구합니다.',
+    node: 'Point Generator SOP에서 생성된 파티클이 Noise CHOP의 흐름을 따라 이동하며, Feedback TOP을 통해 이전 프레임이 잔상처럼 누적됩니다. LFO CHOP 3개가 각각 위치·속도·밀도를 독립적으로 제어하며, Bloom TOP으로 파티클의 발광 효과를 마무리합니다.',
+    images: ['scanner_node.png']
   },
   ragebeat: {
     number: '03 / 04',
     title: 'Rage Beat',
     video: 'ragebeat.mov',
-    about: 'Rage 장르는 Playboi Carti, Ken Carson 등으로 대표되는 하이퍼팝 계열의 음악 장르로, 과포화된 사운드와 공격적인 비트 패턴이 특징입니다. 이 작업은 그 비트의 리듬 구조를 TouchDesigner의 Noise TOP 노드를 통해 실시간 비주얼 신호로 변환한 시스템입니다. 음악의 폭력적인 에너지와 노이즈 기반 그래픽의 불규칙성이 맞닿는 지점에서, 사운드가 이미지로 붕괴되는 순간을 포착합니다.'
+    about: 'Rage 장르는 Playboi Carti, Ken Carson 등으로 대표되는 하이퍼팝 계열의 음악 장르로, 과포화된 사운드와 공격적인 비트 패턴이 특징입니다. 이 작업은 그 비트의 리듬 구조를 TouchDesigner의 Noise TOP 노드를 통해 실시간 비주얼 신호로 변환한 시스템입니다.',
+    node: 'Audio File In → Audio Spectrum Analyze → Math → Filter → Select CHOP 체인으로 특정 주파수 대역의 에너지를 추출합니다. 추출된 값이 Tube SOP에 연결된 Twist SOP의 강도를 구동하고, Mirror SOP 5개를 직렬로 연결해 대칭 구조를 만든 뒤 RGB Key TOP으로 색상을 분리해 최종 출력합니다.',
+    images: ['rage_node.png']
   },
   keyboard: {
     number: '04 / 04',
     title: 'Keyboard Reactive',
     video: 'keyboardreactive.mov',
-    about: '균일한 사각형 그리드 위에서 비정형적인 그래픽이 무작위로 생성되며, 루프의 주기와 활성화되는 셀의 수가 키보드 입력에 실시간으로 반응해 끊임없이 재편되는 인터랙티브 비주얼 시스템입니다. 이 작업은 단순한 시각 실험을 넘어, 키보드 하나로 그래픽의 리듬과 구성을 즉흥적으로 편집할 수 있는 새로운 퍼포먼스 인터페이스로 발전시키는 것을 목표로 합니다. 궁극적으로는 런치패드와 같은 악기의 형태로, 시각과 음악을 동시에 연주할 수 있는 새로운 도구로 확장하고자 합니다.'
+    about: '균일한 사각형 그리드 위에서 비정형적인 그래픽이 무작위로 생성되며, 루프의 주기와 활성화되는 셀의 수가 키보드 입력에 실시간으로 반응해 끊임없이 재편되는 인터랙티브 비주얼 시스템입니다. 궁극적으로는 런치패드와 같은 악기의 형태로, 시각과 음악을 동시에 연주할 수 있는 새로운 도구로 확장하고자 합니다.',
+    node: 'Keyboard In CHOP이 키 입력을 실시간으로 감지해 신호를 발생시키고, Noise TOP → Edge TOP 체인이 그리드 위의 비정형 패턴을 생성합니다. Feedback TOP으로 이전 프레임이 누적되며, Displace TOP과 Composite TOP이 각 셀의 변형과 합성을 처리합니다. RGB Key TOP → Level TOP으로 색상과 명도를 최종 조정합니다.',
+    images: ['keyboard_node.png']
   }
 };
 
@@ -655,8 +661,22 @@ document.querySelectorAll('.card').forEach(card => {
     document.getElementById('panelNumber').textContent = p.number;
     document.getElementById('panelTitle').textContent  = p.title;
     document.getElementById('panelAbout').textContent  = p.about;
+    document.getElementById('panelNode').textContent   = p.node;
     panelVideoSrc.src = p.video;
     panelVideo.load();
+
+    // 노드 이미지 동적 생성
+    const screenshots = document.getElementById('panelScreenshots');
+    screenshots.innerHTML = '';
+    p.images.forEach(src => {
+      const slot = document.createElement('div');
+      slot.className = 'screenshot-slot';
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = p.title + ' node';
+      slot.appendChild(img);
+      screenshots.appendChild(slot);
+    });
 
     panel.classList.add('active');
     overlayBg.classList.add('active');
