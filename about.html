@@ -374,16 +374,7 @@ body {
   100% { transform: translate(-2%, 6%); }
 }
 
-/* ⑤ 페이지 전환 */
-.page-transition {
-  position: fixed;
-  inset: 0;
-  z-index: 9500;
-  background: linear-gradient(135deg, #ff2aa6 0%, #ff6ed4 40%, #c800ff 100%);
-  transform: translateX(-100%);
-  pointer-events: none;
-  transition: transform .6s cubic-bezier(.77,0,.18,1);
-}
+
 
 
 @keyframes fadeUp {
@@ -404,8 +395,7 @@ body {
 <!-- 그레인 -->
 <div class="grain"></div>
 
-<!-- 페이지 전환 -->
-<div class="page-transition" id="pageTransition"></div>
+
 
 <!-- 커서 -->
 <div class="cursor" id="cursor">
@@ -527,31 +517,7 @@ document.querySelectorAll('a, .tool-item, .bottom-text p').forEach(el => {
   el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
 });
 
-// ── 페이지 전환 ──
-const pageTransition = document.getElementById('pageTransition');
 
-// 진입 시: 왼쪽에서 훑고 오른쪽으로 빠짐
-pageTransition.style.transition = 'none';
-pageTransition.style.transform  = 'translateX(-100%)';
-
-window.addEventListener('load', () => {
-  requestAnimationFrame(() => {
-    pageTransition.style.transition = 'transform .55s cubic-bezier(.77,0,.18,1)';
-    pageTransition.style.transform  = 'translateX(0)';
-    setTimeout(() => {
-      pageTransition.style.transform = 'translateX(100%)';
-    }, 550);
-  });
-});
-
-// Works 버튼 클릭 시
-document.querySelector('.back').addEventListener('click', e => {
-  e.preventDefault();
-  const href = e.currentTarget.getAttribute('href');
-  pageTransition.style.transition = 'transform .55s cubic-bezier(.77,0,.18,1)';
-  pageTransition.style.transform  = 'translateX(0)';
-  setTimeout(() => { window.location.href = href; }, 580);
-});
 </script>
 
 </body>

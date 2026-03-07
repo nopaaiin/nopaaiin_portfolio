@@ -91,20 +91,7 @@ body {
 }
 .cursor-label.visible { opacity: 1; }
 
-/* ════════════════════════════
-   ⑤ 페이지 전환 슬라이드
-════════════════════════════ */
-.page-transition {
-  position: fixed;
-  inset: 0;
-  z-index: 9500;
-  background: linear-gradient(135deg, #ff2aa6 0%, #ff6ed4 40%, #c800ff 100%);
-  transform: translateX(-100%);
-  pointer-events: none;
-  transition: transform .6s cubic-bezier(.77,0,.18,1);
-}
-.page-transition.slide-in  { transform: translateX(0); }
-.page-transition.slide-out { transform: translateX(100%); }
+
 
 /* ── 페이드인 애니메이션 ── */
 @keyframes fadeUp {
@@ -561,8 +548,7 @@ body {
 <!-- ③ 커서 라벨 -->
 <div class="cursor-label" id="cursorLabel"></div>
 
-<!-- ⑤ 페이지 전환 -->
-<div class="page-transition" id="pageTransition"></div>
+
 
 <!-- 커스텀 커서 (옴 문양) -->
 <div class="cursor" id="cursor">
@@ -730,35 +716,7 @@ introVideo.addEventListener('ended', () => {
 // ── ③ 커서 라벨 ──
 const cursorLabel = document.getElementById('cursorLabel');
 
-// ── ⑤ 페이지 전환 ──
-const pageTransition = document.getElementById('pageTransition');
 
-// 페이지 진입 시: 왼쪽에서 들어왔다가 오른쪽으로 빠져나감
-pageTransition.style.transition = 'none';
-pageTransition.style.transform  = 'translateX(-100%)';
-
-window.addEventListener('load', () => {
-  // 살짝 딜레이 후 슬라이드 인
-  requestAnimationFrame(() => {
-    pageTransition.style.transition = 'transform .55s cubic-bezier(.77,0,.18,1)';
-    pageTransition.style.transform  = 'translateX(0)';
-    setTimeout(() => {
-      // 슬라이드 아웃
-      pageTransition.style.transform = 'translateX(100%)';
-    }, 550);
-  });
-});
-
-// About 버튼 클릭 시: 슬라이드 인 후 이동
-document.querySelectorAll('a.about-btn').forEach(link => {
-  link.addEventListener('click', e => {
-    e.preventDefault();
-    const href = link.getAttribute('href');
-    pageTransition.style.transition = 'transform .55s cubic-bezier(.77,0,.18,1)';
-    pageTransition.style.transform  = 'translateX(0)';
-    setTimeout(() => { window.location.href = href; }, 580);
-  });
-});
 
 // ── 커스텀 커서 ──
 const cursor = document.getElementById('cursor');
