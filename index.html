@@ -61,6 +61,37 @@ body {
   100% { transform:translate(5%,-3%); }
 }
 
+/* ══ 배경 영상 레이어 ══ */
+.bg-video-layer {
+  position: fixed; inset: 0;
+  z-index: 0; pointer-events: none;
+  overflow: hidden;
+}
+.bg-video-layer video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0s;
+  filter: saturate(0.7) brightness(0.38);
+}
+.bg-video-layer video.active {
+  opacity: 1;
+}
+/* 영상 위 핑크 연기 오버레이 */
+.bg-video-layer::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 20% 40%, rgba(255,42,166,0.18) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 50% at 80% 60%, rgba(255,42,166,0.1) 0%, transparent 60%),
+    linear-gradient(to bottom, rgba(8,5,8,0.55) 0%, rgba(8,5,8,0.3) 50%, rgba(8,5,8,0.65) 100%);
+  z-index: 1; pointer-events: none;
+  opacity: 0;
+  transition: opacity 0s;
+}
+.bg-video-layer.active::after { opacity: 1; }
+
 /* ══ 핑크 안개층 — 항상 존재 ══ */
 .pink-atmosphere {
   position: fixed; inset: 0;
@@ -505,6 +536,9 @@ body {
 }
 .lightbox-close:hover { color:var(--pink); border-color:var(--pink); }
 
+/* 썸네일 박스 완전 제거 */
+.project-thumb-wrap { display: none !important; }
+
 /* ══ 반응형 ══ */
 @media (max-width: 768px) {
   .hero { padding: 110px 24px 48px; }
@@ -543,6 +577,14 @@ body {
     </filter>
   </defs>
 </svg>
+
+<!-- 배경 영상 레이어 -->
+<div class="bg-video-layer" id="bgVideoLayer">
+  <video id="bgVid1" muted loop playsinline><source src="audio_reactive.mov" type="video/mp4"></video>
+  <video id="bgVid2" muted loop playsinline><source src="scanner.mov" type="video/mp4"></video>
+  <video id="bgVid3" muted loop playsinline><source src="ragebeat.mov" type="video/mp4"></video>
+  <video id="bgVid4" muted loop playsinline><source src="keyboardreactive.mov" type="video/mp4"></video>
+</div>
 
 <!-- 분위기 레이어들 -->
 <div class="grain"></div>
@@ -815,11 +857,68 @@ if (!reduced) {
   gsap.set('#heroLine', { width:'calc(100% - 96px)' });
 }
 
-// ══ 호버 시 썸네일 비디오 재생 ══
+// ══ 배경 영상 호버 시스템 ══
+const bgLayer = document.getElementById('bgVideoLayer');
+const bgVideos = {
+  audio:    document.getElementById('bgVid1'),
+  scanner:  document.getElementById('bgVid2'),
+  ragebeat: document.getElementById('bgVid3'),
+  keyboard: document.getElementById('bgVid4'),
+};
+
+let currentBgVideo = null;
+let fadeTimeout = null;
+
+function showBgVideo(key) {
+  const vid = bgVideos[key];
+  if (!vid || vid === currentBgVideo) return;
+
+  // 이전 영상 즉시 숨김
+  if (currentBgVideo) {
+    gsap.to(currentBgVideo, { opacity: 0, duration: .5, ease: 'power2.in',
+      onComplete: () => { currentBgVideo.pause(); }
+    });
+  }
+
+  // 새 영상 연기처럼 등장
+  vid.currentTime = 0;
+  vid.play();
+  currentBgVideo = vid;
+
+  bgLayer.classList.add('active');
+  gsap.fromTo(vid,
+    { opacity: 0, filter: 'blur(18px) saturate(0)' },
+    { opacity: 1, filter: 'blur(0px) saturate(0.7)', duration: .9, ease: 'power2.out',
+      onStart: () => vid.classList.add('active') }
+  );
+  gsap.fromTo(bgLayer, { opacity: 0 }, { opacity: 1, duration: .5, ease: 'power2.out' });
+}
+
+function hideBgVideo() {
+  if (!currentBgVideo) return;
+  const vid = currentBgVideo;
+  currentBgVideo = null;
+
+  gsap.to(bgLayer, {
+    opacity: 0, duration: .65, ease: 'power2.in',
+    onComplete: () => {
+      bgLayer.classList.remove('active');
+      vid.pause();
+      vid.classList.remove('active');
+      gsap.set(bgLayer, { opacity: 1 });
+      // 모든 비디오 초기화
+      Object.values(bgVideos).forEach(v => {
+        v.classList.remove('active');
+        gsap.set(v, { opacity: 0, filter: 'none' });
+      });
+    }
+  });
+}
+
+// ══ 호버 시 배경 영상 교체 ══
 document.querySelectorAll('.project-item').forEach(item => {
-  const video = item.querySelector('video');
-  item.addEventListener('mouseenter', () => { if (video) { video.currentTime=0; video.play(); } });
-  item.addEventListener('mouseleave', () => { if (video) { video.pause(); video.currentTime=0; } });
+  item.addEventListener('mouseenter', () => showBgVideo(item.dataset.project));
+  item.addEventListener('mouseleave', () => hideBgVideo());
 });
 cursorGrow(document.querySelectorAll('.project-item, button, .nav-btn, a'));
 
