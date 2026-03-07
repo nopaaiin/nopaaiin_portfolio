@@ -50,30 +50,6 @@ body {
 }
 
 /* ════════════════════════════
-   ① 로딩 인트로
-════════════════════════════ */
-.intro {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  background: #050505;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity .8s ease;
-}
-.intro.hide {
-  opacity: 0;
-  pointer-events: none;
-}
-.intro video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.9;
-}
-
-/* ════════════════════════════
    ② 그레인 노이즈
 ════════════════════════════ */
 .grain {
@@ -577,12 +553,7 @@ body {
 </head>
 <body>
 
-<!-- ① 인트로 -->
-<div class="intro" id="intro">
-  <video autoplay muted playsinline id="introVideo">
-    <source src="om.mov" type="video/mp4">
-  </video>
-</div>
+
 
 <!-- ② 그레인 -->
 <div class="grain"></div>
@@ -756,13 +727,6 @@ introVideo.addEventListener('ended', () => {
   setTimeout(() => intro.remove(), 900);
 });
 // 영상이 안 재생될 경우 fallback
-setTimeout(() => {
-  if (document.getElementById('intro')) {
-    intro.classList.add('hide');
-    setTimeout(() => { if (intro.parentNode) intro.remove(); }, 900);
-  }
-}, 5000);
-
 // ── ③ 커서 라벨 ──
 const cursorLabel = document.getElementById('cursorLabel');
 
