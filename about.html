@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>About — NOPAAIIN</title>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;700;900&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
-<!-- GSAP + ScrollTrigger -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <style>
 
 * {
@@ -380,52 +377,6 @@ body {
 
 
 
-/* SVG 필터 컨테이너 */
-.svg-filters { position: absolute; width: 0; height: 0; overflow: hidden; }
-
-/* Smoky reveal 초기 상태 */
-.smoke-reveal {
-  opacity: 0;
-  will-change: opacity, transform, filter;
-}
-
-/* 핑크 헤이즈 분위기 레이어 */
-.pink-haze {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 60% 50% at 20% 40%, rgba(255,42,166,0.06) 0%, transparent 65%),
-    radial-gradient(ellipse 45% 55% at 80% 60%, rgba(255,42,166,0.045) 0%, transparent 60%),
-    radial-gradient(ellipse 35% 25% at 55% 5%,  rgba(255,42,166,0.03) 0%, transparent 55%);
-  animation: hazeShift 20s ease-in-out infinite alternate;
-}
-
-@keyframes hazeShift {
-  0%   { opacity: 0.75; transform: scale(1) translateX(0); }
-  50%  { opacity: 1;    transform: scale(1.05) translateX(10px); }
-  100% { opacity: 0.85; transform: scale(1.02) translateX(-6px); }
-}
-
-/* bottom-text hover 핑크 글로우 강화 */
-.bottom-text p {
-  transition: -webkit-text-stroke .3s, color .3s, text-shadow .3s;
-}
-.bottom-text p:hover {
-  color: var(--pink);
-  -webkit-text-stroke: 1px var(--pink);
-  text-shadow: 0 0 40px rgba(255,42,166,0.35), 0 0 80px rgba(255,42,166,0.15);
-}
-
-/* prefers-reduced-motion */
-@media (prefers-reduced-motion: reduce) {
-  .smoke-reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
-  .pink-haze { animation: none; }
-}
-
-
-
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(28px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -440,27 +391,6 @@ body {
 </style>
 </head>
 <body>
-
-<!-- SVG 필터 -->
-<svg class="svg-filters" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <filter id="smoky-in" x="-20%" y="-20%" width="140%" height="140%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.018 0.025" numOctaves="3" seed="5" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="16" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
-      <feGaussianBlur in="displaced" stdDeviation="4" result="blurred"/>
-      <feComposite in="blurred" in2="SourceGraphic" operator="in"/>
-    </filter>
-    <filter id="smoky-text" x="-10%" y="-30%" width="120%" height="160%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.02 0.03" numOctaves="2" seed="11" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="8" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
-      <feGaussianBlur in="displaced" stdDeviation="2.5" result="blurred"/>
-      <feComposite in="blurred" in2="SourceGraphic" operator="in"/>
-    </filter>
-  </defs>
-</svg>
-
-<!-- 핑크 헤이즈 -->
-<div class="pink-haze"></div>
 
 <!-- 그레인 -->
 <div class="grain"></div>
@@ -498,7 +428,7 @@ body {
 <div class="content">
 
   <!-- 이름 -->
-  <div class="name-block smoke-reveal">
+  <div class="name-block fade">
     <span class="name-tag">— About</span>
     <h1 class="name">JUNG<br>JUNYONG</h1>
     <p class="name-sub">Hongik Univ. · Visual Communication Design</p>
@@ -508,7 +438,7 @@ body {
   <div class="mid-section">
 
     <!-- tagline -->
-    <div class="tagline-block smoke-reveal">
+    <div class="tagline-block fade">
       <p class="tagline">
         Real-time visuals &amp; photography.<br>
         Hongik Univ.<br>
@@ -517,7 +447,7 @@ body {
     </div>
 
     <!-- tools -->
-    <div class="tools-block smoke-reveal">
+    <div class="tools-block fade">
       <span class="section-label">Tools</span>
       <div class="tools">
         <span class="tool-item">TouchDesigner</span>
@@ -528,7 +458,7 @@ body {
     </div>
 
     <!-- exhibitions -->
-    <div class="exhibitions-block smoke-reveal">
+    <div class="exhibitions-block fade">
       <span class="section-label">Exhibitions</span>
 
       <a href="https://instagram.com/hips_official" target="_blank" class="exhibition-item">
@@ -549,7 +479,7 @@ body {
   </div>
 
   <!-- 하단 아웃라인 텍스트 -->
-  <div class="bottom-text smoke-reveal">
+  <div class="bottom-text">
     <p>OBSESSION</p>
     <p>AS A MEDIUM</p>
   </div>
@@ -577,88 +507,6 @@ body {
 </div>
 
 <script>
-gsap.registerPlugin(ScrollTrigger);
-
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-if (!reducedMotion) {
-
-  // ── 이름 블록 — smoky reveal (페이지 로드 즉시) ──
-  gsap.fromTo('.name-block.smoke-reveal', {
-    opacity: 0,
-    y: 24,
-    filter: 'blur(16px) url(#smoky-in)',
-  }, {
-    opacity: 1,
-    y: 0,
-    filter: 'blur(0px)',
-    duration: 1.6,
-    ease: 'power3.out',
-    delay: 0.2,
-    clearProps: 'filter'
-  });
-
-  // ── 중간 컬럼들 — 순서대로 stagger ──
-  const midBlocks = ['.tagline-block', '.tools-block', '.exhibitions-block'];
-  midBlocks.forEach((sel, i) => {
-    gsap.fromTo(sel + '.smoke-reveal', {
-      opacity: 0,
-      y: 20,
-      filter: 'blur(10px) url(#smoky-text)',
-    }, {
-      opacity: 1,
-      y: 0,
-      filter: 'blur(0px)',
-      duration: 1.2,
-      ease: 'power2.out',
-      delay: i * 0.14,
-      clearProps: 'filter',
-      scrollTrigger: {
-        trigger: '.mid-section',
-        start: 'top 82%',
-        once: true,
-      }
-    });
-  });
-
-  // ── bottom text ──
-  gsap.fromTo('.bottom-text.smoke-reveal', {
-    opacity: 0,
-    y: 30,
-    filter: 'blur(14px)',
-  }, {
-    opacity: 1,
-    y: 0,
-    filter: 'blur(0px)',
-    duration: 1.4,
-    ease: 'power2.out',
-    clearProps: 'filter',
-    scrollTrigger: {
-      trigger: '.bottom-text',
-      start: 'top 88%',
-      once: true,
-    }
-  });
-
-  // ── marquee ──
-  gsap.fromTo('.marquee-wrap', {
-    opacity: 0,
-  }, {
-    opacity: 1,
-    duration: 1.0,
-    ease: 'power2.out',
-    scrollTrigger: {
-      trigger: '.marquee-wrap',
-      start: 'top 95%',
-      once: true,
-    }
-  });
-
-} else {
-  gsap.set('.smoke-reveal', { opacity: 1, y: 0 });
-}
-
-// ── 커스텀 커서 ──
 const cursor = document.getElementById('cursor');
 document.addEventListener('mousemove', e => {
   cursor.style.left = e.clientX + 'px';
@@ -668,6 +516,8 @@ document.querySelectorAll('a, .tool-item, .bottom-text p').forEach(el => {
   el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
   el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
 });
+
+
 </script>
 
 </body>

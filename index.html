@@ -19,43 +19,27 @@
   --bg: #050505;
 }
 
-/* ── 커스텀 커서 (크로스헤어) ── */
+/* ── 커스텀 커서 (옴 문양) ── */
 .cursor {
   position: fixed;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   pointer-events: none;
   z-index: 9999;
   transform: translate(-50%, -50%);
   transition: width .2s ease, height .2s ease, opacity .2s ease;
+  filter: drop-shadow(0 0 6px rgba(255, 42, 166, 0.6));
 }
 
-.cursor::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
+.cursor svg {
   width: 100%;
-  height: 1px;
-  background: var(--pink);
-  transform: translateY(-50%);
-}
-
-.cursor::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: 1px;
   height: 100%;
-  background: var(--pink);
-  transform: translateX(-50%);
 }
 
 .cursor.grow {
-  width: 56px;
-  height: 56px;
-  opacity: 0.6;
+  width: 52px;
+  height: 52px;
+  opacity: 0.7;
 }
 
 body {
@@ -64,6 +48,50 @@ body {
   font-family: 'Space Mono', monospace;
   overflow-x: hidden;
 }
+
+/* ════════════════════════════
+   ② 그레인 노이즈
+════════════════════════════ */
+.grain {
+  position: fixed;
+  inset: -50%;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.06;
+  width: 200%;
+  height: 200%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  animation: grainMove .08s steps(1) infinite;
+}
+@keyframes grainMove {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-5%, -8%); }
+  40%  { transform: translate(8%, 3%); }
+  60%  { transform: translate(-3%, 9%); }
+  80%  { transform: translate(6%, -4%); }
+  100% { transform: translate(-2%, 6%); }
+}
+
+/* ════════════════════════════
+   ③ 커서 옆 프로젝트 번호
+════════════════════════════ */
+.cursor-label {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9998;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--pink);
+  letter-spacing: 0.1em;
+  transform: translate(20px, -8px);
+  opacity: 0;
+  transition: opacity .2s ease;
+  white-space: nowrap;
+}
+.cursor-label.visible { opacity: 1; }
+
+
 
 /* ── 페이드인 애니메이션 ── */
 @keyframes fadeUp {
@@ -90,7 +118,7 @@ body {
 }
 
 .title img {
-  height: 72px;
+  height: 100px;
   width: auto;
   display: block;
 }
@@ -104,14 +132,15 @@ body {
 }
 
 /* ────────────────────────────
-   비대칭 카드 레이아웃
-   왼쪽: 큰 카드 1개 (세로 2칸)
-   오른쪽: 작은 카드 3개
+   비대칭 카드 레이아웃 (3컬럼)
+   col1: audio 큰 카드
+   col2: scanner 세로 카드
+   col3: ragebeat + keyboard 위아래
 ──────────────────────────── */
 .works {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  grid-template-rows: auto;
+  grid-template-columns: 1.4fr 0.8fr 0.8fr;
+  grid-template-rows: 1fr 1fr;
   gap: 16px;
   padding: 0 40px;
 }
@@ -132,23 +161,47 @@ body {
   border-color: var(--pink);
 }
 
-/* 01번 카드: 세로로 큰 카드 */
+/* 01 audio: 왼쪽 큰 카드 */
 .card-featured {
   grid-column: 1;
   grid-row: 1 / 3;
-  min-height: 580px;
+  min-height: 600px;
 }
 
-/* 02, 03 카드: 오른쪽 위아래 */
-.card-sm {
+/* 02 scanner: 세로 영상 */
+.card-scanner {
   grid-column: 2;
-  min-height: 280px;
+  grid-row: 1 / 3;
+  min-height: 600px;
 }
 
-/* 04번 카드: 하단 풀 가로 */
-.card-wide {
-  grid-column: 1 / 3;
-  min-height: 200px;
+/* 03 ragebeat */
+.card-sm {
+  grid-column: 3;
+  grid-row: 1;
+  min-height: 290px;
+}
+
+/* 04 keyboard */
+.card-sm2 {
+  grid-column: 3;
+  grid-row: 2;
+  min-height: 290px;
+}
+
+/* ── 카드 썸네일 ── */
+.card-thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 1;
+  transition: opacity .4s ease;
+}
+
+.card:hover .card-thumb {
+  opacity: 0;
 }
 
 .card-video {
@@ -171,23 +224,12 @@ body {
   width: 100%;
   height: 100%;
   padding: 24px;
-  background: linear-gradient(to top, rgba(0,0,0,.9) 0%, rgba(0,0,0,.1) 60%);
+  background: linear-gradient(to top, rgba(0,0,0,.9) 0%, rgba(0,0,0,.05) 60%);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   min-height: inherit;
 }
-
-/* wide 카드는 가로로 펼침 */
-.card-wide .card-overlay {
-  flex-direction: row;
-  align-items: flex-end;
-  justify-content: space-between;
-  background: linear-gradient(to right, rgba(0,0,0,.9) 0%, rgba(0,0,0,.2) 100%);
-}
-
-.card-wide .card-meta { flex: 1; }
-.card-wide .card-desc { max-width: 400px; text-align: right; align-self: flex-end; }
 
 .card-number {
   font-size: 10px;
@@ -377,24 +419,163 @@ body {
 }
 
 .screenshot-slot {
-  aspect-ratio: 16/9;
   border-radius: 8px;
-  border: 1px dashed #222;
+  overflow: hidden;
+  border: 1px solid #222;
   background: #0a0a0a;
+  cursor: none;
+}
+
+.screenshot-slot img {
+  width: 100%;
+  display: block;
+  border-radius: 8px;
+  transition: opacity .2s;
+}
+
+.screenshot-slot:hover img {
+  opacity: 0.8;
+}
+
+/* ── 라이트박스 ── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(0,0,0,0.92);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2a2a2a;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s ease;
+  cursor: none;
+}
+
+.lightbox.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  border: 1px solid #333;
+  object-fit: contain;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 24px;
+  right: 32px;
+  background: none;
+  border: 1px solid #333;
+  color: #666;
+  font-family: 'Space Mono', monospace;
   font-size: 10px;
+  padding: 6px 12px;
+  letter-spacing: 0.12em;
+  cursor: none;
+  transition: color .2s, border-color .2s;
+}
+
+.lightbox-close:hover {
+  color: var(--pink);
+  border-color: var(--pink);
+}
+
+/* ── 인스타 고정 버튼 ── */
+.insta-btn {
+  position: fixed;
+  top: 28px;
+  right: 32px;
+  z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: #666;
+  text-decoration: none;
   letter-spacing: 0.1em;
+  border: 1px solid #222;
+  padding: 8px 14px;
+  border-radius: 2px;
+  transition: color .2s, border-color .2s;
+  cursor: none;
+}
+
+.insta-btn:hover {
+  color: var(--pink);
+  border-color: var(--pink);
+}
+
+/* ── About 버튼 ── */
+.about-btn {
+  position: fixed;
+  top: 28px;
+  right: 160px;
+  z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: #555;
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  border: 1px solid #222;
+  padding: 8px 14px;
+  border-radius: 2px;
+  transition: color .2s, border-color .2s;
+  cursor: none;
+}
+
+.about-btn:hover {
+  color: var(--pink);
+  border-color: var(--pink);
 }
 
 </style>
 </head>
 <body>
 
-<!-- 커스텀 커서 -->
-<div class="cursor" id="cursor"></div>
+
+
+<!-- ② 그레인 -->
+<div class="grain"></div>
+
+<!-- ③ 커서 라벨 -->
+<div class="cursor-label" id="cursorLabel"></div>
+
+
+
+<!-- 커스텀 커서 (옴 문양) -->
+<div class="cursor" id="cursor">
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 옴(ॐ) 문양 -->
+    <text
+      x="50" y="72"
+      text-anchor="middle"
+      font-size="72"
+      font-family="serif"
+      fill="#ff2aa6"
+    >ॐ</text>
+  </svg>
+</div>
+
+<!-- 인스타 고정 버튼 -->
+<a href="https://instagram.com/nopaaiin" target="_blank" class="insta-btn">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+    <circle cx="12" cy="12" r="4"/>
+    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+  </svg>
+  @nopaaiin
+</a>
+
+<!-- About 버튼 -->
+<a href="about.html" class="about-btn">About</a>
 
 <!-- 헤더 -->
 <div class="header">
@@ -405,8 +586,9 @@ body {
 <!-- 비대칭 카드 그리드 -->
 <section class="works fade-up">
 
-  <!-- 01 — 큰 카드 -->
+  <!-- 01 audio — 왼쪽 큰 카드 -->
   <div class="card card-featured" data-project="audio">
+    <img class="card-thumb" src="thumb_audio.png" alt="">
     <video class="card-video" muted loop playsinline>
       <source src="audio_reactive.mov" type="video/mp4">
     </video>
@@ -417,8 +599,9 @@ body {
     </div>
   </div>
 
-  <!-- 02 — 오른쪽 위 -->
-  <div class="card card-sm" data-project="scanner">
+  <!-- 02 scanner — 세로 카드 -->
+  <div class="card card-scanner" data-project="scanner">
+    <img class="card-thumb" src="thumb_scanner.png" alt="">
     <video class="card-video" muted loop playsinline>
       <source src="scanner.mov" type="video/mp4">
     </video>
@@ -429,8 +612,9 @@ body {
     </div>
   </div>
 
-  <!-- 03 — 오른쪽 아래 -->
+  <!-- 03 ragebeat — 오른쪽 위 -->
   <div class="card card-sm" data-project="ragebeat">
+    <img class="card-thumb" src="thumb_rage.png" alt="">
     <video class="card-video" muted loop playsinline>
       <source src="ragebeat.mov" type="video/mp4">
     </video>
@@ -441,17 +625,16 @@ body {
     </div>
   </div>
 
-  <!-- 04 — 하단 와이드 -->
-  <div class="card card-wide" data-project="keyboard">
+  <!-- 04 keyboard — 오른쪽 아래 -->
+  <div class="card card-sm2" data-project="keyboard">
+    <img class="card-thumb" src="thumb_key.png" alt="">
     <video class="card-video" muted loop playsinline>
       <source src="keyboardreactive.mov" type="video/mp4">
     </video>
     <div class="card-overlay">
-      <div class="card-meta">
-        <div class="card-number">04 / 04</div>
-        <h2 class="card-title">Keyboard Reactive</h2>
-      </div>
-      <p class="card-desc">Grid visual system controlled by keyboard input.</p>
+      <div class="card-number">04 / 04</div>
+      <h2 class="card-title">Keyboard Reactive</h2>
+      <p class="card-desc">Grid visual system controlled by keyboard.</p>
     </div>
   </div>
 
@@ -510,23 +693,48 @@ body {
 
   <div class="panel-section">
     <p class="panel-label">TouchDesigner Network</p>
-    <div class="screenshots">
-      <div class="screenshot-slot">Screenshot 1</div>
-      <div class="screenshot-slot">Screenshot 2</div>
-    </div>
+    <p class="panel-text" id="panelNode" style="margin-bottom:16px;"></p>
+    <div class="screenshots" id="panelScreenshots"></div>
   </div>
 </div>
 
+<!-- 라이트박스 -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">✕ CLOSE</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
 <script>
+// ── ③ 커서 라벨 ──
+const cursorLabel = document.getElementById('cursorLabel');
+
+
+
 // ── 커스텀 커서 ──
 const cursor = document.getElementById('cursor');
 document.addEventListener('mousemove', e => {
   cursor.style.left = e.clientX + 'px';
   cursor.style.top  = e.clientY + 'px';
+  cursorLabel.style.left = e.clientX + 'px';
+  cursorLabel.style.top  = e.clientY + 'px';
 });
 document.querySelectorAll('.card, .panel-close, button').forEach(el => {
   el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
   el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+});
+
+document.querySelectorAll('.card').forEach(card => {
+  const num = card.querySelector('.card-number');
+  const title = card.querySelector('.card-title');
+  card.addEventListener('mouseenter', () => {
+    if (num && title) {
+      cursorLabel.textContent = num.textContent + ' ' + title.textContent;
+      cursorLabel.classList.add('visible');
+    }
+  });
+  card.addEventListener('mouseleave', () => {
+    cursorLabel.classList.remove('visible');
+  });
 });
 
 // ── 프로젝트 데이터 ──
@@ -535,25 +743,33 @@ const projects = {
     number: '01 / 04',
     title: 'Audio Reactive',
     video: 'audio_reactive.mov',
-    about: '킥 드럼의 저음역대 주파수를 TouchDesigner 내에서 실시간으로 감지하고, 그 신호값에 따라 원형 그래픽의 크기·형태·밀도가 동적으로 변화하는 반응형 비주얼 시스템입니다. 사운드와 이미지 사이의 물리적 연결을 노드 기반 로직으로 구현하였으며, 음악의 에너지가 시각 언어로 번역되는 순간을 포착하는 데 초점을 맞추었습니다.'
+    about: '킥 드럼의 저음역대 주파수를 TouchDesigner 내에서 실시간으로 감지하고, 그 신호값에 따라 원형 그래픽의 크기·형태·밀도가 동적으로 변화하는 반응형 비주얼 시스템입니다. 사운드와 이미지 사이의 물리적 연결을 노드 기반 로직으로 구현하였으며, 음악의 에너지가 시각 언어로 번역되는 순간을 포착하는 데 초점을 맞추었습니다.',
+    node: 'Grid SOP → Sprinkle SOP으로 파티클 포인트를 생성하고, Noise SOP으로 유기적인 변위를 만든 뒤 CHOP을 통해 오디오 신호값을 geometry의 transform에 실시간으로 연결했습니다. audioreactive CHOP이 주파수 대역별 진폭을 추출해 Sphere SOP의 스케일과 Displace SOP의 강도를 구동합니다.',
+    images: ['audio_node_1.png', 'audio_node_2.png']
   },
   scanner: {
     number: '02 / 04',
     title: 'Scanner',
     video: 'scanner.mov',
-    about: 'TouchDesigner의 POP(Particle Operator) 노드를 활용해 무작위로 생성·소멸을 반복하는 파티클 시스템을 구축하고, 그 위를 스캐닝하듯 가로지르는 시선의 흐름을 시각화한 작업입니다. 통제되지 않는 입자들의 운동과 기계적으로 반복되는 스캔 모션 사이의 긴장감을 통해, 디지털 표면 위에서 발생하는 질서와 무질서의 공존을 탐구합니다.'
+    about: 'TouchDesigner의 POP(Particle Operator) 노드를 활용해 무작위로 생성·소멸을 반복하는 파티클 시스템을 구축하고, 그 위를 스캐닝하듯 가로지르는 시선의 흐름을 시각화한 작업입니다. 통제되지 않는 입자들의 운동과 기계적으로 반복되는 스캔 모션 사이의 긴장감을 통해, 디지털 표면 위에서 발생하는 질서와 무질서의 공존을 탐구합니다.',
+    node: 'Point Generator SOP에서 생성된 파티클이 Noise CHOP의 흐름을 따라 이동하며, Feedback TOP을 통해 이전 프레임이 잔상처럼 누적됩니다. LFO CHOP 3개가 각각 위치·속도·밀도를 독립적으로 제어하며, Bloom TOP으로 파티클의 발광 효과를 마무리합니다.',
+    images: ['scanner_node.png']
   },
   ragebeat: {
     number: '03 / 04',
     title: 'Rage Beat',
     video: 'ragebeat.mov',
-    about: 'Rage 장르는 Playboi Carti, Ken Carson 등으로 대표되는 하이퍼팝 계열의 음악 장르로, 과포화된 사운드와 공격적인 비트 패턴이 특징입니다. 이 작업은 그 비트의 리듬 구조를 TouchDesigner의 Noise TOP 노드를 통해 실시간 비주얼 신호로 변환한 시스템입니다. 음악의 폭력적인 에너지와 노이즈 기반 그래픽의 불규칙성이 맞닿는 지점에서, 사운드가 이미지로 붕괴되는 순간을 포착합니다.'
+    about: 'Rage 장르는 Playboi Carti, Ken Carson 등으로 대표되는 하이퍼팝 계열의 음악 장르로, 과포화된 사운드와 공격적인 비트 패턴이 특징입니다. 이 작업은 그 비트의 리듬 구조를 TouchDesigner의 Noise TOP 노드를 통해 실시간 비주얼 신호로 변환한 시스템입니다.',
+    node: 'Audio File In → Audio Spectrum Analyze → Math → Filter → Select CHOP 체인으로 특정 주파수 대역의 에너지를 추출합니다. 추출된 값이 Tube SOP에 연결된 Twist SOP의 강도를 구동하고, Mirror SOP 5개를 직렬로 연결해 대칭 구조를 만든 뒤 RGB Key TOP으로 색상을 분리해 최종 출력합니다.',
+    images: ['rage_node.png']
   },
   keyboard: {
     number: '04 / 04',
     title: 'Keyboard Reactive',
     video: 'keyboardreactive.mov',
-    about: '균일한 사각형 그리드 위에서 비정형적인 그래픽이 무작위로 생성되며, 루프의 주기와 활성화되는 셀의 수가 키보드 입력에 실시간으로 반응해 끊임없이 재편되는 인터랙티브 비주얼 시스템입니다. 이 작업은 단순한 시각 실험을 넘어, 키보드 하나로 그래픽의 리듬과 구성을 즉흥적으로 편집할 수 있는 새로운 퍼포먼스 인터페이스로 발전시키는 것을 목표로 합니다. 궁극적으로는 런치패드와 같은 악기의 형태로, 시각과 음악을 동시에 연주할 수 있는 새로운 도구로 확장하고자 합니다.'
+    about: '균일한 사각형 그리드 위에서 비정형적인 그래픽이 무작위로 생성되며, 루프의 주기와 활성화되는 셀의 수가 키보드 입력에 실시간으로 반응해 끊임없이 재편되는 인터랙티브 비주얼 시스템입니다. 궁극적으로는 런치패드와 같은 악기의 형태로, 시각과 음악을 동시에 연주할 수 있는 새로운 도구로 확장하고자 합니다.',
+    node: 'Keyboard In CHOP이 키 입력을 실시간으로 감지해 신호를 발생시키고, Noise TOP → Edge TOP 체인이 그리드 위의 비정형 패턴을 생성합니다. Feedback TOP으로 이전 프레임이 누적되며, Displace TOP과 Composite TOP이 각 셀의 변형과 합성을 처리합니다. RGB Key TOP → Level TOP으로 색상과 명도를 최종 조정합니다.',
+    images: ['keyboard_node.png']
   }
 };
 
@@ -580,8 +796,23 @@ document.querySelectorAll('.card').forEach(card => {
     document.getElementById('panelNumber').textContent = p.number;
     document.getElementById('panelTitle').textContent  = p.title;
     document.getElementById('panelAbout').textContent  = p.about;
+    document.getElementById('panelNode').textContent   = p.node;
     panelVideoSrc.src = p.video;
     panelVideo.load();
+
+    // 노드 이미지 동적 생성
+    const screenshots = document.getElementById('panelScreenshots');
+    screenshots.innerHTML = '';
+    p.images.forEach(src => {
+      const slot = document.createElement('div');
+      slot.className = 'screenshot-slot';
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = p.title + ' node';
+      img.addEventListener('click', () => openLightbox(src));
+      slot.appendChild(img);
+      screenshots.appendChild(slot);
+    });
 
     panel.classList.add('active');
     overlayBg.classList.add('active');
@@ -596,9 +827,28 @@ function closePanel() {
   panelVideo.pause();
 }
 
+// ── 라이트박스 ──
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightboxImg');
+
+function openLightbox(src) {
+  lightboxImg.src = src;
+  lightbox.classList.add('active');
+}
+
+function closeLightbox() {
+  lightbox.classList.remove('active');
+  lightboxImg.src = '';
+}
+
+document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closePanel(); closeLightbox(); }
+});
+
 document.getElementById('panelClose').addEventListener('click', closePanel);
 overlayBg.addEventListener('click', closePanel);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 </script>
 
 </body>
