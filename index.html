@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NOPAAIIN</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<!-- GSAP + ScrollTrigger -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <style>
 
 * {
@@ -93,20 +96,83 @@ body {
 
 
 
-/* ── 페이드인 애니메이션 ── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/* ══════════════════════════════════
+   SMOKY REVEAL SYSTEM
+══════════════════════════════════ */
 
-.fade-up {
+/* SVG 필터 컨테이너 — 화면에 안 보이게 */
+.svg-filters { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* 모든 reveal 대상의 초기 상태 — GSAP이 제어 */
+.smoke-reveal {
   opacity: 0;
-  animation: fadeUp .7s ease forwards;
+  will-change: opacity, transform, filter;
 }
 
-.fade-up:nth-child(1) { animation-delay: .1s; }
-.fade-up:nth-child(2) { animation-delay: .25s; }
-.fade-up:nth-child(3) { animation-delay: .4s; }
+/* 핑크 안개 오버레이 — 전역 분위기 레이어 */
+.pink-haze {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 30%, rgba(255,42,166,0.055) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 60% at 85% 70%, rgba(255,42,166,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 10%, rgba(255,42,166,0.03) 0%, transparent 55%);
+  animation: hazeShift 18s ease-in-out infinite alternate;
+}
+
+@keyframes hazeShift {
+  0%   { opacity: 0.7; transform: scale(1) translateX(0); }
+  50%  { opacity: 1;   transform: scale(1.04) translateX(12px); }
+  100% { opacity: 0.8; transform: scale(1.02) translateX(-8px); }
+}
+
+/* 카드 hover 시 핑크 글로우 강화 */
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 16px;
+  background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(255,42,166,0.12) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity .5s ease;
+  pointer-events: none;
+}
+.card:hover::after { opacity: 1; }
+
+/* 카드 reveal 초기 상태 */
+.card.smoke-reveal {
+  transform: translateY(22px);
+}
+
+/* 헤더 타이틀 reveal */
+.title.smoke-reveal,
+.subtitle.smoke-reveal {
+  transform: translateY(16px);
+}
+
+/* 핑크 라인 — 헤더 하단 */
+.header-line {
+  display: block;
+  width: 0;
+  height: 1px;
+  background: linear-gradient(to right, var(--pink), transparent);
+  margin: 0 40px 32px;
+  position: relative;
+  z-index: 2;
+}
+
+/* prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .smoke-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .pink-haze { animation: none; }
+}
 
 /* ── 헤더 영역 ── */
 .header {
@@ -540,6 +606,27 @@ body {
 </head>
 <body>
 
+<!-- SVG 필터 정의 (smoky blur 효과용) -->
+<svg class="svg-filters" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="smoky-in" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018 0.025" numOctaves="3" seed="8" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="14" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <feGaussianBlur in="displaced" stdDeviation="3.5" result="blurred"/>
+      <feComposite in="blurred" in2="SourceGraphic" operator="in"/>
+    </filter>
+    <filter id="smoky-card" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022 0.018" numOctaves="2" seed="14" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <feGaussianBlur in="displaced" stdDeviation="2.5" result="blurred"/>
+      <feComposite in="blurred" in2="SourceGraphic" operator="in"/>
+    </filter>
+  </defs>
+</svg>
+
+<!-- 핑크 헤이즈 분위기 레이어 -->
+<div class="pink-haze"></div>
+
 
 
 <!-- ② 그레인 -->
@@ -579,15 +666,16 @@ body {
 
 <!-- 헤더 -->
 <div class="header">
-  <h1 class="title fade-up"><img src="logo.png" alt="NOPAAIIN"></h1>
-  <p class="subtitle fade-up">Interactive experiments · Visual systems · Real-time media</p>
+  <h1 class="title smoke-reveal"><img src="logo.png" alt="NOPAAIIN"></h1>
+  <p class="subtitle smoke-reveal">Interactive experiments · Visual systems · Real-time media</p>
 </div>
+<span class="header-line" id="headerLine"></span>
 
 <!-- 비대칭 카드 그리드 -->
-<section class="works fade-up">
+<section class="works">
 
   <!-- 01 audio — 왼쪽 큰 카드 -->
-  <div class="card card-featured" data-project="audio">
+  <div class="card card-featured smoke-reveal" data-project="audio">
     <img class="card-thumb" src="thumb_audio.png" alt="">
     <video class="card-video" muted loop playsinline>
       <source src="audio_reactive.mov" type="video/mp4">
@@ -600,7 +688,7 @@ body {
   </div>
 
   <!-- 02 scanner — 세로 카드 -->
-  <div class="card card-scanner" data-project="scanner">
+  <div class="card card-scanner smoke-reveal" data-project="scanner">
     <img class="card-thumb" src="thumb_scanner.png" alt="">
     <video class="card-video" muted loop playsinline>
       <source src="scanner.mov" type="video/mp4">
@@ -613,7 +701,7 @@ body {
   </div>
 
   <!-- 03 ragebeat — 오른쪽 위 -->
-  <div class="card card-sm" data-project="ragebeat">
+  <div class="card card-sm smoke-reveal" data-project="ragebeat">
     <img class="card-thumb" src="thumb_rage.png" alt="">
     <video class="card-video" muted loop playsinline>
       <source src="ragebeat.mov" type="video/mp4">
@@ -626,7 +714,7 @@ body {
   </div>
 
   <!-- 04 keyboard — 오른쪽 아래 -->
-  <div class="card card-sm2" data-project="keyboard">
+  <div class="card card-sm2 smoke-reveal" data-project="keyboard">
     <img class="card-thumb" src="thumb_key.png" alt="">
     <video class="card-video" muted loop playsinline>
       <source src="keyboardreactive.mov" type="video/mp4">
@@ -705,10 +793,109 @@ body {
 </div>
 
 <script>
-// ── ③ 커서 라벨 ──
+// ════════════════════════════════════════
+//  SMOKY REVEAL SYSTEM — GSAP + ScrollTrigger
+// ════════════════════════════════════════
+
+gsap.registerPlugin(ScrollTrigger);
+
+// prefers-reduced-motion 체크
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+if (!reducedMotion) {
+
+  // ── 헤더 라인 reveal ──
+  gsap.to('#headerLine', {
+    width: 'calc(100% - 80px)',
+    duration: 1.6,
+    ease: 'power2.out',
+    delay: 0.3
+  });
+
+  // ── 타이틀 smoky reveal (페이지 로드 즉시) ──
+  gsap.fromTo('.title.smoke-reveal', {
+    opacity: 0,
+    y: 20,
+    filter: 'blur(14px) url(#smoky-in)',
+  }, {
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    duration: 1.4,
+    ease: 'power3.out',
+    delay: 0.15,
+    clearProps: 'filter'
+  });
+
+  gsap.fromTo('.subtitle.smoke-reveal', {
+    opacity: 0,
+    y: 14,
+    filter: 'blur(10px)',
+  }, {
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    duration: 1.2,
+    ease: 'power3.out',
+    delay: 0.45,
+    clearProps: 'filter'
+  });
+
+  // ── 카드 smoky reveal — ScrollTrigger 기반, stagger ──
+  const cards = gsap.utils.toArray('.card.smoke-reveal');
+
+  cards.forEach((card, i) => {
+    // 각 카드마다 약간 다른 displacement seed로 개성 부여
+    const delay = i * 0.11;
+
+    gsap.fromTo(card, {
+      opacity: 0,
+      y: 28,
+      filter: 'blur(12px) url(#smoky-card)',
+      scale: 0.985,
+    }, {
+      opacity: 1,
+      y: 0,
+      filter: 'blur(0px)',
+      scale: 1,
+      duration: 1.3,
+      ease: 'power2.out',
+      delay: delay,
+      clearProps: 'filter,scale',
+      scrollTrigger: {
+        trigger: card,
+        start: 'top 88%',
+        once: true,
+      }
+    });
+  });
+
+  // ── marquee 라인 reveal ──
+  gsap.fromTo('.marquee-wrap', {
+    opacity: 0,
+  }, {
+    opacity: 1,
+    duration: 1.0,
+    ease: 'power2.out',
+    scrollTrigger: {
+      trigger: '.marquee-wrap',
+      start: 'top 95%',
+      once: true,
+    }
+  });
+
+} else {
+  // 모션 감소 환경 — 즉시 표시
+  gsap.set('.smoke-reveal', { opacity: 1, y: 0 });
+  gsap.set('#headerLine', { width: 'calc(100% - 80px)' });
+}
+
+// ════════════════════════════════════════
+//  기존 커서 + 패널 로직
+// ════════════════════════════════════════
+
+// ── 커서 라벨 ──
 const cursorLabel = document.getElementById('cursorLabel');
-
-
 
 // ── 커스텀 커서 ──
 const cursor = document.getElementById('cursor');
@@ -800,7 +987,6 @@ document.querySelectorAll('.card').forEach(card => {
     panelVideoSrc.src = p.video;
     panelVideo.load();
 
-    // 노드 이미지 동적 생성
     const screenshots = document.getElementById('panelScreenshots');
     screenshots.innerHTML = '';
     p.images.forEach(src => {
