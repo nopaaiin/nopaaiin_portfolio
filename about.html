@@ -55,6 +55,22 @@ body {
   filter: saturate(1.4) contrast(1.1);
 }
 
+/* ④ 스캔라인 효과 */
+.video-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0,0,0,0.08) 3px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+}
+
 /* 영상 위 그라디언트 오버레이 */
 .video-bg::after {
   content: '';
@@ -336,7 +352,40 @@ body {
   to   { transform: translateX(-50%); }
 }
 
-/* ── 페이드인 ── */
+/* ② 그레인 */
+.grain {
+  position: fixed;
+  inset: -50%;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.05;
+  width: 200%;
+  height: 200%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  animation: grainMove .08s steps(1) infinite;
+}
+@keyframes grainMove {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-5%, -8%); }
+  40%  { transform: translate(8%, 3%); }
+  60%  { transform: translate(-3%, 9%); }
+  80%  { transform: translate(6%, -4%); }
+  100% { transform: translate(-2%, 6%); }
+}
+
+/* ⑤ 페이지 전환 */
+.page-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: linear-gradient(135deg, #ff2aa6 0%, #ff6ed4 40%, #c800ff 100%);
+  transform: translateX(-100%);
+  pointer-events: none;
+  transition: transform .6s cubic-bezier(.77,0,.18,1);
+}
+
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(28px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -351,6 +400,12 @@ body {
 </style>
 </head>
 <body>
+
+<!-- 그레인 -->
+<div class="grain"></div>
+
+<!-- 페이지 전환 -->
+<div class="page-transition" id="pageTransition"></div>
 
 <!-- 커서 -->
 <div class="cursor" id="cursor">
@@ -470,6 +525,32 @@ document.addEventListener('mousemove', e => {
 document.querySelectorAll('a, .tool-item, .bottom-text p').forEach(el => {
   el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
   el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+});
+
+// ── 페이지 전환 ──
+const pageTransition = document.getElementById('pageTransition');
+
+// 진입 시: 왼쪽에서 훑고 오른쪽으로 빠짐
+pageTransition.style.transition = 'none';
+pageTransition.style.transform  = 'translateX(-100%)';
+
+window.addEventListener('load', () => {
+  requestAnimationFrame(() => {
+    pageTransition.style.transition = 'transform .55s cubic-bezier(.77,0,.18,1)';
+    pageTransition.style.transform  = 'translateX(0)';
+    setTimeout(() => {
+      pageTransition.style.transform = 'translateX(100%)';
+    }, 550);
+  });
+});
+
+// Works 버튼 클릭 시
+document.querySelector('.back').addEventListener('click', e => {
+  e.preventDefault();
+  const href = e.currentTarget.getAttribute('href');
+  pageTransition.style.transition = 'transform .55s cubic-bezier(.77,0,.18,1)';
+  pageTransition.style.transform  = 'translateX(0)';
+  setTimeout(() => { window.location.href = href; }, 580);
 });
 </script>
 
