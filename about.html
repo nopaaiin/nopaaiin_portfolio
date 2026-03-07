@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About — NOPAAIIN</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  cursor: none;
+}
+
+:root {
+  --pink: #ff2aa6;
+  --bg: #050505;
+}
+
+/* ── 커스텀 커서 (옴 문양) ── */
+.cursor {
+  position: fixed;
+  width: 36px;
+  height: 36px;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width .2s ease, height .2s ease;
+  filter: drop-shadow(0 0 6px rgba(255, 42, 166, 0.6));
+}
+.cursor svg { width: 100%; height: 100%; }
+.cursor.grow { width: 52px; height: 52px; opacity: 0.7; }
+
+body {
+  background: var(--bg);
+  color: white;
+  font-family: 'Space Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── 페이드인 ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  opacity: 0;
+  animation: fadeUp .7s ease forwards;
+}
+.fade-up:nth-child(1) { animation-delay: .1s; }
+.fade-up:nth-child(2) { animation-delay: .25s; }
+.fade-up:nth-child(3) { animation-delay: .4s; }
+
+/* ── 뒤로가기 ── */
+.back {
+  position: fixed;
+  top: 28px;
+  left: 32px;
+  z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: #555;
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  border: 1px solid #222;
+  padding: 8px 14px;
+  border-radius: 2px;
+  transition: color .2s, border-color .2s;
+  cursor: none;
+}
+.back:hover { color: var(--pink); border-color: var(--pink); }
+.back::before { content: '←'; font-size: 13px; }
+
+/* ── 인스타 버튼 ── */
+.insta-btn {
+  position: fixed;
+  top: 28px;
+  right: 32px;
+  z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: #555;
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  border: 1px solid #222;
+  padding: 8px 14px;
+  border-radius: 2px;
+  transition: color .2s, border-color .2s;
+  cursor: none;
+}
+.insta-btn:hover { color: var(--pink); border-color: var(--pink); }
+
+/* ── 메인 레이아웃 ── */
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+  gap: 0;
+}
+
+/* ── 왼쪽: 영상 ── */
+.video-side {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px 40px;
+  border-right: 1px solid #1a1a1a;
+}
+
+.video-wrap {
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 1 / 1;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid #2a2a2a;
+  background: #0a0a0a;
+}
+
+.video-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── 오른쪽: 텍스트 ── */
+.text-side {
+  padding: 120px 56px 80px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--pink);
+  margin-bottom: 20px;
+}
+
+.name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 72px;
+  color: white;
+  line-height: 0.95;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.school {
+  font-size: 12px;
+  color: #555;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 40px;
+}
+
+.tagline {
+  font-size: 14px;
+  color: #bbb;
+  line-height: 1.9;
+  margin-bottom: 48px;
+  padding-left: 16px;
+  border-left: 2px solid var(--pink);
+}
+
+/* ── 구분선 ── */
+.divider {
+  border: none;
+  border-top: 1px solid #1a1a1a;
+  margin-bottom: 32px;
+}
+
+/* ── 툴 섹션 ── */
+.section-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pink);
+  margin-bottom: 14px;
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 40px;
+}
+
+.tool-tag {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #888;
+  border: 1px solid #2a2a2a;
+  padding: 5px 12px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  transition: color .2s, border-color .2s;
+}
+
+.tool-tag:hover {
+  color: var(--pink);
+  border-color: var(--pink);
+}
+
+/* ── 전시 섹션 ── */
+.exhibitions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.exhibition-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.exhibition-item::before {
+  content: '↗';
+  color: var(--pink);
+  font-size: 12px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.exhibition-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  color: white;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.exhibition-desc {
+  font-size: 11px;
+  color: #555;
+  line-height: 1.7;
+  letter-spacing: 0.06em;
+}
+
+/* ── 하단 marquee ── */
+.marquee-wrap {
+  width: 100%;
+  overflow: hidden;
+  border-top: 1px solid #1a1a1a;
+  padding: 14px 0;
+  margin-top: auto;
+}
+
+.marquee-track {
+  display: flex;
+  white-space: nowrap;
+  animation: marquee 18s linear infinite;
+}
+
+.marquee-track span {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #2a2a2a;
+  padding: 0 32px;
+}
+
+.marquee-track span em {
+  color: var(--pink);
+  font-style: normal;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+</style>
+</head>
+<body>
+
+<!-- 커서 -->
+<div class="cursor" id="cursor">
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <text x="50" y="72" text-anchor="middle" font-size="72" font-family="serif" fill="#ff2aa6">ॐ</text>
+  </svg>
+</div>
+
+<!-- 뒤로가기 -->
+<a href="index.html" class="back">Works</a>
+
+<!-- 인스타 -->
+<a href="https://instagram.com/nopaaiin" target="_blank" class="insta-btn">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+    <circle cx="12" cy="12" r="4"/>
+    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+  </svg>
+  @nopaaiin
+</a>
+
+<!-- 메인 -->
+<div class="container">
+
+  <!-- 왼쪽: 영상 -->
+  <div class="video-side">
+    <div class="video-wrap fade-up">
+      <video autoplay muted loop playsinline>
+        <source src="self_introduce.MOV" type="video/mp4">
+      </video>
+    </div>
+  </div>
+
+  <!-- 오른쪽: 텍스트 -->
+  <div class="text-side">
+
+    <p class="label fade-up">About</p>
+
+    <h1 class="name fade-up">JUNG<br>JUNYONG</h1>
+    <p class="school fade-up">Hongik Univ. · Visual Communication Design</p>
+
+    <p class="tagline fade-up">
+      Real-time visuals & photography.<br>
+      Hongik Univ. Visual Communication Design.
+    </p>
+
+    <hr class="divider">
+
+    <p class="section-label fade-up">Tools</p>
+    <div class="tools fade-up">
+      <span class="tool-tag">TouchDesigner</span>
+      <span class="tool-tag">Adobe Illustrator</span>
+      <span class="tool-tag">Photoshop</span>
+      <span class="tool-tag">Lightroom</span>
+    </div>
+
+    <hr class="divider">
+
+    <p class="section-label fade-up">Exhibitions</p>
+    <div class="exhibitions fade-up">
+      <div class="exhibition-item">
+        <div>
+          <p class="exhibition-title">보행</p>
+          <p class="exhibition-desc">HIPS 사진 소모임 · 집착과 강박을 주제로 한 사진 전시</p>
+        </div>
+      </div>
+      <div class="exhibition-item">
+        <div>
+          <p class="exhibition-title">DEMONSTRATION</p>
+          <p class="exhibition-desc">HIPS 사진 소모임 · 집착과 강박의 연장선에서 탐구한 시각 작업</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Marquee -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span>NOPAAIIN</span><span><em>·</em></span>
+    <span>TOUCHDESIGNER</span><span><em>·</em></span>
+    <span>VISUAL COMMUNICATION DESIGN</span><span><em>·</em></span>
+    <span>HONGIK UNIV</span><span><em>·</em></span>
+    <span>PHOTOGRAPHY</span><span><em>·</em></span>
+    <span>REALTIME VISUAL</span><span><em>·</em></span>
+    <span>2026</span><span><em>·</em></span>
+    <span>NOPAAIIN</span><span><em>·</em></span>
+    <span>TOUCHDESIGNER</span><span><em>·</em></span>
+    <span>VISUAL COMMUNICATION DESIGN</span><span><em>·</em></span>
+    <span>HONGIK UNIV</span><span><em>·</em></span>
+    <span>PHOTOGRAPHY</span><span><em>·</em></span>
+    <span>REALTIME VISUAL</span><span><em>·</em></span>
+    <span>2026</span><span><em>·</em></span>
+  </div>
+</div>
+
+<script>
+// 커서
+const cursor = document.getElementById('cursor');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top  = e.clientY + 'px';
+});
+document.querySelectorAll('a, button, .tool-tag').forEach(el => {
+  el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
+  el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+});
+</script>
+
+</body>
+</html>
