@@ -4,751 +4,455 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NOPAAIIN</title>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;700;900&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
 
-* { box-sizing: border-box; margin: 0; padding: 0; cursor: none; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  cursor: none;
+}
 
 :root {
   --pink: #ff2aa6;
-  --bg: #070407;
+  --bg: #050505;
 }
 
-/* ══════════════════════════════
-   커서 — 왜곡 원
-══════════════════════════════ */
-.cursor-ring {
+/* ── 커스텀 커서 (크로스헤어) ── */
+.cursor {
   position: fixed;
-  width: 44px; height: 44px;
+  width: 32px;
+  height: 32px;
   pointer-events: none;
-  z-index: 99999;
+  z-index: 9999;
   transform: translate(-50%, -50%);
-  will-change: transform;
-}
-.cursor-ring svg {
-  width: 100%; height: 100%;
-  overflow: visible;
+  transition: width .2s ease, height .2s ease, opacity .2s ease;
 }
 
-/* ══════════════════════════════
-   BODY
-══════════════════════════════ */
+.cursor::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--pink);
+  transform: translateY(-50%);
+}
+
+.cursor::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  background: var(--pink);
+  transform: translateX(-50%);
+}
+
+.cursor.grow {
+  width: 56px;
+  height: 56px;
+  opacity: 0.6;
+}
+
 body {
   background: var(--bg);
-  color: #fff;
-  font-family: 'DM Mono', monospace;
+  color: white;
+  font-family: 'Space Mono', monospace;
   overflow-x: hidden;
 }
 
-/* ══════════════════════════════
-   SVG 필터
-══════════════════════════════ */
-.svg-filters {
-  position: absolute; width: 0; height: 0;
-  overflow: hidden; pointer-events: none;
+/* ── 페이드인 애니메이션 ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ══════════════════════════════
-   그레인 — 치지직
-══════════════════════════════ */
-.grain {
-  position: fixed; inset: -50%;
-  z-index: 50; pointer-events: none;
-  opacity: 0.07;
-  width: 200%; height: 200%;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
-  animation: grainMove .06s steps(1) infinite;
-  mix-blend-mode: overlay;
-}
-@keyframes grainMove {
-  0%   { transform: translate(0,0) rotate(0deg); }
-  16%  { transform: translate(-6%,-9%); }
-  33%  { transform: translate(9%,4%); }
-  50%  { transform: translate(-3%,10%); }
-  66%  { transform: translate(7%,-5%); }
-  83%  { transform: translate(-8%,2%); }
-  100% { transform: translate(4%,-7%); }
-}
-
-/* ══════════════════════════════
-   핑크 분위기 레이어
-══════════════════════════════ */
-.pink-atm {
-  position: fixed; inset: 0;
-  z-index: 1; pointer-events: none;
-  background:
-    radial-gradient(ellipse 75% 55% at 8% 18%, rgba(255,42,166,0.065) 0%, transparent 60%),
-    radial-gradient(ellipse 45% 45% at 92% 82%, rgba(255,42,166,0.05) 0%, transparent 55%);
-  animation: atmDrift 20s ease-in-out infinite alternate;
-}
-@keyframes atmDrift {
-  0%   { transform: scale(1) translate(0,0); opacity:.7; }
-  100% { transform: scale(1.08) translate(12px,6px); opacity:1; }
-}
-
-/* ══════════════════════════════
-   배경 영상 레이어
-══════════════════════════════ */
-.bg-video-layer {
-  position: fixed; inset: 0;
-  z-index: 0; pointer-events: none;
-  overflow: hidden;
-}
-.bg-video-layer video {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
+.fade-up {
   opacity: 0;
-  filter: saturate(0.55) brightness(0.32);
-}
-/* 핑크 연기 오버레이 — 영상 위 */
-.bg-smoke {
-  position: absolute; inset: 0;
-  z-index: 2; pointer-events: none;
-  opacity: 0;
-  background:
-    radial-gradient(ellipse 65% 55% at 15% 35%, rgba(255,42,166,0.2) 0%, transparent 65%),
-    radial-gradient(ellipse 45% 50% at 85% 65%, rgba(255,42,166,0.12) 0%, transparent 58%),
-    linear-gradient(to bottom, rgba(7,4,7,0.6) 0%, rgba(7,4,7,0.15) 50%, rgba(7,4,7,0.7) 100%);
-  transition: opacity .8s ease;
-}
-.bg-video-layer.active .bg-smoke { opacity: 1; }
-
-/* ══════════════════════════════
-   부유하는 옴 — hero 오른쪽
-══════════════════════════════ */
-.float-om {
-  position: fixed;
-  right: 6vw;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 20;
-  pointer-events: none;
-  font-family: serif;
-  font-size: clamp(120px, 16vw, 220px);
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(255,42,166,0.18);
-  text-shadow:
-    0 0 60px rgba(255,42,166,0.08),
-    0 0 120px rgba(255,42,166,0.04);
-  user-select: none;
-  animation: omFloat 6s ease-in-out infinite;
-  filter: url(#om-distort);
-}
-@keyframes omFloat {
-  0%, 100% { transform: translateY(-50%) translateX(0) rotate(-1deg); opacity:.55; }
-  30%       { transform: translateY(-54%) translateX(6px) rotate(.5deg); opacity:.7; }
-  65%       { transform: translateY(-46%) translateX(-4px) rotate(1deg); opacity:.5; }
+  animation: fadeUp .7s ease forwards;
 }
 
-/* ══════════════════════════════
-   네비
-══════════════════════════════ */
-.nav {
-  position: fixed; top: 0; left: 0; right: 0;
-  z-index: 200;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 24px 36px;
-}
-.nav-logo {
-  display: block;
-  height: 36px; width: auto;
-}
-.nav-logo img { height: 100%; width: auto; display: block; }
-.nav-right { display: flex; gap: 10px; }
-.nav-btn {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px; letter-spacing: .12em;
-  color: #555; text-decoration: none;
-  border: 1px solid #1c1c1c; padding: 7px 13px;
-  border-radius: 2px;
-  transition: color .2s, border-color .2s;
-  display: inline-flex; align-items: center; gap: 6px;
-  cursor: none;
-}
-.nav-btn:hover { color: var(--pink); border-color: var(--pink); }
+.fade-up:nth-child(1) { animation-delay: .1s; }
+.fade-up:nth-child(2) { animation-delay: .25s; }
+.fade-up:nth-child(3) { animation-delay: .4s; }
 
-/* ══════════════════════════════
-   HERO — 컴팩트, 왼쪽 정렬
-══════════════════════════════ */
-.hero {
-  position: relative; z-index: 10;
-  height: 100vh;
-  display: flex; flex-direction: column;
-  justify-content: center;
-  padding: 0 52px;
-  overflow: hidden;
+/* ── 헤더 영역 ── */
+.header {
+  padding: 40px 40px 0;
 }
 
-.hero-label {
-  font-size: 9px; letter-spacing: .26em;
-  text-transform: uppercase;
-  color: var(--pink);
-  margin-bottom: 20px;
-  opacity: 0;
-}
-
-.hero-title {
-  font-family: 'Unbounded', sans-serif;
-  font-size: clamp(36px, 6.5vw, 80px);
-  font-weight: 900;
-  line-height: .9;
-  letter-spacing: -.03em;
-  color: white;
-  opacity: 0;
-  max-width: 65vw;
-}
-.hero-title .pink { color: var(--pink); }
-
-.hero-desc {
-  margin-top: 28px;
-  font-size: 10px; color: #383838;
-  letter-spacing: .1em; line-height: 2;
-  max-width: 320px;
-  opacity: 0;
-}
-
-.hero-scroll-hint {
-  position: absolute;
-  bottom: 32px; left: 52px;
-  font-size: 9px; color: #2a2a2a;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-  display: flex; align-items: center; gap: 12px;
-  opacity: 0;
-}
-.hero-scroll-hint::before {
-  content: '';
-  width: 32px; height: 1px;
-  background: #222;
-}
-
-/* ══════════════════════════════
-   WORKS — 영상 메인
-══════════════════════════════ */
-.works {
-  position: relative; z-index: 10;
-  padding-bottom: 100px;
-}
-
-/* 각 프로젝트 — 풀스크린 높이 */
-.project {
-  position: relative;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  cursor: none;
-}
-
-/* 프로젝트 배경 영상 — 각 섹션 내부 */
-.project-video-bg {
-  position: absolute; inset: 0;
-  z-index: 0;
-  overflow: hidden;
-}
-.project-video-bg video {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  filter: saturate(0.5) brightness(0.25);
-  transition: opacity 1.0s cubic-bezier(.16,1,.3,1),
-              filter 1.0s cubic-bezier(.16,1,.3,1);
-  transform: scale(1.04);
-  transition: opacity 1.0s cubic-bezier(.16,1,.3,1),
-              filter 1.0s cubic-bezier(.16,1,.3,1),
-              transform 1.2s cubic-bezier(.16,1,.3,1);
-}
-.project:hover .project-video-bg video {
-  opacity: 1;
-  filter: saturate(0.65) brightness(0.35);
-  transform: scale(1.0);
-}
-
-/* 영상 위 핑크 연기 — 각 프로젝트 */
-.project-smoke {
-  position: absolute; inset: 0; z-index: 1;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 60% 70% at 10% 50%, rgba(255,42,166,0.15) 0%, transparent 65%),
-    linear-gradient(to right, rgba(7,4,7,0.8) 0%, rgba(7,4,7,0.1) 55%, rgba(7,4,7,0.6) 100%),
-    linear-gradient(to bottom, rgba(7,4,7,0.5) 0%, transparent 30%, transparent 70%, rgba(7,4,7,0.5) 100%);
-  opacity: 0;
-  transition: opacity .9s ease;
-}
-.project:hover .project-smoke { opacity: 1; }
-
-/* 구분선 */
-.project + .project {
-  border-top: 1px solid #0e0e0e;
-}
-
-/* 프로젝트 콘텐츠 — 기본: 번호만 보임 */
-.project-content {
-  position: relative; z-index: 10;
-  padding: 0 52px;
-  width: 100%;
-  display: grid;
-  grid-template-columns: 80px 1fr;
-  align-items: center;
-  gap: 40px;
-}
-
-.project-num {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  letter-spacing: .2em;
-  color: #1e1e1e;
-  transition: color .5s ease;
-  align-self: start;
-  padding-top: 6px;
-}
-.project:hover .project-num { color: var(--pink); }
-
-.project-main { min-width: 0; }
-
-/* 타이틀 — 기본은 매우 어둡게, 호버 시 등장 */
-.project-name {
-  font-family: 'Unbounded', sans-serif;
-  font-size: clamp(40px, 7vw, 100px);
-  font-weight: 900;
-  letter-spacing: -.03em;
-  line-height: .88;
-  color: rgba(255,255,255,0.06);
-  transition: color .7s cubic-bezier(.16,1,.3,1),
-              text-shadow .7s ease;
-  white-space: nowrap;
-}
-.project:hover .project-name {
-  color: rgba(255,255,255,0.95);
-  text-shadow: 0 0 80px rgba(255,42,166,0.15);
-}
-
-/* 태그 + 설명 — 호버 시만 등장 */
-.project-meta {
-  margin-top: 16px;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity .6s ease .1s, transform .6s ease .1s;
-}
-.project:hover .project-meta {
-  opacity: 1;
-  transform: translateY(0);
-}
-.project-tag {
-  font-size: 9px; color: var(--pink);
-  letter-spacing: .18em; text-transform: uppercase;
+.title {
   margin-bottom: 10px;
 }
-.project-desc {
-  font-size: 11px; color: #555;
-  letter-spacing: .06em; line-height: 1.8;
-  max-width: 420px;
+
+.title img {
+  height: 72px;
+  width: auto;
+  display: block;
 }
 
-/* 클릭 힌트 */
-.project-click {
-  position: absolute; bottom: 36px; right: 52px;
-  font-size: 9px; color: #222;
-  letter-spacing: .18em; text-transform: uppercase;
-  opacity: 0;
-  transform: translateX(8px);
-  transition: opacity .5s ease .2s, transform .5s ease .2s, color .2s;
-  z-index: 10;
+.subtitle {
+  font-size: 11px;
+  color: #444;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 48px;
+}
+
+/* ────────────────────────────
+   비대칭 카드 레이아웃
+   왼쪽: 큰 카드 1개 (세로 2칸)
+   오른쪽: 작은 카드 3개
+──────────────────────────── */
+.works {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  grid-template-rows: auto;
+  gap: 16px;
+  padding: 0 40px;
+}
+
+/* 카드 공통 */
+.card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #111;
+  border: 1px solid #1e1e1e;
+  transition: transform .3s ease, border-color .3s ease;
   cursor: none;
 }
-.project:hover .project-click {
-  opacity: 1;
-  transform: translateX(0);
+
+.card:hover {
+  transform: translateY(-5px) scale(1.01);
+  border-color: var(--pink);
 }
 
-/* ══════════════════════════════
-   디테일 오버레이 — 클릭 시
-══════════════════════════════ */
-.detail-overlay {
-  position: fixed; inset: 0;
-  z-index: 800;
-  background: rgba(7,4,7,0);
-  pointer-events: none;
-  transition: background .55s ease;
-}
-.detail-overlay.active {
-  background: rgba(7,4,7,0.93);
-  pointer-events: all;
+/* 01번 카드: 세로로 큰 카드 */
+.card-featured {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  min-height: 580px;
 }
 
-.detail-panel {
-  position: fixed; inset: 0;
-  z-index: 900;
-  display: flex;
-  pointer-events: none;
-  opacity: 0;
-}
-.detail-panel.active {
-  pointer-events: all;
-  opacity: 1;
+/* 02, 03 카드: 오른쪽 위아래 */
+.card-sm {
+  grid-column: 2;
+  min-height: 280px;
 }
 
-/* 디테일 — 왼쪽 */
-.detail-left {
-  width: 54%; height: 100%;
-  padding: 88px 48px 60px 60px;
-  display: flex; flex-direction: column;
-  justify-content: center;
-  overflow: hidden; position: relative;
+/* 04번 카드: 하단 풀 가로 */
+.card-wide {
+  grid-column: 1 / 3;
+  min-height: 200px;
 }
 
-.detail-bg-ghost {
-  position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-  font-family: 'Unbounded', sans-serif;
-  font-size: clamp(80px, 14vw, 180px);
-  font-weight: 900; color: transparent;
-  -webkit-text-stroke: 1px rgba(255,42,166,0.04);
-  white-space: nowrap; letter-spacing: -.04em;
-  pointer-events: none; user-select: none;
-  z-index: 0;
-}
-
-.detail-eyebrow {
-  font-size: 9px; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--pink);
-  margin-bottom: 12px; position: relative; z-index: 2;
-}
-.detail-title {
-  font-family: 'Unbounded', sans-serif;
-  font-size: clamp(32px, 4.5vw, 64px);
-  font-weight: 900; line-height: .88;
-  letter-spacing: -.03em; color: white;
-  margin-bottom: 32px; position: relative; z-index: 2;
-}
-.detail-video-wrap {
-  position: relative; z-index: 2;
-  width: 100%; max-width: 520px;
-  border-radius: 4px; overflow: hidden;
-  border: 1px solid #181818; background: #050305;
-  margin-bottom: 28px;
-  box-shadow: 0 0 80px rgba(255,42,166,0.07);
-}
-.detail-video-wrap video { width: 100%; display: block; }
-
-.detail-about {
-  position: relative; z-index: 2;
-  font-size: 11px; line-height: 2;
-  color: #555; max-width: 460px;
-  border-left: 1px solid rgba(255,42,166,0.2);
-  padding-left: 16px;
-}
-
-/* 디테일 — 오른쪽 */
-.detail-right {
-  width: 46%; height: 100%;
-  padding: 88px 60px 60px 28px;
-  display: flex; flex-direction: column;
-  justify-content: center;
-  border-left: 1px solid #0d0d0d;
-  overflow-y: auto; position: relative;
-}
-
-.detail-node-label {
-  font-size: 9px; letter-spacing: .22em;
-  text-transform: uppercase; color: #222;
-  margin-bottom: 16px;
-  display: flex; align-items: center; gap: 12px;
-}
-.detail-node-label::after {
-  content: ''; flex: 1; height: 1px;
-  background: linear-gradient(to right, #181818, transparent);
-}
-.detail-node-text {
-  font-size: 11px; line-height: 1.9;
-  color: #3a3a3a; margin-bottom: 32px;
-}
-
-/* 노드 이미지 콜라주 */
-.node-collage {
-  position: relative; width: 100%; min-height: 320px;
-}
-.node-slot {
+.card-video {
   position: absolute;
-  border-radius: 3px; overflow: hidden;
-  border: 1px solid #181818; background: #080508;
-  cursor: none;
-  transition: transform .3s ease, box-shadow .3s ease, z-index 0s;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity .4s ease;
 }
-.node-slot:hover {
-  z-index: 10;
-  transform: scale(1.05) rotate(0deg) !important;
-  box-shadow: 0 0 40px rgba(255,42,166,0.12);
-}
-.node-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* 닫기 */
-.detail-close {
-  position: fixed; top: 24px; right: 32px;
-  z-index: 1000;
-  background: none; border: 1px solid #222; color: #444;
-  font-family: 'DM Mono', monospace;
-  font-size: 10px; letter-spacing: .12em;
-  padding: 8px 14px; cursor: none;
-  transition: color .2s, border-color .2s;
-  opacity: 0; pointer-events: none;
+.card:hover .card-video {
+  opacity: 1;
 }
-.detail-close.visible { opacity: 1; pointer-events: all; }
-.detail-close:hover { color: var(--pink); border-color: var(--pink); }
 
-/* ══════════════════════════════
-   Marquee
-══════════════════════════════ */
+.card-overlay {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+  background: linear-gradient(to top, rgba(0,0,0,.9) 0%, rgba(0,0,0,.1) 60%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: inherit;
+}
+
+/* wide 카드는 가로로 펼침 */
+.card-wide .card-overlay {
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: space-between;
+  background: linear-gradient(to right, rgba(0,0,0,.9) 0%, rgba(0,0,0,.2) 100%);
+}
+
+.card-wide .card-meta { flex: 1; }
+.card-wide .card-desc { max-width: 400px; text-align: right; align-self: flex-end; }
+
+.card-number {
+  font-size: 10px;
+  color: #444;
+  margin-bottom: 8px;
+  letter-spacing: 0.14em;
+}
+
+.card-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  color: var(--pink);
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.card-featured .card-title {
+  font-size: 52px;
+}
+
+.card-desc {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #777;
+}
+
+/* ── 하단 marquee ── */
 .marquee-wrap {
-  position: relative; z-index: 10;
-  width: 100%; overflow: hidden;
-  border-top: 1px solid #0d0d0d;
-  padding: 13px 0;
+  width: 100%;
+  overflow: hidden;
+  border-top: 1px solid #1a1a1a;
+  border-bottom: 1px solid #1a1a1a;
+  padding: 14px 0;
+  margin-top: 40px;
 }
+
 .marquee-track {
-  display: flex; white-space: nowrap;
-  animation: marquee 22s linear infinite;
+  display: flex;
+  white-space: nowrap;
+  animation: marquee 18s linear infinite;
 }
+
 .marquee-track span {
-  font-size: 10px; letter-spacing: .18em;
-  text-transform: uppercase; color: #1a1a1a;
-  padding: 0 32px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #333;
+  padding: 0 40px;
 }
-.marquee-track span em { color: var(--pink); font-style: normal; }
+
+.marquee-track span em {
+  color: var(--pink);
+  font-style: normal;
+}
+
 @keyframes marquee {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
 
-/* ══════════════════════════════
-   라이트박스
-══════════════════════════════ */
-.lightbox {
-  position: fixed; inset: 0; z-index: 9999;
-  background: rgba(0,0,0,.95);
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; pointer-events: none;
-  transition: opacity .3s;
-}
-.lightbox.active { opacity: 1; pointer-events: all; }
-.lightbox img {
-  max-width: 88vw; max-height: 88vh;
-  border-radius: 3px; border: 1px solid #1e1e1e; object-fit: contain;
-}
-.lightbox-close {
-  position: absolute; top: 24px; right: 32px;
-  background: none; border: 1px solid #333; color: #555;
-  font-family: 'DM Mono', monospace; font-size: 10px;
-  padding: 6px 12px; letter-spacing: .12em; cursor: none;
-  transition: color .2s, border-color .2s;
-}
-.lightbox-close:hover { color: var(--pink); border-color: var(--pink); }
-
-/* ══════════════════════════════
-   반응형
-══════════════════════════════ */
-@media (max-width: 768px) {
-  .hero { padding: 0 24px; }
-  .hero-title { max-width: 90vw; }
-  .float-om { display: none; }
-  .project-content { padding: 0 24px; grid-template-columns: 48px 1fr; gap: 20px; }
-  .project-name { font-size: clamp(28px, 9vw, 52px); white-space: normal; }
-  .detail-panel { flex-direction: column; }
-  .detail-left { width: 100%; height: auto; padding: 88px 24px 24px; }
-  .detail-right { width: 100%; height: auto; padding: 24px; border-left: none; border-top: 1px solid #0d0d0d; }
+/* ────────────────────────────
+   블러 배경
+──────────────────────────── */
+.overlay-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 0, 3, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .4s ease;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .grain, .pink-atm { animation: none; }
-  .float-om { animation: none; }
+.overlay-bg.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ────────────────────────────
+   사이드 패널
+──────────────────────────── */
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 500px;
+  max-width: 92vw;
+  height: 100vh;
+  background: rgba(8, 2, 5, 0.85);
+  border-left: 1px solid var(--pink);
+  z-index: 200;
+  transform: translateX(100%);
+  transition: transform .45s cubic-bezier(.16,1,.3,1);
+  overflow-y: auto;
+  padding: 48px 32px 60px;
+}
+
+.panel.active {
+  transform: translateX(0);
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 35%;
+  background: linear-gradient(to bottom, var(--pink), transparent);
+}
+
+.panel-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: 1px solid #222;
+  color: #555;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  padding: 6px 12px;
+  cursor: none;
+  letter-spacing: 0.12em;
+  transition: border-color .2s, color .2s;
+}
+
+.panel-close:hover {
+  border-color: var(--pink);
+  color: var(--pink);
+}
+
+.panel-number {
+  font-size: 11px;
+  color: #444;
+  letter-spacing: 0.14em;
+  margin-bottom: 8px;
+}
+
+.panel-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 56px;
+  color: var(--pink);
+  line-height: 1;
+  margin-bottom: 24px;
+}
+
+.panel-video-wrap {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #1e1e1e;
+  background: #060606;
+  margin-bottom: 28px;
+}
+
+.panel-video-wrap video {
+  width: 100%;
+  display: block;
+}
+
+.panel-section { margin-bottom: 24px; }
+
+.panel-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pink);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #181818;
+}
+
+.panel-text {
+  font-size: 12px;
+  line-height: 2;
+  color: #999;
+}
+
+.screenshots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.screenshot-slot {
+  aspect-ratio: 16/9;
+  border-radius: 8px;
+  border: 1px dashed #222;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2a2a2a;
+  font-size: 10px;
+  letter-spacing: 0.1em;
 }
 
 </style>
 </head>
 <body>
 
-<!-- SVG 필터 -->
-<svg class="svg-filters" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <!-- 커서 왜곡용 -->
-    <filter id="cursor-distort" x="-50%" y="-50%" width="200%" height="200%">
-      <feTurbulence id="cursorTurb" type="turbulence"
-        baseFrequency="0.04 0.06" numOctaves="2" seed="3" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise"
-        scale="6" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-    <!-- 옴 기호 왜곡 -->
-    <filter id="om-distort" x="-20%" y="-20%" width="140%" height="140%">
-      <feTurbulence id="omTurb" type="fractalNoise"
-        baseFrequency="0.012 0.018" numOctaves="3" seed="9" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise"
-        scale="12" xChannelSelector="R" yChannelSelector="G" result="disp"/>
-      <feGaussianBlur in="disp" stdDeviation="1.5"/>
-    </filter>
-    <!-- reveal용 -->
-    <filter id="smoke-reveal" x="-15%" y="-15%" width="130%" height="130%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.016 0.022"
-        numOctaves="3" seed="7" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise"
-        scale="16" xChannelSelector="R" yChannelSelector="G" result="disp"/>
-      <feGaussianBlur in="disp" stdDeviation="4" result="blur"/>
-      <feComposite in="blur" in2="SourceGraphic" operator="in"/>
-    </filter>
-  </defs>
-</svg>
+<!-- 커스텀 커서 -->
+<div class="cursor" id="cursor"></div>
 
-<!-- 분위기 -->
-<div class="grain"></div>
-<div class="pink-atm"></div>
-
-<!-- 부유하는 옴 -->
-<div class="float-om" id="floatOm">ॐ</div>
-
-<!-- 커서 -->
-<div class="cursor-ring" id="cursorRing">
-  <svg viewBox="-10 -10 120 120" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <filter id="ring-blur">
-        <feGaussianBlur stdDeviation="0.8"/>
-      </filter>
-    </defs>
-    <!-- 왜곡 원 -->
-    <circle id="cursorCircle" cx="50" cy="50" r="38"
-      fill="none" stroke="#ff2aa6" stroke-width="1"
-      opacity="0.7"
-      filter="url(#cursor-distort)"/>
-    <!-- 중심점 -->
-    <circle cx="50" cy="50" r="2" fill="#ff2aa6" opacity="0.9"/>
-    <!-- 핑크 글로우 -->
-    <circle cx="50" cy="50" r="38"
-      fill="none" stroke="rgba(255,42,166,0.15)" stroke-width="8"
-      filter="url(#ring-blur)"/>
-  </svg>
+<!-- 헤더 -->
+<div class="header">
+  <h1 class="title fade-up"><img src="logo.png" alt="NOPAAIIN"></h1>
+  <p class="subtitle fade-up">Interactive experiments · Visual systems · Real-time media</p>
 </div>
 
-<!-- 네비 -->
-<nav class="nav">
-  <a href="index.html" class="nav-logo">
-    <img src="logo.png" alt="NOPAAIIN" onerror="this.parentElement.innerHTML='<span style=\'font-family:Unbounded,sans-serif;font-size:11px;font-weight:700;letter-spacing:.2em;color:white\'>NOPAAIIN</span>'">
-  </a>
-  <div class="nav-right">
-    <a href="about.html" class="nav-btn">About</a>
-    <a href="https://instagram.com/nopaaiin" target="_blank" class="nav-btn">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-        <rect x="2" y="2" width="20" height="20" rx="5"/>
-        <circle cx="12" cy="12" r="4"/>
-        <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
-      </svg>
-      @nopaaiin
-    </a>
-  </div>
-</nav>
+<!-- 비대칭 카드 그리드 -->
+<section class="works fade-up">
 
-<!-- HERO -->
-<section class="hero" id="hero">
-  <span class="hero-label" id="heroLabel">— Visual Systems · Real-time Media · 2026</span>
-  <h1 class="hero-title" id="heroTitle">
-    INTERACTIVE<br>
-    EXPERIMENTS<br>
-    <span class="pink">&amp; REAL-TIME</span><br>
-    VISUAL
-  </h1>
-  <p class="hero-desc" id="heroDesc">
-    TouchDesigner · Audio Reactive<br>
-    Particle Systems · Generative Media
-  </p>
-  <div class="hero-scroll-hint" id="heroScroll">Scroll</div>
-</section>
-
-<!-- WORKS -->
-<section class="works">
-
-  <!-- 01 Audio Reactive -->
-  <div class="project" data-project="audio">
-    <div class="project-video-bg">
-      <video muted loop playsinline>
-        <source src="audio_reactive.mov" type="video/mp4">
-      </video>
+  <!-- 01 — 큰 카드 -->
+  <div class="card card-featured" data-project="audio">
+    <video class="card-video" muted loop playsinline>
+      <source src="audio_reactive.mov" type="video/mp4">
+    </video>
+    <div class="card-overlay">
+      <div class="card-number">01 / 04</div>
+      <h2 class="card-title">Audio Reactive</h2>
+      <p class="card-desc">Real-time visual driven by kick frequency.</p>
     </div>
-    <div class="project-smoke"></div>
-    <div class="project-content">
-      <span class="project-num">01</span>
-      <div class="project-main">
-        <div class="project-name">Audio<br>Reactive</div>
-        <div class="project-meta">
-          <div class="project-tag">TouchDesigner · Real-time · 2026</div>
-          <div class="project-desc">Real-time visual driven by kick frequency.</div>
-        </div>
-      </div>
-    </div>
-    <div class="project-click">↗ View Project</div>
   </div>
 
-  <!-- 02 Scanner -->
-  <div class="project" data-project="scanner">
-    <div class="project-video-bg">
-      <video muted loop playsinline>
-        <source src="scanner.mov" type="video/mp4">
-      </video>
+  <!-- 02 — 오른쪽 위 -->
+  <div class="card card-sm" data-project="scanner">
+    <video class="card-video" muted loop playsinline>
+      <source src="scanner.mov" type="video/mp4">
+    </video>
+    <div class="card-overlay">
+      <div class="card-number">02 / 04</div>
+      <h2 class="card-title">Scanner</h2>
+      <p class="card-desc">Particle scan via POP node.</p>
     </div>
-    <div class="project-smoke"></div>
-    <div class="project-content">
-      <span class="project-num">02</span>
-      <div class="project-main">
-        <div class="project-name">Scanner</div>
-        <div class="project-meta">
-          <div class="project-tag">TouchDesigner · Particle · 2026</div>
-          <div class="project-desc">Particle scan via POP node.</div>
-        </div>
-      </div>
-    </div>
-    <div class="project-click">↗ View Project</div>
   </div>
 
-  <!-- 03 Rage Beat -->
-  <div class="project" data-project="ragebeat">
-    <div class="project-video-bg">
-      <video muted loop playsinline>
-        <source src="ragebeat.mov" type="video/mp4">
-      </video>
+  <!-- 03 — 오른쪽 아래 -->
+  <div class="card card-sm" data-project="ragebeat">
+    <video class="card-video" muted loop playsinline>
+      <source src="ragebeat.mov" type="video/mp4">
+    </video>
+    <div class="card-overlay">
+      <div class="card-number">03 / 04</div>
+      <h2 class="card-title">Rage Beat</h2>
+      <p class="card-desc">Beat visualized with Noise TOP.</p>
     </div>
-    <div class="project-smoke"></div>
-    <div class="project-content">
-      <span class="project-num">03</span>
-      <div class="project-main">
-        <div class="project-name">Rage Beat</div>
-        <div class="project-meta">
-          <div class="project-tag">TouchDesigner · Noise TOP · 2026</div>
-          <div class="project-desc">Beat visualized with Noise TOP.</div>
-        </div>
-      </div>
-    </div>
-    <div class="project-click">↗ View Project</div>
   </div>
 
-  <!-- 04 Keyboard -->
-  <div class="project" data-project="keyboard">
-    <div class="project-video-bg">
-      <video muted loop playsinline>
-        <source src="keyboardreactive.mov" type="video/mp4">
-      </video>
-    </div>
-    <div class="project-smoke"></div>
-    <div class="project-content">
-      <span class="project-num">04</span>
-      <div class="project-main">
-        <div class="project-name">Keyboard<br>Reactive</div>
-        <div class="project-meta">
-          <div class="project-tag">TouchDesigner · Interactive · 2026</div>
-          <div class="project-desc">Grid visual system controlled by keyboard.</div>
-        </div>
+  <!-- 04 — 하단 와이드 -->
+  <div class="card card-wide" data-project="keyboard">
+    <video class="card-video" muted loop playsinline>
+      <source src="keyboardreactive.mov" type="video/mp4">
+    </video>
+    <div class="card-overlay">
+      <div class="card-meta">
+        <div class="card-number">04 / 04</div>
+        <h2 class="card-title">Keyboard Reactive</h2>
       </div>
+      <p class="card-desc">Grid visual system controlled by keyboard input.</p>
     </div>
-    <div class="project-click">↗ View Project</div>
   </div>
 
 </section>
@@ -756,305 +460,145 @@ body {
 <!-- Marquee -->
 <div class="marquee-wrap">
   <div class="marquee-track">
-    <span>NOPAAIIN</span><span><em>·</em></span>
-    <span>TOUCHDESIGNER</span><span><em>·</em></span>
-    <span>REALTIME VISUAL</span><span><em>·</em></span>
-    <span>AUDIO REACTIVE</span><span><em>·</em></span>
-    <span>INTERACTIVE MEDIA</span><span><em>·</em></span>
-    <span>2026</span><span><em>·</em></span>
-    <span>NOPAAIIN</span><span><em>·</em></span>
-    <span>TOUCHDESIGNER</span><span><em>·</em></span>
-    <span>REALTIME VISUAL</span><span><em>·</em></span>
-    <span>AUDIO REACTIVE</span><span><em>·</em></span>
-    <span>INTERACTIVE MEDIA</span><span><em>·</em></span>
-    <span>2026</span><span><em>·</em></span>
+    <span>NOPAAIIN</span>
+    <span><em>·</em></span>
+    <span>TOUCHDESIGNER</span>
+    <span><em>·</em></span>
+    <span>REALTIME VISUAL</span>
+    <span><em>·</em></span>
+    <span>AUDIO REACTIVE</span>
+    <span><em>·</em></span>
+    <span>INTERACTIVE MEDIA</span>
+    <span><em>·</em></span>
+    <span>2026</span>
+    <span><em>·</em></span>
+    <!-- 반복 (seamless loop) -->
+    <span>NOPAAIIN</span>
+    <span><em>·</em></span>
+    <span>TOUCHDESIGNER</span>
+    <span><em>·</em></span>
+    <span>REALTIME VISUAL</span>
+    <span><em>·</em></span>
+    <span>AUDIO REACTIVE</span>
+    <span><em>·</em></span>
+    <span>INTERACTIVE MEDIA</span>
+    <span><em>·</em></span>
+    <span>2026</span>
+    <span><em>·</em></span>
   </div>
 </div>
 
-<!-- 디테일 오버레이 -->
-<div class="detail-overlay" id="detailOverlay"></div>
+<!-- 블러 배경 -->
+<div class="overlay-bg" id="overlayBg"></div>
 
-<!-- 디테일 패널 -->
-<div class="detail-panel" id="detailPanel">
-  <div class="detail-left">
-    <div class="detail-bg-ghost" id="detailGhost"></div>
-    <div class="detail-eyebrow" id="detailNum"></div>
-    <div class="detail-title" id="detailTitle"></div>
-    <div class="detail-video-wrap">
-      <video id="detailVideo" controls playsinline>
-        <source id="detailVideoSrc" src="" type="video/mp4">
-      </video>
+<!-- 사이드 패널 -->
+<div class="panel" id="panel">
+  <button class="panel-close" id="panelClose">✕ CLOSE</button>
+  <p class="panel-number" id="panelNumber"></p>
+  <h2 class="panel-title" id="panelTitle"></h2>
+
+  <div class="panel-video-wrap">
+    <video id="panelVideo" controls playsinline>
+      <source id="panelVideoSrc" src="" type="video/mp4">
+    </video>
+  </div>
+
+  <div class="panel-section">
+    <p class="panel-label">About</p>
+    <p class="panel-text" id="panelAbout"></p>
+  </div>
+
+  <div class="panel-section">
+    <p class="panel-label">TouchDesigner Network</p>
+    <div class="screenshots">
+      <div class="screenshot-slot">Screenshot 1</div>
+      <div class="screenshot-slot">Screenshot 2</div>
     </div>
-    <p class="detail-about" id="detailAbout"></p>
   </div>
-  <div class="detail-right">
-    <div class="detail-node-label">TouchDesigner Network</div>
-    <p class="detail-node-text" id="detailNode"></p>
-    <div class="node-collage" id="nodeCollage"></div>
-  </div>
-</div>
-
-<!-- 닫기 -->
-<button class="detail-close" id="detailClose">✕ CLOSE</button>
-
-<!-- 라이트박스 -->
-<div class="lightbox" id="lightbox">
-  <button class="lightbox-close" id="lightboxClose">✕ CLOSE</button>
-  <img id="lightboxImg" src="" alt="">
 </div>
 
 <script>
-gsap.registerPlugin(ScrollTrigger);
+// ── 커스텀 커서 ──
+const cursor = document.getElementById('cursor');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top  = e.clientY + 'px';
+});
+document.querySelectorAll('.card, .panel-close, button').forEach(el => {
+  el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
+  el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+});
 
-const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-// ══ 프로젝트 데이터 ══
+// ── 프로젝트 데이터 ──
 const projects = {
   audio: {
-    number: '01 / 04', title: 'Audio Reactive',
+    number: '01 / 04',
+    title: 'Audio Reactive',
     video: 'audio_reactive.mov',
-    about: '킥 드럼의 저음역대 주파수를 TouchDesigner 내에서 실시간으로 감지하고, 그 신호값에 따라 원형 그래픽의 크기·형태·밀도가 동적으로 변화하는 반응형 비주얼 시스템입니다.',
-    node: 'Grid SOP → Sprinkle SOP으로 파티클 포인트를 생성하고, Noise SOP으로 유기적인 변위를 만든 뒤 CHOP을 통해 오디오 신호값을 geometry의 transform에 실시간으로 연결했습니다.',
-    images: ['audio_node_1.png', 'audio_node_2.png']
+    about: '킥 드럼의 저음역대 주파수를 TouchDesigner 내에서 실시간으로 감지하고, 그 신호값에 따라 원형 그래픽의 크기·형태·밀도가 동적으로 변화하는 반응형 비주얼 시스템입니다. 사운드와 이미지 사이의 물리적 연결을 노드 기반 로직으로 구현하였으며, 음악의 에너지가 시각 언어로 번역되는 순간을 포착하는 데 초점을 맞추었습니다.'
   },
   scanner: {
-    number: '02 / 04', title: 'Scanner',
+    number: '02 / 04',
+    title: 'Scanner',
     video: 'scanner.mov',
-    about: 'TouchDesigner의 POP 노드를 활용해 무작위로 생성·소멸을 반복하는 파티클 시스템을 구축하고, 그 위를 스캐닝하듯 가로지르는 시선의 흐름을 시각화한 작업입니다.',
-    node: 'Point Generator SOP에서 생성된 파티클이 Noise CHOP의 흐름을 따라 이동하며, Feedback TOP을 통해 이전 프레임이 잔상처럼 누적됩니다.',
-    images: ['scanner_node.png']
+    about: 'TouchDesigner의 POP(Particle Operator) 노드를 활용해 무작위로 생성·소멸을 반복하는 파티클 시스템을 구축하고, 그 위를 스캐닝하듯 가로지르는 시선의 흐름을 시각화한 작업입니다. 통제되지 않는 입자들의 운동과 기계적으로 반복되는 스캔 모션 사이의 긴장감을 통해, 디지털 표면 위에서 발생하는 질서와 무질서의 공존을 탐구합니다.'
   },
   ragebeat: {
-    number: '03 / 04', title: 'Rage Beat',
+    number: '03 / 04',
+    title: 'Rage Beat',
     video: 'ragebeat.mov',
-    about: 'Rage 장르의 비트 리듬 구조를 TouchDesigner의 Noise TOP 노드를 통해 실시간 비주얼 신호로 변환한 시스템입니다.',
-    node: 'Audio File In → Audio Spectrum Analyze → Math → Filter → Select CHOP 체인으로 특정 주파수 대역의 에너지를 추출합니다. Mirror SOP 5개 직렬 연결로 대칭 구조를 만듭니다.',
-    images: ['rage_node.png']
+    about: 'Rage 장르는 Playboi Carti, Ken Carson 등으로 대표되는 하이퍼팝 계열의 음악 장르로, 과포화된 사운드와 공격적인 비트 패턴이 특징입니다. 이 작업은 그 비트의 리듬 구조를 TouchDesigner의 Noise TOP 노드를 통해 실시간 비주얼 신호로 변환한 시스템입니다. 음악의 폭력적인 에너지와 노이즈 기반 그래픽의 불규칙성이 맞닿는 지점에서, 사운드가 이미지로 붕괴되는 순간을 포착합니다.'
   },
   keyboard: {
-    number: '04 / 04', title: 'Keyboard Reactive',
+    number: '04 / 04',
+    title: 'Keyboard Reactive',
     video: 'keyboardreactive.mov',
-    about: '균일한 사각형 그리드 위에서 비정형적인 그래픽이 무작위로 생성되며, 키보드 입력에 실시간으로 반응하는 인터랙티브 비주얼 시스템입니다.',
-    node: 'Keyboard In CHOP이 키 입력을 실시간으로 감지해 신호를 발생시키고, Noise TOP → Edge TOP 체인이 그리드 위의 비정형 패턴을 생성합니다.',
-    images: ['keyboard_node.png']
+    about: '균일한 사각형 그리드 위에서 비정형적인 그래픽이 무작위로 생성되며, 루프의 주기와 활성화되는 셀의 수가 키보드 입력에 실시간으로 반응해 끊임없이 재편되는 인터랙티브 비주얼 시스템입니다. 이 작업은 단순한 시각 실험을 넘어, 키보드 하나로 그래픽의 리듬과 구성을 즉흥적으로 편집할 수 있는 새로운 퍼포먼스 인터페이스로 발전시키는 것을 목표로 합니다. 궁극적으로는 런치패드와 같은 악기의 형태로, 시각과 음악을 동시에 연주할 수 있는 새로운 도구로 확장하고자 합니다.'
   }
 };
 
-// ══ 커서 왜곡 원 ══
-const cursorRing = document.getElementById('cursorRing');
-const turbEl = document.getElementById('cursorTurb');
-let mouseX = window.innerWidth / 2;
-let mouseY = window.innerHeight / 2;
-let curX = mouseX, curY = mouseY;
-let velX = 0, velY = 0;
-let turbSeed = 0;
+const panel      = document.getElementById('panel');
+const overlayBg  = document.getElementById('overlayBg');
+const panelVideo = document.getElementById('panelVideo');
+const panelVideoSrc = document.getElementById('panelVideoSrc');
 
-document.addEventListener('mousemove', e => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
-});
+document.querySelectorAll('.card').forEach(card => {
+  const video = card.querySelector('.card-video');
 
-// 커서 부드러운 추적 + 속도에 따른 왜곡
-function animateCursor() {
-  velX = mouseX - curX;
-  velY = mouseY - curY;
-  curX += velX * 0.14;
-  curY += velY * 0.14;
-
-  const speed = Math.sqrt(velX * velX + velY * velY);
-  const distortion = Math.min(speed * 0.4, 14);
-  const freq = 0.03 + speed * 0.002;
-
-  gsap.set(cursorRing, { x: curX, y: curY, xPercent: -50, yPercent: -50 });
-
-  // 속도 따라 turbulence 강도 변화
-  if (turbEl) {
-    turbEl.setAttribute('baseFrequency', `${freq} ${freq * 1.4}`);
-    turbEl.setAttribute('scale', distortion);
-    turbSeed += 0.3;
-    if (turbSeed > 100) turbSeed = 0;
-  }
-
-  requestAnimationFrame(animateCursor);
-}
-animateCursor();
-
-// 호버 시 커서 스케일
-document.querySelectorAll('.project, button, .nav-btn, a').forEach(el => {
-  el.addEventListener('mouseenter', () => gsap.to(cursorRing, { scale: 1.6, duration: .3, ease: 'power2.out' }));
-  el.addEventListener('mouseleave', () => gsap.to(cursorRing, { scale: 1, duration: .3, ease: 'power2.out' }));
-});
-
-// ══ HERO reveal ══
-if (!reduced) {
-  const tl = gsap.timeline({ delay: .15 });
-  tl.fromTo('#heroLabel',
-    { opacity:0, y:10, filter:'blur(6px)' },
-    { opacity:1, y:0, filter:'blur(0px)', duration:1.0, ease:'power3.out', clearProps:'filter' }
-  )
-  .fromTo('#heroTitle',
-    { opacity:0, y:32, filter:'blur(22px) url(#smoke-reveal)' },
-    { opacity:1, y:0, filter:'blur(0px)', duration:1.6, ease:'power3.out', clearProps:'filter' },
-    '-=.6'
-  )
-  .fromTo('#heroDesc',
-    { opacity:0, y:14 },
-    { opacity:1, y:0, duration:.9, ease:'power2.out' },
-    '-=.8'
-  )
-  .fromTo('#heroScroll',
-    { opacity:0 },
-    { opacity:1, duration:.7, ease:'power2.out' },
-    '-=.4'
-  );
-} else {
-  gsap.set(['#heroLabel','#heroTitle','#heroDesc','#heroScroll'], { opacity:1 });
-}
-
-// ══ 프로젝트 호버 — 배경 영상 ══
-document.querySelectorAll('.project').forEach(proj => {
-  const video = proj.querySelector('video');
-
-  proj.addEventListener('mouseenter', () => {
-    if (video) { video.currentTime = 0; video.play().catch(()=>{}); }
+  card.addEventListener('mouseenter', () => {
+    if (video) { video.currentTime = 0; video.play(); }
   });
-  proj.addEventListener('mouseleave', () => {
+  card.addEventListener('mouseleave', () => {
     if (video) { video.pause(); video.currentTime = 0; }
   });
 
-  proj.addEventListener('click', () => openDetail(proj.dataset.project));
+  card.addEventListener('click', () => {
+    const key = card.dataset.project;
+    const p = projects[key];
+    if (!p) return;
+
+    document.getElementById('panelNumber').textContent = p.number;
+    document.getElementById('panelTitle').textContent  = p.title;
+    document.getElementById('panelAbout').textContent  = p.about;
+    panelVideoSrc.src = p.video;
+    panelVideo.load();
+
+    panel.classList.add('active');
+    overlayBg.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  });
 });
 
-// ══ 디테일 패널 ══
-const overlay   = document.getElementById('detailOverlay');
-const panel     = document.getElementById('detailPanel');
-const closeBtn  = document.getElementById('detailClose');
-const detailVideo = document.getElementById('detailVideo');
-const detailVideoSrc = document.getElementById('detailVideoSrc');
-let isOpen = false;
-
-const slotLayouts = [
-  { top:'0%',   left:'0%',  width:'60%', height:'47%', rotate:'-1.8deg' },
-  { top:'4%',   left:'56%', width:'44%', height:'40%', rotate:'1.4deg'  },
-  { top:'53%',  left:'6%',  width:'52%', height:'45%', rotate:'.9deg'   },
-  { top:'50%',  left:'54%', width:'42%', height:'43%', rotate:'-1.2deg' },
-];
-
-function openDetail(key) {
-  const p = projects[key];
-  if (!p || isOpen) return;
-  isOpen = true;
-
-  document.getElementById('detailGhost').textContent  = p.title.toUpperCase();
-  document.getElementById('detailNum').textContent    = p.number;
-  document.getElementById('detailTitle').textContent  = p.title;
-  document.getElementById('detailAbout').textContent  = p.about;
-  document.getElementById('detailNode').textContent   = p.node;
-  detailVideoSrc.src = p.video;
-  detailVideo.load();
-
-  // 콜라주
-  const collage = document.getElementById('nodeCollage');
-  collage.innerHTML = '';
-  p.images.forEach((src, i) => {
-    const lay = slotLayouts[i % slotLayouts.length];
-    const slot = document.createElement('div');
-    slot.className = 'node-slot';
-    Object.assign(slot.style, {
-      top: lay.top, left: lay.left,
-      width: lay.width, height: lay.height,
-      transform: `rotate(${lay.rotate})`,
-      zIndex: i + 1
-    });
-    const img = document.createElement('img');
-    img.src = src; img.alt = p.title;
-    img.addEventListener('click', () => openLightbox(src));
-    slot.appendChild(img);
-    collage.appendChild(slot);
-  });
-
-  overlay.classList.add('active');
-  closeBtn.classList.add('visible');
-  panel.classList.add('active');
-  document.body.style.overflow = 'hidden';
-
-  if (!reduced) {
-    gsap.fromTo('.detail-left',
-      { x:-28, opacity:0, filter:'blur(20px) url(#smoke-reveal)' },
-      { x:0, opacity:1, filter:'blur(0px)', duration:1.0, ease:'power3.out', clearProps:'filter' }
-    );
-    gsap.fromTo('.detail-right',
-      { x:24, opacity:0, filter:'blur(14px)' },
-      { x:0, opacity:1, filter:'blur(0px)', duration:.95, ease:'power3.out', delay:.1, clearProps:'filter' }
-    );
-    gsap.fromTo('.detail-title',
-      { opacity:0, y:18, filter:'blur(10px)' },
-      { opacity:1, y:0, filter:'blur(0px)', duration:.85, ease:'power2.out', delay:.22, clearProps:'filter' }
-    );
-    gsap.fromTo('.detail-video-wrap',
-      { opacity:0, scale:.96 },
-      { opacity:1, scale:1, duration:.85, ease:'power2.out', delay:.3 }
-    );
-    gsap.fromTo('.detail-about',
-      { opacity:0, y:12 },
-      { opacity:1, y:0, duration:.75, ease:'power2.out', delay:.4 }
-    );
-    gsap.fromTo('.node-slot',
-      { opacity:0, scale:.9, filter:'blur(8px)' },
-      { opacity:1, scale:1, filter:'blur(0px)',
-        duration:.75, ease:'power2.out', stagger:.08, delay:.28, clearProps:'filter' }
-    );
-  }
-}
-
-function closeDetail() {
-  if (!isOpen) return;
-  isOpen = false;
-
-  if (!reduced) {
-    gsap.to(['.detail-left', '.detail-right'], {
-      opacity:0, filter:'blur(10px)', duration:.4, ease:'power2.in',
-      onComplete: finishClose
-    });
-  } else {
-    finishClose();
-  }
-}
-
-function finishClose() {
+function closePanel() {
   panel.classList.remove('active');
-  overlay.classList.remove('active');
-  closeBtn.classList.remove('visible');
+  overlayBg.classList.remove('active');
   document.body.style.overflow = '';
-  detailVideo.pause();
-  gsap.set(['.detail-left','.detail-right'], { clearProps:'all' });
+  panelVideo.pause();
 }
 
-closeBtn.addEventListener('click', closeDetail);
-overlay.addEventListener('click', closeDetail);
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeDetail(); closeLightbox(); }
-});
-
-// ══ 라이트박스 ══
-const lightbox    = document.getElementById('lightbox');
-const lightboxImg = document.getElementById('lightboxImg');
-function openLightbox(src) { lightboxImg.src = src; lightbox.classList.add('active'); }
-function closeLightbox() { lightbox.classList.remove('active'); lightboxImg.src = ''; }
-document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
-lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
-
-// ══ 옴 기호 마우스 반응 ══
-const omEl = document.getElementById('floatOm');
-if (omEl) {
-  document.addEventListener('mousemove', e => {
-    const cx = window.innerWidth * 0.85;
-    const cy = window.innerHeight * 0.5;
-    const dx = (e.clientX - cx) * 0.012;
-    const dy = (e.clientY - cy) * 0.008;
-    gsap.to(omEl, { x: dx, y: dy, duration: 1.8, ease: 'power2.out' });
-  });
-}
+document.getElementById('panelClose').addEventListener('click', closePanel);
+overlayBg.addEventListener('click', closePanel);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 </script>
 
 </body>
