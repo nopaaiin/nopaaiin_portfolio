@@ -4,159 +4,414 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NOPAAIIN</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
-body{
-  background:#050505;
-  color:white;
-  font-family:Arial, sans-serif;
-  padding:40px;
+
+:root {
+  --pink: #ff2aa6;
+  --bg: #050505;
 }
-.title{
-  font-size:64px;
-  font-weight:900;
-  color:#ff2aa6;
-  margin-bottom:14px;
+
+body {
+  background: var(--bg);
+  color: white;
+  font-family: 'Space Mono', monospace;
+  padding: 40px;
+  overflow-x: hidden;
 }
-.subtitle{
-  font-size:20px;
-  color:#bdbdbd;
-  margin-bottom:50px;
+
+.title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 80px;
+  color: var(--pink);
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+  line-height: 1;
 }
-.works{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:28px;
+
+.subtitle {
+  font-size: 11px;
+  color: #555;
+  margin-bottom: 48px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
-.card{
-  position:relative;
-  display:block;
-  min-height:320px;
-  border-radius:24px;
-  overflow:hidden;
-  background:#1b1b1b;
-  border:1px solid #3a3a3a;
-  text-decoration:none;
-  transition:transform .35s ease,border-color .35s ease;
-  cursor:pointer;
+
+/* ── 카드 그리드 ── */
+.works {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
 }
-.card:hover{
-  transform:translateY(-8px) scale(1.01);
-  border-color:#ff2aa6;
+
+.card {
+  position: relative;
+  display: block;
+  min-height: 300px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  text-decoration: none;
+  transition: transform .3s ease, border-color .3s ease;
+  cursor: pointer;
 }
-.card-video{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  opacity:0;
-  transition:opacity .35s ease;
+
+.card:hover {
+  transform: translateY(-6px) scale(1.01);
+  border-color: var(--pink);
 }
-.card:hover .card-video{
-  opacity:1;
+
+.card-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity .35s ease;
 }
-.card-overlay{
-  position:relative;
-  z-index:2;
-  height:100%;
-  padding:28px;
-  background:linear-gradient(to top,rgba(0,0,0,.75),rgba(0,0,0,.25));
+
+.card:hover .card-video {
+  opacity: 1;
 }
-.card-number{
-  font-size:14px;
-  color:#b5b5b5;
-  margin-bottom:20px;
+
+.card-overlay {
+  position: relative;
+  z-index: 2;
+  min-height: 300px;
+  padding: 24px;
+  background: linear-gradient(to top, rgba(0,0,0,.85), rgba(0,0,0,.15));
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
-.card-title{
-  font-size:30px;
-  font-weight:800;
-  color:#ff2aa6;
-  margin-bottom:14px;
+
+.card-number {
+  font-size: 11px;
+  color: #555;
+  margin-bottom: 10px;
+  letter-spacing: 0.12em;
 }
-.card-desc{
-  font-size:16px;
-  line-height:1.6;
-  color:#e7e7e7;
-  max-width:90%;
+
+.card-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px;
+  color: var(--pink);
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
 }
+
+.card-desc {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #999;
+}
+
+/* ────────────────────────────
+   블러 배경
+──────────────────────────── */
+.overlay-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 0, 3, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .4s ease;
+}
+
+.overlay-bg.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ────────────────────────────
+   사이드 패널
+──────────────────────────── */
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 500px;
+  max-width: 92vw;
+  height: 100vh;
+  background: rgba(10, 3, 7, 0.75);
+  border-left: 1px solid var(--pink);
+  z-index: 200;
+  transform: translateX(100%);
+  transition: transform .45s cubic-bezier(.16,1,.3,1);
+  overflow-y: auto;
+  padding: 48px 32px 60px;
+}
+
+.panel.active {
+  transform: translateX(0);
+}
+
+/* 왼쪽 핑크 라인 */
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 40%;
+  background: linear-gradient(to bottom, var(--pink), transparent);
+}
+
+.panel-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: 1px solid #2a2a2a;
+  color: #666;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  padding: 6px 12px;
+  cursor: pointer;
+  letter-spacing: 0.12em;
+  transition: border-color .2s, color .2s;
+}
+
+.panel-close:hover {
+  border-color: var(--pink);
+  color: var(--pink);
+}
+
+.panel-number {
+  font-size: 11px;
+  color: #444;
+  letter-spacing: 0.14em;
+  margin-bottom: 8px;
+}
+
+.panel-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 56px;
+  color: var(--pink);
+  line-height: 1;
+  margin-bottom: 24px;
+  letter-spacing: 0.03em;
+}
+
+.panel-video-wrap {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #1e1e1e;
+  background: #060606;
+  margin-bottom: 28px;
+}
+
+.panel-video-wrap video {
+  width: 100%;
+  display: block;
+}
+
+.panel-section {
+  margin-bottom: 24px;
+}
+
+.panel-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pink);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #181818;
+}
+
+.panel-text {
+  font-size: 12px;
+  line-height: 2;
+  color: #aaa;
+}
+
+.screenshots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.screenshot-slot {
+  aspect-ratio: 16/9;
+  border-radius: 8px;
+  border: 1px dashed #222;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2a2a2a;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
 </style>
 </head>
 <body>
 
 <h1 class="title">NOPAAIIN</h1>
-<p class="subtitle">Interactive experiments, visual systems, and real-time media works.</p>
+<p class="subtitle">Interactive experiments · Visual systems · Real-time media</p>
 
 <section class="works">
 
-  <!-- 01 Audio Reactive -->
-  <a href="audio.html" class="card">
+  <div class="card" data-project="audio">
     <video class="card-video" muted loop playsinline>
       <source src="audio_reactive.mov" type="video/mp4">
     </video>
     <div class="card-overlay">
-      <div class="card-number">01</div>
+      <div class="card-number">01 / 04</div>
       <h2 class="card-title">Audio Reactive</h2>
-      <p class="card-desc">A real-time visual experiment that reacts to sound and transforms rhythm into motion and light.</p>
+      <p class="card-desc">Real-time visual driven by kick frequency.</p>
     </div>
-  </a>
+  </div>
 
-  <!-- 02 Scanner -->
-  <a href="scanner.html" class="card">
+  <div class="card" data-project="scanner">
     <video class="card-video" muted loop playsinline>
       <source src="scanner.mov" type="video/mp4">
     </video>
     <div class="card-overlay">
-      <div class="card-number">02</div>
+      <div class="card-number">02 / 04</div>
       <h2 class="card-title">Scanner</h2>
-      <p class="card-desc">A scan-based visual composition exploring distortion and digital surface.</p>
+      <p class="card-desc">Particle scan composition via POP node.</p>
     </div>
-  </a>
+  </div>
 
-  <!-- 03 Rage Beat -->
-  <a href="ragebeat.html" class="card">
+  <div class="card" data-project="ragebeat">
     <video class="card-video" muted loop playsinline>
       <source src="ragebeat.mov" type="video/mp4">
     </video>
     <div class="card-overlay">
-      <div class="card-number">03</div>
+      <div class="card-number">03 / 04</div>
       <h2 class="card-title">Rage Beat</h2>
-      <p class="card-desc">Audio driven realtime visual system.</p>
+      <p class="card-desc">Rage genre beat visualized with Noise TOP.</p>
     </div>
-  </a>
+  </div>
 
-  <!-- 04 Keyboard Reactive -->
-  <a href="keyboard.html" class="card">
+  <div class="card" data-project="keyboard">
     <video class="card-video" muted loop playsinline>
       <source src="keyboardreactive.mov" type="video/mp4">
     </video>
     <div class="card-overlay">
-      <div class="card-number">04</div>
+      <div class="card-number">04 / 04</div>
       <h2 class="card-title">Keyboard Reactive</h2>
-      <p class="card-desc">Keyboard input based interactive visual.</p>
+      <p class="card-desc">Grid visual system controlled by keyboard input.</p>
     </div>
-  </a>
+  </div>
 
 </section>
 
+<!-- 블러 배경 -->
+<div class="overlay-bg" id="overlayBg"></div>
+
+<!-- 사이드 패널 -->
+<div class="panel" id="panel">
+  <button class="panel-close" id="panelClose">✕ CLOSE</button>
+  <p class="panel-number" id="panelNumber"></p>
+  <h2 class="panel-title" id="panelTitle"></h2>
+
+  <div class="panel-video-wrap">
+    <video id="panelVideo" controls playsinline>
+      <source id="panelVideoSrc" src="" type="video/mp4">
+    </video>
+  </div>
+
+  <div class="panel-section">
+    <p class="panel-label">About</p>
+    <p class="panel-text" id="panelAbout"></p>
+  </div>
+
+  <div class="panel-section">
+    <p class="panel-label">TouchDesigner Network</p>
+    <div class="screenshots">
+      <div class="screenshot-slot">Screenshot 1</div>
+      <div class="screenshot-slot">Screenshot 2</div>
+    </div>
+  </div>
+</div>
+
 <script>
-const cards = document.querySelectorAll('.card');
-cards.forEach(card => {
-  const video = card.querySelector('video');
-  if (!video) return;
+const projects = {
+  audio: {
+    number: '01 / 04',
+    title: 'Audio Reactive',
+    video: 'audio_reactive.mov',
+    about: '킥 드럼의 저음역대 주파수를 TouchDesigner 내에서 실시간으로 감지하고, 그 신호값에 따라 원형 그래픽의 크기·형태·밀도가 동적으로 변화하는 반응형 비주얼 시스템입니다. 사운드와 이미지 사이의 물리적 연결을 노드 기반 로직으로 구현하였으며, 음악의 에너지가 시각 언어로 번역되는 순간을 포착하는 데 초점을 맞추었습니다.'
+  },
+  scanner: {
+    number: '02 / 04',
+    title: 'Scanner',
+    video: 'scanner.mov',
+    about: 'TouchDesigner의 POP(Particle Operator) 노드를 활용해 무작위로 생성·소멸을 반복하는 파티클 시스템을 구축하고, 그 위를 스캐닝하듯 가로지르는 시선의 흐름을 시각화한 작업입니다. 통제되지 않는 입자들의 운동과 기계적으로 반복되는 스캔 모션 사이의 긴장감을 통해, 디지털 표면 위에서 발생하는 질서와 무질서의 공존을 탐구합니다.'
+  },
+  ragebeat: {
+    number: '03 / 04',
+    title: 'Rage Beat',
+    video: 'ragebeat.mov',
+    about: 'Rage 장르는 Playboi Carti, Ken Carson 등으로 대표되는 하이퍼팝 계열의 음악 장르로, 과포화된 사운드와 공격적인 비트 패턴이 특징입니다. 이 작업은 그 비트의 리듬 구조를 TouchDesigner의 Noise TOP 노드를 통해 실시간 비주얼 신호로 변환한 시스템입니다. 음악의 폭력적인 에너지와 노이즈 기반 그래픽의 불규칙성이 맞닿는 지점에서, 사운드가 이미지로 붕괴되는 순간을 포착합니다.'
+  },
+  keyboard: {
+    number: '04 / 04',
+    title: 'Keyboard Reactive',
+    video: 'keyboardreactive.mov',
+    about: '균일한 사각형 그리드 위에서 비정형적인 그래픽이 무작위로 생성되며, 루프의 주기와 활성화되는 셀의 수가 키보드 입력에 실시간으로 반응해 끊임없이 재편되는 인터랙티브 비주얼 시스템입니다. 이 작업은 단순한 시각 실험을 넘어, 키보드 하나로 그래픽의 리듬과 구성을 즉흥적으로 편집할 수 있는 새로운 퍼포먼스 인터페이스로 발전시키는 것을 목표로 합니다. 궁극적으로는 런치패드와 같은 악기의 형태로, 시각과 음악을 동시에 연주할 수 있는 새로운 도구로 확장하고자 합니다.'
+  }
+};
+
+const panel = document.getElementById('panel');
+const overlayBg = document.getElementById('overlayBg');
+const panelVideo = document.getElementById('panelVideo');
+const panelVideoSrc = document.getElementById('panelVideoSrc');
+
+document.querySelectorAll('.card').forEach(card => {
+  const video = card.querySelector('.card-video');
+
   card.addEventListener('mouseenter', () => {
-    video.currentTime = 0;
-    video.play();
+    if (video) { video.currentTime = 0; video.play(); }
   });
   card.addEventListener('mouseleave', () => {
-    video.pause();
-    video.currentTime = 0;
+    if (video) { video.pause(); video.currentTime = 0; }
+  });
+
+  card.addEventListener('click', () => {
+    const key = card.dataset.project;
+    const p = projects[key];
+    if (!p) return;
+
+    document.getElementById('panelNumber').textContent = p.number;
+    document.getElementById('panelTitle').textContent = p.title;
+    document.getElementById('panelAbout').textContent = p.about;
+    panelVideoSrc.src = p.video;
+    panelVideo.load();
+
+    panel.classList.add('active');
+    overlayBg.classList.add('active');
+    document.body.style.overflow = 'hidden';
   });
 });
+
+function closePanel() {
+  panel.classList.remove('active');
+  overlayBg.classList.remove('active');
+  document.body.style.overflow = '';
+  panelVideo.pause();
+}
+
+document.getElementById('panelClose').addEventListener('click', closePanel);
+overlayBg.addEventListener('click', closePanel);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 </script>
 
 </body>
