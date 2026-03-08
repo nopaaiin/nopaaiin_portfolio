@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NOPAAIIN</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@700;900&display=swap" rel="stylesheet">
 <style>
 
 * {
@@ -165,19 +165,17 @@ body {
     0 0 80px rgba(255,42,166,0.07);
 }
 
-/* ── 3번: 카드 타이틀 호버 — smoky pink reveal ── */
+/* ── 3번: 카드 타이틀 호버 — pink glow ── */
 .card-title {
   position: relative;
-  transition: color .4s ease, text-shadow .4s ease, letter-spacing .4s ease;
+  transition: text-shadow .4s ease, letter-spacing .4s ease;
 }
 
 .card:hover .card-title {
-  color: #fff;
-  letter-spacing: 0.07em;
   text-shadow:
-    0 0 20px rgba(255,42,166,0.6),
-    0 0 60px rgba(255,42,166,0.25),
-    0 0 100px rgba(255,42,166,0.1);
+    0 0 16px rgba(255,42,166,0.9),
+    0 0 48px rgba(255,42,166,0.4),
+    0 0 90px rgba(255,42,166,0.15);
 }
 
 /* 01 audio: 왼쪽 큰 카드 */
@@ -258,16 +256,17 @@ body {
 }
 
 .card-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 36px;
+  font-family: 'Inter', sans-serif;
+  font-size: 20px;
+  font-weight: 900;
   color: var(--pink);
   margin-bottom: 6px;
-  letter-spacing: 0.04em;
-  line-height: 1;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .card-featured .card-title {
-  font-size: 52px;
+  font-size: 28px;
 }
 
 .card-desc {
@@ -418,10 +417,12 @@ body {
 }
 
 .panel-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 56px;
+  font-family: 'Inter', sans-serif;
+  font-size: 32px;
+  font-weight: 900;
   color: var(--pink);
-  line-height: 1;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
   margin-bottom: 24px;
 }
 
