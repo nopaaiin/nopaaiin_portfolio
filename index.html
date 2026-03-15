@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOPAAIIN</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  cursor: none;
+}
+
+:root {
+  --pink: #ff2aa6;
+  --bg: #050505;
+}
+
+/* ── 커스텀 커서 (옴 문양) ── */
+.cursor {
+  position: fixed;
+  width: 36px;
+  height: 36px;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width .2s ease, height .2s ease, opacity .2s ease;
+  filter: drop-shadow(0 0 6px rgba(255, 42, 166, 0.6));
+}
+
+.cursor svg {
+  width: 100%;
+  height: 100%;
+}
+
+.cursor.grow {
+  width: 52px;
+  height: 52px;
+  opacity: 0.7;
+}
+
+body {
+  background: var(--bg);
+  color: white;
+  font-family: 'Space Mono', monospace;
+  overflow-x: hidden;
+}
+
+/* ════════════════════════════
+   ② 그레인 노이즈
+════════════════════════════ */
+.grain {
+  position: fixed;
+  inset: -50%;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.06;
+  width: 200%;
+  height: 200%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  animation: grainMove .08s steps(1) infinite;
+}
+@keyframes grainMove {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-5%, -8%); }
+  40%  { transform: translate(8%, 3%); }
+  60%  { transform: translate(-3%, 9%); }
+  80%  { transform: translate(6%, -4%); }
+  100% { transform: translate(-2%, 6%); }
+}
+
+/* ════════════════════════════
+   ③ 커서 옆 프로젝트 번호
+════════════════════════════ */
+.cursor-label {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9998;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--pink);
+  letter-spacing: 0.1em;
+  transform: translate(20px, -8px);
+  opacity: 0;
+  transition: opacity .2s ease;
+  white-space: nowrap;
+}
+.cursor-label.visible { opacity: 1; }
+
+
+
+/* ── 페이드인 애니메이션 ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-up {
+  opacity: 0;
+  animation: fadeUp .7s ease forwards;
+}
+
+.fade-up:nth-child(1) { animation-delay: .1s; }
+.fade-up:nth-child(2) { animation-delay: .25s; }
+.fade-up:nth-child(3) { animation-delay: .4s; }
+
+/* ── 헤더 영역 ── */
+.header {
+  padding: 40px 40px 0;
+}
+
+.title {
+  margin-bottom: 10px;
+}
+
+.title img {
+  height: 100px;
+  width: auto;
+  display: block;
+}
+
+.subtitle {
+  font-size: 11px;
+  color: #444;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 48px;
+}
+
+/* ────────────────────────────
+   비대칭 카드 레이아웃 (3컬럼)
+   col1: audio 큰 카드
+   col2: scanner 세로 카드
+   col3: ragebeat + keyboard 위아래
+──────────────────────────── */
+.works {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr 0.8fr 0.7fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 16px;
+  padding: 0 40px;
+}
+
+/* 05 vanishown — 세로 */
+.card-vanishown {
+  grid-column: 4;
+  grid-row: 1 / 3;
+  min-height: 600px;
+}
+
+/* 카드 공통 */
+.card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #111;
+  border: 1px solid #1e1e1e;
+  transition: transform .3s ease, border-color .3s ease;
+  cursor: none;
+}
+
+.card:hover {
+  transform: translateY(-5px) scale(1.01);
+  border-color: var(--pink);
+  box-shadow:
+    0 0 0 1px rgba(255,42,166,0.15),
+    0 8px 32px rgba(255,42,166,0.18),
+    0 0 80px rgba(255,42,166,0.07);
+}
+
+/* ── 3번: 카드 타이틀 호버 — pink glow ── */
+.card-title {
+  position: relative;
+  transition: text-shadow .4s ease, letter-spacing .4s ease;
+}
+
+.card:hover .card-title {
+  text-shadow:
+    0 0 16px rgba(255,42,166,0.9),
+    0 0 48px rgba(255,42,166,0.4),
+    0 0 90px rgba(255,42,166,0.15);
+}
+
+/* 01 audio: 왼쪽 큰 카드 */
+.card-featured {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  min-height: 600px;
+}
+
+/* 02 scanner: 세로 영상 */
+.card-scanner {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  min-height: 600px;
+}
+
+/* 03 ragebeat */
+.card-sm {
+  grid-column: 3;
+  grid-row: 1;
+  min-height: 290px;
+}
+
+/* 04 keyboard */
+.card-sm2 {
+  grid-column: 3;
+  grid-row: 2;
+  min-height: 290px;
+}
+
+/* ── 카드 썸네일 ── */
+.card-thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 1;
+  transition: opacity .4s ease;
+}
+
+.card:hover .card-thumb {
+  opacity: 0;
+}
+
+.card-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+
+.card:hover .card-video {
+  opacity: 1;
+}
+
+.card-overlay {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+  background: linear-gradient(to top, rgba(0,0,0,.9) 0%, rgba(0,0,0,.05) 60%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: inherit;
+}
+
+.card-number {
+  font-size: 10px;
+  color: #444;
+  margin-bottom: 8px;
+  letter-spacing: 0.14em;
+}
+
+.card-title {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--pink);
+  margin-bottom: 6px;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.card-featured .card-title {
+  font-size: 32px;
+}
+
+.card-desc {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #777;
+}
+
+/* ── 모바일 ── */
+@media (max-width: 768px) {
+  .header {
+    padding: 80px 20px 0;
+  }
+
+  .title img {
+    height: 64px;
+  }
+
+  .subtitle {
+    font-size: 9px;
+    margin-bottom: 24px;
+  }
+
+  .works {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: 12px;
+    padding: 0 20px;
+  }
+
+  .card-featured,
+  .card-scanner,
+  .card-sm,
+  .card-sm2 {
+    grid-column: 1;
+    grid-row: auto;
+    min-height: 240px;
+  }
+
+  .card-featured { min-height: 300px; }
+
+  .card-title { font-size: 16px; }
+  .card-featured .card-title { font-size: 22px; }
+
+  .about-btn {
+    top: auto;
+    bottom: 20px;
+    right: 20px;
+    top: 20px;
+  }
+
+  .insta-btn {
+    left: 20px;
+    bottom: 20px;
+    top: auto;
+  }
+
+  .panel {
+    width: 100vw;
+    max-width: 100vw;
+    padding: 36px 20px 40px;
+  }
+
+  .panel-title { font-size: 24px; }
+
+  .screenshots {
+    grid-template-columns: 1fr;
+  }
+
+  .marquee-wrap { margin-top: 24px; }
+}
+
+/* ── 하단 marquee ── */
+.marquee-wrap {
+  width: 100%;
+  overflow: hidden;
+  border-top: 1px solid #1a1a1a;
+  border-bottom: 1px solid #1a1a1a;
+  padding: 14px 0;
+  margin-top: 40px;
+}
+
+.marquee-track {
+  display: flex;
+  white-space: nowrap;
+  animation: marquee 18s linear infinite;
+}
+
+.marquee-track span {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #333;
+  padding: 0 40px;
+}
+
+.marquee-track span em {
+  color: var(--pink);
+  font-style: normal;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ────────────────────────────
+   블러 배경
+──────────────────────────── */
+.overlay-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 0, 3, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .4s ease;
+}
+
+.overlay-bg.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ────────────────────────────
+   사이드 패널
+──────────────────────────── */
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 500px;
+  max-width: 92vw;
+  height: 100vh;
+  background: rgba(8, 2, 5, 0.85);
+  border-left: 1px solid var(--pink);
+  z-index: 200;
+  transform: translateX(100%);
+  transition: transform .45s cubic-bezier(.16,1,.3,1);
+  overflow-y: auto;
+  padding: 0;
+  isolation: isolate;
+}
+
+/* 패널 핑크 노이즈 배경 */
+.panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  opacity: 0.04;
+  mix-blend-mode: screen;
+}
+
+/* 패널 핑크 분위기 그라디언트 */
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(255,42,166,0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 30% at 50% 100%, rgba(255,42,166,0.05) 0%, transparent 65%),
+    linear-gradient(160deg, rgba(255,42,166,0.04) 0%, transparent 50%);
+}
+
+.panel.active {
+  transform: translateX(0);
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 35%;
+  background: linear-gradient(to bottom, var(--pink), transparent);
+}
+
+.panel-close {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(5,0,3,0.8);
+  border: 1px solid #333;
+  color: #555;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  padding: 6px 12px;
+  cursor: none;
+  letter-spacing: 0.12em;
+  transition: border-color .2s, color .2s;
+  z-index: 300;
+  backdrop-filter: blur(8px);
+}
+
+.panel-close:hover {
+  border-color: var(--pink);
+  color: var(--pink);
+}
+
+.panel-number {
+  font-size: 11px;
+  color: #444;
+  letter-spacing: 0.14em;
+  margin-bottom: 8px;
+}
+
+.panel-title {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--pink);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin-bottom: 24px;
+}
+
+.panel-webgl-wrap {
+  display: none;
+  width: calc(100% + 64px);
+  margin-left: -32px;
+  height: 100vh;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #050505;
+}
+
+.panel-webgl-wrap canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.webgl-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,42,166,0.5);
+  pointer-events: none;
+  animation: pulseFade 2s ease-in-out infinite;
+}
+
+.scroll-hint {
+  position: absolute;
+  bottom: 32px;
+  right: 32px;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+  pointer-events: none;
+  animation: pulseFade 2s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+@keyframes pulseFade {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.panel-video-wrap {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #1e1e1e;
+  background: #060606;
+  margin-bottom: 28px;
+}
+
+.panel-video-wrap video {
+  width: 100%;
+  display: block;
+}
+
+.panel-section { margin-bottom: 24px; }
+
+.panel-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pink);
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: none;
+  position: relative;
+}
+
+.panel-label::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    rgba(255,42,166,0.8) 0%,
+    rgba(255,42,166,0.2) 60%,
+    transparent 100%
+  );
+  box-shadow: 0 0 6px rgba(255,42,166,0.4);
+}
+
+.panel-text {
+  font-size: 12px;
+  line-height: 2;
+  color: #999;
+}
+
+.screenshots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.screenshot-slot {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #222;
+  background: #0a0a0a;
+  cursor: none;
+}
+
+.screenshot-slot img {
+  width: 100%;
+  display: block;
+  border-radius: 8px;
+  transition: opacity .2s;
+}
+
+.screenshot-slot:hover img {
+  opacity: 0.8;
+}
+
+/* ── 라이트박스 ── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(0,0,0,0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s ease;
+  cursor: none;
+}
+
+.lightbox.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  border: 1px solid #333;
+  object-fit: contain;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 24px;
+  right: 32px;
+  background: none;
+  border: 1px solid #333;
+  color: #666;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  padding: 6px 12px;
+  letter-spacing: 0.12em;
+  cursor: none;
+  transition: color .2s, border-color .2s;
+}
+
+.lightbox-close:hover {
+  color: var(--pink);
+  border-color: var(--pink);
+}
+
+/* ── 인스타 고정 버튼 ── */
+.insta-btn {
+  position: fixed;
+  top: 28px;
+  right: 32px;
+  z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: #666;
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  border: 1px solid #222;
+  padding: 8px 14px;
+  border-radius: 2px;
+  transition: color .2s, border-color .2s;
+  cursor: none;
+}
+
+.insta-btn:hover {
+  color: var(--pink);
+  border-color: var(--pink);
+}
+
+/* ── About 버튼 ── */
+.about-btn {
+  position: fixed;
+  top: 28px;
+  right: 160px;
+  z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: #555;
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  border: 1px solid #222;
+  padding: 8px 14px;
+  border-radius: 2px;
+  transition: color .2s, border-color .2s;
+  cursor: none;
+}
+
+.about-btn:hover {
+  color: var(--pink);
+  border-color: var(--pink);
+}
+
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+
+
+<!-- ② 그레인 -->
+<div class="grain"></div>
+
+<!-- ③ 커서 라벨 -->
+<div class="cursor-label" id="cursorLabel"></div>
+
+
+
+<!-- 커스텀 커서 (옴 문양) -->
+<div class="cursor" id="cursor">
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 옴(ॐ) 문양 -->
+    <text
+      x="50" y="72"
+      text-anchor="middle"
+      font-size="72"
+      font-family="serif"
+      fill="#ff2aa6"
+    >ॐ</text>
+  </svg>
+</div>
+
+<!-- 인스타 고정 버튼 -->
+<a href="https://instagram.com/nopaaiin" target="_blank" class="insta-btn">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+    <circle cx="12" cy="12" r="4"/>
+    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+  </svg>
+  @nopaaiin
+</a>
+
+<!-- About 버튼 -->
+<a href="about.html" class="about-btn">About</a>
+
+<!-- 헤더 -->
+<div class="header">
+  <h1 class="title fade-up"><img src="logo.png" alt="NOPAAIIN"></h1>
+  <p class="subtitle fade-up">Interactive experiments · Visual systems · Real-time media</p>
+</div>
+
+<!-- 비대칭 카드 그리드 -->
+<section class="works fade-up">
+
+  <!-- 01 audio — 왼쪽 큰 카드 -->
+  <div class="card card-featured" data-project="audio">
+    <img class="card-thumb" src="thumb_audio.png" alt="">
+    <video class="card-video" muted loop playsinline>
+      <source src="audio_reactive.mov" type="video/mp4">
+    </video>
+    <div class="card-overlay">
+      <div class="card-number">01 / 04</div>
+      <h2 class="card-title">Audio Reactive</h2>
+      <p class="card-desc">Real-time visual driven by kick frequency.</p>
+    </div>
+  </div>
+
+  <!-- 02 scanner — 세로 카드 -->
+  <div class="card card-scanner" data-project="scanner">
+    <img class="card-thumb" src="thumb_scanner.png" alt="">
+    <video class="card-video" muted loop playsinline>
+      <source src="scanner.mov" type="video/mp4">
+    </video>
+    <div class="card-overlay">
+      <div class="card-number">02 / 04</div>
+      <h2 class="card-title">Scanner</h2>
+      <p class="card-desc">Particle scan via POP node.</p>
+    </div>
+  </div>
+
+  <!-- 03 ragebeat — 오른쪽 위 -->
+  <div class="card card-sm" data-project="ragebeat">
+    <img class="card-thumb" src="thumb_rage.png" alt="">
+    <video class="card-video" muted loop playsinline>
+      <source src="ragebeat.mov" type="video/mp4">
+    </video>
+    <div class="card-overlay">
+      <div class="card-number">03 / 04</div>
+      <h2 class="card-title">Rage Beat</h2>
+      <p class="card-desc">Beat visualized with Noise TOP.</p>
+    </div>
+  </div>
+
+  <!-- 04 keyboard — 오른쪽 아래 -->
+  <div class="card card-sm2" data-project="keyboard">
+    <img class="card-thumb" src="thumb_key.png" alt="">
+    <video class="card-video" muted loop playsinline>
+      <source src="keyboardreactive.mov" type="video/mp4">
+    </video>
+    <div class="card-overlay">
+      <div class="card-number">04 / 04</div>
+      <h2 class="card-title">Keyboard Reactive</h2>
+      <p class="card-desc">Grid visual system controlled by keyboard.</p>
+    </div>
+  </div>
+
+  <!-- 05 vanishown — 세로 카드 -->
+  <div class="card card-vanishown" data-project="vanishown">
+    <img class="card-thumb" src="HIPS_2.jpeg" alt="">
+    <div class="card-overlay">
+      <div class="card-number">05 / 05</div>
+      <h2 class="card-title">VANISHOWN</h2>
+      <p class="card-desc">Mixed media sculpture · 2024</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- Marquee -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span>NOPAAIIN</span>
+    <span><em>·</em></span>
+    <span>TOUCHDESIGNER</span>
+    <span><em>·</em></span>
+    <span>REALTIME VISUAL</span>
+    <span><em>·</em></span>
+    <span>AUDIO REACTIVE</span>
+    <span><em>·</em></span>
+    <span>INTERACTIVE MEDIA</span>
+    <span><em>·</em></span>
+    <span>2026</span>
+    <span><em>·</em></span>
+    <!-- 반복 (seamless loop) -->
+    <span>NOPAAIIN</span>
+    <span><em>·</em></span>
+    <span>TOUCHDESIGNER</span>
+    <span><em>·</em></span>
+    <span>REALTIME VISUAL</span>
+    <span><em>·</em></span>
+    <span>AUDIO REACTIVE</span>
+    <span><em>·</em></span>
+    <span>INTERACTIVE MEDIA</span>
+    <span><em>·</em></span>
+    <span>2026</span>
+    <span><em>·</em></span>
+  </div>
+</div>
+
+<!-- 블러 배경 -->
+<div class="overlay-bg" id="overlayBg"></div>
+
+<!-- 사이드 패널 -->
+<div class="panel" id="panel">
+  <button class="panel-close" id="panelClose">✕ CLOSE</button>
+
+  <!-- WebGL / 인터랙티브 히어로 (hasLive 프로젝트) -->
+  <div class="panel-webgl-wrap" id="panelWebglWrap">
+    <canvas id="glCanvas"></canvas>
+    <div class="webgl-hint" id="webglHint"></div>
+    <div class="scroll-hint">scroll ↓</div>
+  </div>
+
+  <!-- 콘텐츠 영역 -->
+  <div class="panel-content" id="panelContent">
+    <p class="panel-number" id="panelNumber"></p>
+    <h2 class="panel-title" id="panelTitle"></h2>
+
+    <div class="panel-video-wrap" id="panelVideoWrap">
+      <video id="panelVideo" controls playsinline>
+        <source id="panelVideoSrc" src="" type="video/mp4">
+      </video>
+    </div>
+
+    <div class="panel-section">
+      <p class="panel-label">About</p>
+      <p class="panel-text" id="panelAbout"></p>
+    </div>
+
+    <div class="panel-section" id="panelNodeSection">
+      <p class="panel-label" id="panelNodeLabel">TouchDesigner Network</p>
+      <p class="panel-text" id="panelNode" style="margin-bottom:16px;"></p>
+      <div class="screenshots" id="panelScreenshots"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 라이트박스 -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">✕ CLOSE</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<script>
+// ── 커서 라벨 ──
+const cursorLabel = document.getElementById('cursorLabel');
+
+// ── 커스텀 커서 ──
+const cursor = document.getElementById('cursor');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top  = e.clientY + 'px';
+  cursorLabel.style.left = e.clientX + 'px';
+  cursorLabel.style.top  = e.clientY + 'px';
+});
+document.querySelectorAll('.card, .panel-close, button').forEach(el => {
+  el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
+  el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+});
+
+document.querySelectorAll('.card').forEach(card => {
+  const num   = card.querySelector('.card-number');
+  const title = card.querySelector('.card-title');
+  card.addEventListener('mouseenter', () => {
+    if (num && title) {
+      cursorLabel.textContent = num.textContent + ' ' + title.textContent;
+      cursorLabel.classList.add('visible');
+    }
+  });
+  card.addEventListener('mouseleave', () => cursorLabel.classList.remove('visible'));
+});
+
+// ── 프로젝트 데이터 ──
+const projects = {
+  audio: {
+    number: '01 / 04', title: 'Audio Reactive', video: 'audio_reactive.mov',
+    about: '킥 드럼의 저음역대 주파수를 TouchDesigner 내에서 실시간으로 감지하고, 그 신호값에 따라 원형 그래픽의 크기·형태·밀도가 동적으로 변화하는 반응형 비주얼 시스템입니다.',
+    node: 'Grid SOP → Sprinkle SOP으로 파티클 포인트를 생성하고, Noise SOP으로 유기적인 변위를 만든 뒤 CHOP을 통해 오디오 신호값을 geometry의 transform에 실시간으로 연결했습니다. audioreactive CHOP이 주파수 대역별 진폭을 추출해 Sphere SOP의 스케일과 Displace SOP의 강도를 구동합니다.',
+    images: ['audio_node_1.png', 'audio_node_2.png']
+  },
+  scanner: {
+    number: '02 / 04', title: 'Scanner', video: 'scanner.mov',
+    about: 'TouchDesigner의 POP(Particle Operator) 노드를 활용해 무작위로 생성·소멸을 반복하는 파티클 시스템을 구축하고, 그 위를 스캐닝하듯 가로지르는 시선의 흐름을 시각화한 작업입니다.',
+    node: 'Point Generator SOP에서 생성된 파티클이 Noise CHOP의 흐름을 따라 이동하며, Feedback TOP을 통해 이전 프레임이 잔상처럼 누적됩니다. LFO CHOP 3개가 각각 위치·속도·밀도를 독립적으로 제어하며, Bloom TOP으로 파티클의 발광 효과를 마무리합니다.',
+    images: ['scanner_node.png']
+  },
+  ragebeat: {
+    number: '03 / 04', title: 'Rage Beat', video: 'ragebeat.mov',
+    about: 'Rage 장르는 Playboi Carti, Ken Carson 등으로 대표되는 하이퍼팝 계열의 음악 장르로, 과포화된 사운드와 공격적인 비트 패턴이 특징입니다. 이 작업은 그 비트의 리듬 구조를 TouchDesigner의 Noise TOP 노드를 통해 실시간 비주얼 신호로 변환한 시스템입니다.',
+    node: 'Audio File In → Audio Spectrum Analyze → Math → Filter → Select CHOP 체인으로 특정 주파수 대역의 에너지를 추출합니다. 추출된 값이 Tube SOP에 연결된 Twist SOP의 강도를 구동하고, Mirror SOP 5개를 직렬로 연결해 대칭 구조를 만든 뒤 RGB Key TOP으로 색상을 분리해 최종 출력합니다.',
+    images: ['rage_node.png']
+  },
+  keyboard: {
+    number: '04 / 05', title: 'Keyboard Reactive', video: 'keyboardreactive.mov',
+    about: '균일한 사각형 그리드 위에서 비정형적인 그래픽이 무작위로 생성되며, 루프의 주기와 활성화되는 셀의 수가 키보드 입력에 실시간으로 반응해 끊임없이 재편되는 인터랙티브 비주얼 시스템입니다.',
+    node: 'Keyboard In CHOP이 키 입력을 실시간으로 감지해 신호를 발생시키고, Noise TOP → Edge TOP 체인이 그리드 위의 비정형 패턴을 생성합니다. Feedback TOP으로 이전 프레임이 누적되며, Displace TOP과 Composite TOP이 각 셀의 변형과 합성을 처리합니다.',
+    images: ['keyboard_node.png'],
+    hasLive: true,
+    liveHint: 'PRESS ANY KEY'
+  },
+  vanishown: {
+    number: '05 / 05', title: 'VANISHOWN', video: '',
+    about: '연기—존재하지만 소유되지 않는 형상. 붙잡히지 않으려는 존재에게 붙인 이름들, 그 명함. 기록은 사라지는 존재를 달래는 방식이다. 머무르지 않는 결을 머무르게 하고자 한다.\n\nHIPS 정기전 DEMONSTRATION 출품작.',
+    node: '복합매체 — 금속 봉, 종이(명함), 석고. 2024.',
+    nodeLabel: '재료 및 정보',
+    images: ['HIPS_2.jpeg'],
+    hasLive: true,
+    liveHint: 'VANISHOWN — 2024'
+  }
+};
+
+// ── 패널 요소 ──
+const panel          = document.getElementById('panel');
+const overlayBg      = document.getElementById('overlayBg');
+const panelVideo     = document.getElementById('panelVideo');
+const panelVideoSrc  = document.getElementById('panelVideoSrc');
+const panelVideoWrap = document.getElementById('panelVideoWrap');
+const panelWebglWrap = document.getElementById('panelWebglWrap');
+const panelContent   = document.getElementById('panelContent');
+
+let glRAF         = null;
+let glInitialized = false;
+let runGLLoop     = () => {};
+let currentProject = '';
+
+// ── CSS: panel-content는 패딩으로 ──
+panelContent.style.cssText = 'padding: 48px 32px 60px;';
+
+// ── 카드 클릭 ──
+document.querySelectorAll('.card').forEach(card => {
+  const vid = card.querySelector('.card-video');
+  card.addEventListener('mouseenter', () => { if(vid){ vid.currentTime=0; vid.play(); } });
+  card.addEventListener('mouseleave', () => { if(vid){ vid.pause(); vid.currentTime=0; } });
+
+  card.addEventListener('click', () => {
+    const key = card.dataset.project;
+    const p   = projects[key];
+    if (!p) return;
+
+    currentProject = key;
+
+    document.getElementById('panelNumber').textContent = p.number;
+    document.getElementById('panelTitle').textContent  = p.title;
+    document.getElementById('panelAbout').textContent  = p.about;
+    document.getElementById('panelNode').textContent   = p.node;
+
+    // 노드 라벨 — vanishown은 재료로
+    const nodeLabel = document.getElementById('panelNodeLabel');
+    if (nodeLabel) nodeLabel.textContent = p.nodeLabel || 'TouchDesigner Network';
+
+    // 스크린샷 — vanishown은 1컬럼 풀사이즈
+    const shots = document.getElementById('panelScreenshots');
+    shots.innerHTML = '';
+    shots.style.gridTemplateColumns = p.images.length === 1 ? '1fr' : '1fr 1fr';
+    p.images.forEach(src => {
+      const slot = document.createElement('div');
+      slot.className = 'screenshot-slot';
+      const img = document.createElement('img');
+      img.src = src; img.alt = p.title;
+      img.addEventListener('click', () => openLightbox(src));
+      slot.appendChild(img); shots.appendChild(slot);
+    });
+
+    if (glRAF) { cancelAnimationFrame(glRAF); glRAF = null; }
+
+    if (p.hasLive) {
+      // WebGL 히어로 먼저
+      panelWebglWrap.style.display = 'block';
+      panelVideoWrap.style.display = p.video ? 'block' : 'none';
+      const hint = document.getElementById('webglHint');
+      if (hint) hint.textContent = p.liveHint || '';
+      if (key === 'vanishown') setTimeout(startDemoGL, 50);
+      else setTimeout(startWebGL, 50);
+    } else {
+      panelWebglWrap.style.display = 'none';
+      panelVideoWrap.style.display = 'block';
+      panelVideoSrc.src = p.video;
+      panelVideo.load();
+    }
+
+    panel.classList.add('active');
+    overlayBg.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    // 패널 스크롤 맨 위로
+    panel.scrollTop = 0;
+  });
+});
+
+// ── WebGL: Keyboard Reactive ──
+function startWebGL() {
+  const canvas = document.getElementById('glCanvas');
+  canvas.width  = Math.floor(panelWebglWrap.offsetWidth  * devicePixelRatio);
+  canvas.height = Math.floor(panelWebglWrap.offsetHeight * devicePixelRatio);
+
+  if (glInitialized) { if(glRAF) cancelAnimationFrame(glRAF); runGLLoop(); return; }
+  glInitialized = true;
+
+  const gl = canvas.getContext('webgl');
+  if (!gl) return;
+
+  const vert = `attribute vec2 a_pos; void main(){ gl_Position=vec4(a_pos,0.0,1.0); }`;
+  const frag = `
+    precision highp float;
+    uniform vec2  u_res; uniform float u_time,u_grid,u_keyPulse,u_keyCode;
+    float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+    float noise(vec2 p){ vec2 i=floor(p),f=fract(p),u=f*f*(3.0-2.0*f); return mix(mix(hash(i),hash(i+vec2(1,0)),u.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x),u.y); }
+    float fbm(vec2 p){ float v=0.0,a=0.5; for(int i=0;i<5;i++){ v+=a*noise(p); p=p*2.1+vec2(1.3,0.7); a*=0.5; } return v; }
+    float tile(vec2 id,vec2 uv,float t){ float s=hash(id),sp=0.5+s*2.5,ph=s*6.283,k=floor(s*4.0); if(k<1.0){float sc=pow(sin(uv.y*80.0+t*sp*3.0+ph)*0.5+0.5,8.0)*0.4;return sc*0.6+noise(uv*12.0+t*sp+id*3.7)*0.4;} else if(k<2.0){return fbm(uv*4.0+t*sp*0.3+id);} else if(k<3.0){return step(0.85,fract(uv.x*(6.0+s*8.0)+t*sp*0.5))*0.7+noise(uv*8.0+t*sp)*0.3;} else{float h=hash(floor(uv*(4.0+s*6.0))+id+floor(t*sp*2.0));return mix(h,hash(floor(uv*(4.0+s*6.0))+id+floor(t*sp*2.0)+1.0),fract(t*sp*2.0));} }
+    void main(){ vec2 uv=gl_FragCoord.xy/u_res; uv.y=1.0-uv.y; vec2 uvA=vec2(uv.x*(u_res.x/u_res.y),uv.y); vec2 tid=floor(uvA*u_grid),luv=fract(uvA*u_grid); float bx=smoothstep(0.0,0.02,luv.x)*smoothstep(1.0,0.98,luv.x),by=smoothstep(0.0,0.02,luv.y)*smoothstep(1.0,0.98,luv.y),n=tile(tid,luv,u_time),b=n*n*0.85+u_keyPulse*step(0.5,hash(tid+u_keyCode*0.01))*0.6*n+u_keyPulse*0.08*n; vec3 pink=vec3(1.0,0.165,0.651),dark=vec3(0.3,0.02,0.15),blk=vec3(0.02,0.01,0.02),col=mix(blk,mix(dark,pink,b),b); col*=mix(0.15,1.0,bx*by); col+=(1.0-bx*by)*u_keyPulse*pink*0.3; col*=max(0.0,1.0-dot(uv-0.5,uv-0.5)*1.8); gl_FragColor=vec4(col,1.0); }
+  `;
+  function mkS(t,s){ const sh=gl.createShader(t); gl.shaderSource(sh,s); gl.compileShader(sh); return sh; }
+  const prog=gl.createProgram();
+  gl.attachShader(prog,mkS(gl.VERTEX_SHADER,vert)); gl.attachShader(prog,mkS(gl.FRAGMENT_SHADER,frag));
+  gl.linkProgram(prog); gl.useProgram(prog);
+  const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  const loc=gl.getAttribLocation(prog,'a_pos'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  const uRes=gl.getUniformLocation(prog,'u_res'),uTime=gl.getUniformLocation(prog,'u_time'),uGrid=gl.getUniformLocation(prog,'u_grid'),uKP=gl.getUniformLocation(prog,'u_keyPulse'),uKC=gl.getUniformLocation(prog,'u_keyCode');
+  const presets=[4,6,8,10,12,16,20,24]; let cur=8,tgt=8,kp=0,kc=0; const t0=performance.now();
+  const hint=document.getElementById('webglHint');
+  function onKey(e){ if(e.key==='Escape') return; const idx=(e.keyCode||e.which)%presets.length; tgt=presets[idx]; kp=1.0; kc=e.keyCode||e.which; if(hint) hint.textContent='KEY: '+(e.key.toUpperCase())+' → GRID '+tgt; }
+  document.addEventListener('keydown',onKey);
+  function loop(){ gl.viewport(0,0,canvas.width,canvas.height); const t=(performance.now()-t0)*0.001; cur+=(tgt-cur)*0.08; kp*=0.92; gl.uniform2f(uRes,canvas.width,canvas.height); gl.uniform1f(uTime,t); gl.uniform1f(uGrid,cur); gl.uniform1f(uKP,kp); gl.uniform1f(uKC,kc); gl.drawArrays(gl.TRIANGLE_STRIP,0,4); glRAF=requestAnimationFrame(loop); }
+  runGLLoop=loop; loop();
+}
+
+// ── WebGL: VANISHOWN (Three.js) ──
+let demoScene=null, demoRenderer=null, demoCamera=null, demoPivot=null, demoPapers=[], demoPinkLight=null;
+
+function startDemoGL() {
+  if (glRAF) { cancelAnimationFrame(glRAF); glRAF = null; }
+
+  const canvas = document.getElementById('glCanvas');
+  const W = panelWebglWrap.offsetWidth || 500;
+  const H = panelWebglWrap.offsetHeight || window.innerHeight;
+  canvas.width  = Math.floor(W * devicePixelRatio);
+  canvas.height = Math.floor(H * devicePixelRatio);
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+
+  if (!window.THREE) return;
+  const THREE = window.THREE;
+
+  if (!demoRenderer) {
+    demoRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    demoRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    demoRenderer.shadowMap.enabled = true;
+    demoRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    demoScene = new THREE.Scene();
+    demoScene.background = new THREE.Color(0x050505);
+    demoScene.fog = new THREE.FogExp2(0x050505, 0.055);
+
+    demoCamera = new THREE.PerspectiveCamera(45, W/H, 0.1, 100);
+    demoCamera.position.set(-1.5, 3.5, 10);
+    demoCamera.lookAt(0, 3.2, 0);
+
+    demoScene.add(new THREE.AmbientLight(0xffffff, 0.3));
+    demoPinkLight = new THREE.PointLight(0xff2aa6, 1.2, 20);
+    demoPinkLight.position.set(2,6,3); demoScene.add(demoPinkLight);
+    const dl = new THREE.DirectionalLight(0xfff5ee, 0.8);
+    dl.position.set(-3,8,2); dl.castShadow=true; demoScene.add(dl);
+    demoScene.add(new THREE.PointLight(0xff2aa6, 0.3, 15)).position.set(-3,2,-3);
+
+    demoPivot = new THREE.Group(); demoScene.add(demoPivot);
+
+    // 비정형 베이스
+    const bMat = new THREE.MeshStandardMaterial({color:0xede8df,roughness:0.97,metalness:0});
+    const bGeo = new THREE.SphereGeometry(0.95,48,32);
+    const bPos = bGeo.attributes.position;
+    for(let i=0;i<bPos.count;i++){const x=bPos.getX(i),y=bPos.getY(i),z=bPos.getZ(i);const n=Math.sin(x*3.1+z*2.3)*0.13+Math.cos(y*2.7+x*1.9)*0.1+Math.sin(z*3.5+y*2.1)*0.08;bPos.setXYZ(i,x+n,y+n*0.4,z+n);}
+    bGeo.computeVertexNormals(); bGeo.scale(1.25,0.32,1.05);
+    const bMesh=new THREE.Mesh(bGeo,bMat); bMesh.position.y=0.17; bMesh.castShadow=true; demoPivot.add(bMesh);
+    [{x:.7,z:.3,sx:.52,sy:.19,sz:.4},{x:-.6,z:.38,sx:.42,sy:.16,sz:.33},{x:.22,z:-.68,sx:.47,sy:.17,sz:.36},{x:-.42,z:-.48,sx:.32,sy:.13,sz:.26},{x:.48,z:.58,sx:.28,sy:.12,sz:.22}].forEach(bd=>{
+      const g=new THREE.SphereGeometry(1,18,12);const p2=g.attributes.position;
+      for(let i=0;i<p2.count;i++){const x=p2.getX(i),y=p2.getY(i),z=p2.getZ(i);const n=Math.sin(x*4.2+z*3.1)*0.11;p2.setXYZ(i,x+n,y+n*.5,z+n);}
+      g.computeVertexNormals();g.scale(bd.sx,bd.sy,bd.sz);
+      const m=new THREE.Mesh(g,bMat);m.position.set(bd.x,.07,bd.z);m.castShadow=true;demoPivot.add(m);
+    });
+
+    // 봉
+    const rGeo=new THREE.CylinderGeometry(0.016,0.016,7,16);
+    const rMat=new THREE.MeshStandardMaterial({color:0xd0d8e0,roughness:0.1,metalness:0.92,transparent:true,opacity:0.82});
+    const rod=new THREE.Mesh(rGeo,rMat);rod.position.y=3.7;demoPivot.add(rod);
+
+    // 종이들
+    const pMat=new THREE.MeshStandardMaterial({color:0xf8f5ee,roughness:0.9,metalness:0,side:THREE.DoubleSide});
+    demoPapers=[];
+    [{y:.62,ry:.3,w:1.7,h:.26,curl:.17},{y:.82,ry:1.8,w:1.35,h:.21,curl:-.14},{y:1.08,ry:.9,w:1.55,h:.24,curl:.15},{y:1.28,ry:2.5,w:1.25,h:.2,curl:-.12},{y:1.52,ry:1.2,w:1.45,h:.23,curl:.14},{y:1.72,ry:.1,w:1.18,h:.19,curl:-.1},{y:1.98,ry:2.0,w:1.38,h:.22,curl:.13},{y:2.18,ry:1.5,w:1.08,h:.18,curl:-.11},{y:2.42,ry:.6,w:1.28,h:.2,curl:.13},{y:2.62,ry:2.8,w:.98,h:.17,curl:-.09},{y:2.88,ry:1.1,w:1.18,h:.19,curl:.12},{y:3.08,ry:.4,w:.88,h:.16,curl:-.08},{y:3.32,ry:1.7,w:1.08,h:.18,curl:.1},{y:3.52,ry:2.3,w:.88,h:.15,curl:-.08},{y:3.78,ry:.8,w:.98,h:.16,curl:.09},{y:3.98,ry:1.4,w:.78,h:.14,curl:-.07},{y:4.22,ry:2.7,w:.88,h:.15,curl:.08},{y:4.42,ry:.2,w:.68,h:.13,curl:-.06},{y:4.68,ry:1.0,w:1.25,h:.21,curl:.17},{y:4.92,ry:2.1,w:1.05,h:.18,curl:-.14},{y:5.18,ry:.5,w:.78,h:.14,curl:.1}].forEach((pd,idx)=>{
+      const seg=10;const geo=new THREE.PlaneGeometry(pd.w,pd.h,seg,1);const pos=geo.attributes.position;
+      for(let j=0;j<pos.count;j++){const x=pos.getX(j);const bend=pd.curl*Math.sin((x/pd.w)*Math.PI);const edge=0.035*Math.pow(Math.abs(x/(pd.w*.5)),3);pos.setY(j,pos.getY(j)+bend);pos.setZ(j,pos.getZ(j)+edge);}
+      geo.computeVertexNormals();
+      const mat=pMat.clone();const tone=.93+Math.random()*.07;mat.color.setRGB(tone,tone*.98,tone*.95);
+      const paper=new THREE.Mesh(geo,mat);
+      paper.position.set((Math.random()-.5)*.07,pd.y,(Math.random()-.5)*.07);
+      paper.rotation.y=pd.ry;paper.castShadow=true;
+      paper.userData={baseRY:pd.ry,baseY:pd.y,phase:Math.random()*Math.PI*2,speed:.4+Math.random()*.6,amplitude:.03+Math.random()*.05,curl:pd.curl,geo,width:pd.w};
+      demoPivot.add(paper);demoPapers.push(paper);
+    });
+
+    // 파티클
+    const pCount=60,pGeo=new THREE.BufferGeometry(),pPos=new Float32Array(pCount*3);
+    for(let i=0;i<pCount;i++){pPos[i*3]=(Math.random()-.5)*5;pPos[i*3+1]=Math.random()*7;pPos[i*3+2]=(Math.random()-.5)*4;}
+    pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+    const ptMat=new THREE.PointsMaterial({color:0xff2aa6,size:0.022,transparent:true,opacity:0.25,sizeAttenuation:true});
+    const pts=new THREE.Points(pGeo,ptMat);demoScene.add(pts);
+    demoScene.userData.particles=pts;
+  } else {
+    demoRenderer.setSize(W,H);
+    demoCamera.aspect=W/H; demoCamera.updateProjectionMatrix();
+  }
+
+  let t0=performance.now();
+  function loop(){
+    const t=(performance.now()-t0)*0.001;
+    demoPivot.rotation.y=t*0.35;
+    demoPapers.forEach(p=>{
+      const u=p.userData;
+      const fl=Math.sin(t*u.speed+u.phase)*u.amplitude;
+      p.rotation.y=u.baseRY+fl;
+      p.position.y=u.baseY+Math.sin(t*u.speed*.5+u.phase)*.007;
+      const pos=u.geo.attributes.position;
+      for(let j=0;j<pos.count;j++){const x=pos.getX(j);pos.setY(j,(u.curl+fl*.5)*Math.sin((x/u.width)*Math.PI));pos.setZ(j,.035*Math.pow(Math.abs(x/(u.width*.5)),3)+Math.sin(t*u.speed*.3+u.phase+x)*.008);}
+      pos.needsUpdate=true; u.geo.computeVertexNormals();
+    });
+    demoPinkLight.intensity=1.0+Math.sin(t*1.3)*.3;
+    demoPinkLight.position.x=2+Math.sin(t*.7)*1;
+    demoPinkLight.position.z=3+Math.cos(t*.5)*1;
+    const pp=demoScene.userData.particles.geometry.attributes.position;
+    for(let i=0;i<60;i++){pp.setY(i,pp.getY(i)+.003);if(pp.getY(i)>8)pp.setY(i,0);}
+    pp.needsUpdate=true;
+    demoRenderer.render(demoScene,demoCamera);
+    glRAF=requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+function closePanel() {
+  panel.classList.remove('active');
+  overlayBg.classList.remove('active');
+  document.body.style.overflow = '';
+  panelVideo.pause();
+  if (glRAF) { cancelAnimationFrame(glRAF); glRAF = null; }
+}
+
+// ── 라이트박스 ──
+const lightbox    = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightboxImg');
+function openLightbox(src){ lightboxImg.src=src; lightbox.classList.add('active'); }
+function closeLightbox(){ lightbox.classList.remove('active'); lightboxImg.src=''; }
+
+document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+lightbox.addEventListener('click', e => { if(e.target===lightbox) closeLightbox(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape'){ closePanel(); closeLightbox(); } });
+document.getElementById('panelClose').addEventListener('click', closePanel);
+overlayBg.addEventListener('click', closePanel);
+</script>
+</body>
+</html>
