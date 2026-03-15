@@ -517,7 +517,50 @@ body {
   display: block;
 }
 
-.webgl-hint {
+/* 연기 오버레이 */
+.smoke-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.7;
+}
+.smoke-overlay svg { width: 100%; height: 100%; }
+
+@keyframes smokeDrift1 {
+  0%   { transform: translate(0px, 0px) scale(1); opacity: 0.6; }
+  50%  { transform: translate(8px, -30px) scale(1.08); opacity: 0.4; }
+  100% { transform: translate(-5px, -60px) scale(0.9); opacity: 0; }
+}
+@keyframes smokeDrift2 {
+  0%   { transform: translate(0px, 0px) scale(1); opacity: 0.5; }
+  50%  { transform: translate(-10px, -40px) scale(1.1); opacity: 0.3; }
+  100% { transform: translate(6px, -80px) scale(0.85); opacity: 0; }
+}
+.smoke-puff { transform-origin: center bottom; }
+.s1 { animation: smokeDrift1 5s ease-in-out infinite; }
+.s2 { animation: smokeDrift2 6.5s ease-in-out infinite 0.8s; }
+.s3 { animation: smokeDrift1 7s ease-in-out infinite 1.5s; }
+.s4 { animation: smokeDrift2 5.5s ease-in-out infinite 0.3s; }
+.s5 { animation: smokeDrift1 6s ease-in-out infinite 1s; }
+
+/* 코드 스트림 */
+.code-stream {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 45%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+.code-stream canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0.55;
+}
   position: absolute;
   bottom: 32px;
   left: 50%;
@@ -878,6 +921,37 @@ body {
   <!-- WebGL / 인터랙티브 히어로 (hasLive 프로젝트) -->
   <div class="panel-webgl-wrap" id="panelWebglWrap">
     <canvas id="glCanvas"></canvas>
+
+    <!-- 연기 SVG 오버레이 -->
+    <div class="smoke-overlay" id="smokeOverlay" style="display:none">
+      <svg viewBox="0 0 400 800" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <filter id="smokeBlur">
+            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.008" numOctaves="4" seed="2" result="noise"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="30" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <radialGradient id="sg1" cx="50%" cy="80%" r="60%">
+            <stop offset="0%" stop-color="rgba(255,255,255,0.12)"/>
+            <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+          </radialGradient>
+          <radialGradient id="sg2" cx="40%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(200,180,220,0.08)"/>
+            <stop offset="100%" stop-color="rgba(200,180,220,0)"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="200" cy="650" rx="180" ry="80" fill="url(#sg1)" filter="url(#smokeBlur)" class="smoke-puff s1"/>
+        <ellipse cx="160" cy="480" rx="130" ry="110" fill="url(#sg2)" filter="url(#smokeBlur)" class="smoke-puff s2"/>
+        <ellipse cx="220" cy="320" rx="100" ry="140" fill="url(#sg1)" filter="url(#smokeBlur)" class="smoke-puff s3"/>
+        <ellipse cx="180" cy="160" rx="70" ry="100" fill="url(#sg2)" filter="url(#smokeBlur)" class="smoke-puff s4"/>
+        <ellipse cx="200" cy="60" rx="50" ry="60" fill="url(#sg1)" filter="url(#smokeBlur)" class="smoke-puff s5"/>
+      </svg>
+    </div>
+
+    <!-- 코드 스트림 오버레이 -->
+    <div class="code-stream" id="codeStream" style="display:none">
+      <canvas id="codeCanvas"></canvas>
+    </div>
+
     <div class="webgl-hint" id="webglHint"></div>
     <div class="scroll-hint">scroll ↓</div>
   </div>
@@ -1040,8 +1114,16 @@ document.querySelectorAll('.card').forEach(card => {
       panelVideoWrap.style.display = p.video ? 'block' : 'none';
       const hint = document.getElementById('webglHint');
       if (hint) hint.textContent = p.liveHint || '';
-      if (key === 'vanishown') setTimeout(startDemoGL, 50);
-      else setTimeout(startWebGL, 50);
+      if (key === 'vanishown') {
+        document.getElementById('smokeOverlay').style.display = 'block';
+        document.getElementById('codeStream').style.display = 'block';
+        startCodeStream();
+        setTimeout(startDemoGL, 50);
+      } else {
+        document.getElementById('smokeOverlay').style.display = 'none';
+        document.getElementById('codeStream').style.display = 'none';
+        setTimeout(startWebGL, 50);
+      }
     } else {
       panelWebglWrap.style.display = 'none';
       panelVideoWrap.style.display = 'block';
@@ -1093,6 +1175,89 @@ function startWebGL() {
   document.addEventListener('keydown',onKey);
   function loop(){ gl.viewport(0,0,canvas.width,canvas.height); const t=(performance.now()-t0)*0.001; cur+=(tgt-cur)*0.08; kp*=0.92; gl.uniform2f(uRes,canvas.width,canvas.height); gl.uniform1f(uTime,t); gl.uniform1f(uGrid,cur); gl.uniform1f(uKP,kp); gl.uniform1f(uKC,kc); gl.drawArrays(gl.TRIANGLE_STRIP,0,4); glRAF=requestAnimationFrame(loop); }
   runGLLoop=loop; loop();
+}
+
+// ── 코드 스트림 ──
+let codeRAF = null;
+function startCodeStream() {
+  const canvas = document.getElementById('codeCanvas');
+  const container = document.getElementById('codeStream');
+  const W = container.offsetWidth || 200;
+  const H = container.offsetHeight || window.innerHeight;
+  canvas.width  = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  const lines = [];
+  const lineCount = 28;
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?/~`\\\'\"';
+  const dataWords = ['SMOKE','NULL','0x','REF','VOID','NaN','OBJ','VEC3','MAT4','UV','RGB','HSL','FPS','DT','POS','ROT','SCL','MESH','NODE','PIPE','BUFF','VERT','FRAG','GLSL','CHOP','SOP','TOP','MAT','COMP','REND'];
+
+  function randLine() {
+    const type = Math.random();
+    let text;
+    if (type < 0.3) {
+      // 순수 숫자/수치
+      text = (Math.random() * 999).toFixed(Math.floor(Math.random()*4)) + (Math.random()>0.5?' ms':'');
+    } else if (type < 0.55) {
+      // 키워드 + 수치
+      const w = dataWords[Math.floor(Math.random()*dataWords.length)];
+      text = w + ': ' + (Math.random()*1).toFixed(6);
+    } else if (type < 0.75) {
+      // hex
+      text = '0x' + Math.floor(Math.random()*0xFFFFFF).toString(16).toUpperCase().padStart(6,'0');
+    } else {
+      // 랜덤 문자열
+      let s = '';
+      const len = 8 + Math.floor(Math.random()*16);
+      for(let i=0;i<len;i++) s += chars[Math.floor(Math.random()*chars.length)];
+      text = s;
+    }
+    return {
+      text,
+      y: Math.random() * H,
+      speed: 0.4 + Math.random() * 1.2,
+      alpha: 0.3 + Math.random() * 0.7,
+      size: 9 + Math.floor(Math.random() * 4),
+      color: Math.random() > 0.85 ? '#ff2aa6' : (Math.random() > 0.5 ? '#ffffff' : '#aaaaaa'),
+      updateTimer: 0,
+      updateInterval: 20 + Math.floor(Math.random() * 60),
+    };
+  }
+
+  for (let i = 0; i < lineCount; i++) lines.push(randLine());
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(0,0,0,0)';
+    ctx.fillRect(0, 0, W, H);
+
+    lines.forEach(l => {
+      l.y -= l.speed;
+      l.updateTimer++;
+      if (l.updateTimer > l.updateInterval) {
+        l.updateTimer = 0;
+        // 텍스트 살짝 바꾸기
+        if (Math.random() > 0.5) l.text = randLine().text;
+      }
+      if (l.y < -20) {
+        Object.assign(l, randLine());
+        l.y = H + 10;
+      }
+      ctx.font = `${l.size}px 'Space Mono', monospace`;
+      ctx.globalAlpha = l.alpha;
+      ctx.fillStyle = l.color;
+      ctx.fillText(l.text, 4, l.y);
+    });
+    ctx.globalAlpha = 1;
+    codeRAF = requestAnimationFrame(draw);
+  }
+  if (codeRAF) cancelAnimationFrame(codeRAF);
+  draw();
 }
 
 // ── WebGL: VANISHOWN (Three.js) ──
@@ -1211,7 +1376,10 @@ function closePanel() {
   overlayBg.classList.remove('active');
   document.body.style.overflow = '';
   panelVideo.pause();
-  if (glRAF) { cancelAnimationFrame(glRAF); glRAF = null; }
+  if (glRAF)   { cancelAnimationFrame(glRAF);   glRAF   = null; }
+  if (codeRAF) { cancelAnimationFrame(codeRAF); codeRAF = null; }
+  document.getElementById('smokeOverlay').style.display = 'none';
+  document.getElementById('codeStream').style.display   = 'none';
 }
 
 // ── 라이트박스 ──
