@@ -1122,8 +1122,8 @@ function startDemoGL() {
     demoScene.background = new THREE.Color(0x050505);
     demoScene.fog = new THREE.FogExp2(0x050505, 0.055);
 
-    demoCamera = new THREE.PerspectiveCamera(45, W/H, 0.1, 100);
-    demoCamera.position.set(-1.5, 3.5, 10);
+    demoCamera = new THREE.PerspectiveCamera(55, W/H, 0.1, 100);
+    demoCamera.position.set(0, 3.5, 10);
     demoCamera.lookAt(0, 3.2, 0);
 
     demoScene.add(new THREE.AmbientLight(0xffffff, 0.3));
