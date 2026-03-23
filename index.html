@@ -1086,7 +1086,14 @@ document.querySelectorAll('.card').forEach(card => {
 
     if (p.hasLive) {
       panelWebglWrap.style.display = 'block';
-      panelVideoWrap.style.display = p.video ? 'block' : 'none';
+      if (p.video) {
+        panelVideoWrap.style.display = 'block';
+        panelVideoSrc.src = p.video;
+        panelVideo.load();
+      } else {
+        panelVideoWrap.style.display = 'none';
+        panelVideoSrc.src = '';
+      }
       const hint = document.getElementById('webglHint');
       if (hint) hint.textContent = p.liveHint || '';
       if (key === 'vanishown') {
@@ -1097,6 +1104,7 @@ document.querySelectorAll('.card').forEach(card => {
       } else {
         document.getElementById('smokeOverlay').style.display = 'none';
         document.getElementById('codeStream').style.display = 'none';
+        glInitialized = false;
         setTimeout(startWebGL, 50);
       }
     } else {
