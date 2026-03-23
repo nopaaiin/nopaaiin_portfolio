@@ -50,7 +50,7 @@ body {
 }
 
 /* ════════════════════════════
-   ② 그레인 노이즈
+   그레인 노이즈
 ════════════════════════════ */
 .grain {
   position: fixed;
@@ -74,7 +74,7 @@ body {
 }
 
 /* ════════════════════════════
-   ③ 커서 옆 프로젝트 번호
+   커서 옆 프로젝트 번호
 ════════════════════════════ */
 .cursor-label {
   position: fixed;
@@ -90,8 +90,6 @@ body {
   white-space: nowrap;
 }
 .cursor-label.visible { opacity: 1; }
-
-
 
 /* ── 페이드인 애니메이션 ── */
 @keyframes fadeUp {
@@ -132,31 +130,58 @@ body {
 }
 
 /* ────────────────────────────
-   비대칭 카드 레이아웃 (3컬럼)
-   col1: audio 큰 카드
-   col2: scanner 세로 카드
-   col3: ragebeat + keyboard 위아래
+   카드 레이아웃
+   col1: audio  — 정사각형 (row 1~2, 단독)
+   col2: ragebeat — 정사각형 (row 1~2, 단독)
+   col3: keyboard — 세로 (row 1~3)
+   col4: vanishown — 세로 (row 1~3)
+   col5: hips — 세로 (row 1~3)
+
+   audio와 ragebeat는 height를 width와 같게 맞추기 위해
+   2행으로 나눠 두 카드가 각각 row 1, row 2를 차지하되
+   전체 높이가 세로 카드들과 동일하도록 구성.
 ──────────────────────────── */
 .works {
   display: grid;
-  grid-template-columns: 1.4fr 0.8fr 0.8fr 0.7fr 0.7fr;
+  /* col1(audio) col2(rage) col3(keyboard) col4(vanishown) col5(hips) */
+  grid-template-columns: 1fr 1fr 0.85fr 0.85fr 0.85fr;
+  /* row1 + row2 = 세로 카드 전체 높이 */
   grid-template-rows: 1fr 1fr;
   gap: 16px;
   padding: 0 40px;
+  /* 전체 그리드 높이를 뷰포트에 맞춤 */
+  height: calc(100vh - 220px);
+  min-height: 560px;
 }
 
-/* 05 vanishown — 세로 */
+/* ── 01 audio reactive — 정사각형 (col1, row1만) ── */
+.card-audio {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+/* ── 02 rage beat — 정사각형 (col1, row2) ── */
+.card-rage {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+/* ── 03 keyboard — 세로 (col2, row 1~3) ── */
+.card-keyboard {
+  grid-column: 2;
+  grid-row: 1 / 3;
+}
+
+/* ── 04 vanishown — 세로 (col3, row 1~3) ── */
 .card-vanishown {
+  grid-column: 3;
+  grid-row: 1 / 3;
+}
+
+/* ── 05 hips — 세로 (col4, row 1~3) ── */
+.card-hips {
   grid-column: 4;
   grid-row: 1 / 3;
-  min-height: 600px;
-}
-
-/* 06 청결강박 — 세로 */
-.card-hips {
-  grid-column: 5;
-  grid-row: 1 / 3;
-  min-height: 600px;
 }
 
 /* 카드 공통 */
@@ -179,7 +204,7 @@ body {
     0 0 80px rgba(255,42,166,0.07);
 }
 
-/* ── 3번: 카드 타이틀 호버 — pink glow ── */
+/* 카드 타이틀 호버 핑크 glow */
 .card-title {
   position: relative;
   transition: text-shadow .4s ease, letter-spacing .4s ease;
@@ -192,35 +217,7 @@ body {
     0 0 90px rgba(255,42,166,0.15);
 }
 
-/* 01 audio: 왼쪽 큰 카드 */
-.card-featured {
-  grid-column: 1;
-  grid-row: 1 / 3;
-  min-height: 600px;
-}
-
-/* 02 scanner: 세로 영상 */
-.card-scanner {
-  grid-column: 2;
-  grid-row: 1 / 3;
-  min-height: 600px;
-}
-
-/* 03 ragebeat */
-.card-sm {
-  grid-column: 3;
-  grid-row: 1;
-  min-height: 290px;
-}
-
-/* 04 keyboard */
-.card-sm2 {
-  grid-column: 3;
-  grid-row: 2;
-  min-height: 290px;
-}
-
-/* ── 카드 썸네일 ── */
+/* ── 카드 썸네일 & 비디오 ── */
 .card-thumb {
   position: absolute;
   inset: 0;
@@ -254,37 +251,33 @@ body {
   z-index: 2;
   width: 100%;
   height: 100%;
-  padding: 24px;
+  padding: 20px;
   background: linear-gradient(to top, rgba(0,0,0,.9) 0%, rgba(0,0,0,.05) 60%);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  min-height: inherit;
+  min-height: 100%;
 }
 
 .card-number {
   font-size: 10px;
   color: #444;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   letter-spacing: 0.14em;
 }
 
 .card-title {
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--pink);
-  margin-bottom: 6px;
+  margin-bottom: 5px;
   letter-spacing: -0.03em;
   line-height: 1.1;
 }
 
-.card-featured .card-title {
-  font-size: 32px;
-}
-
 .card-desc {
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.7;
   color: #777;
 }
@@ -309,12 +302,12 @@ body {
     grid-template-rows: auto;
     gap: 12px;
     padding: 0 20px;
+    height: auto;
   }
 
-  .card-featured,
-  .card-scanner,
-  .card-sm,
-  .card-sm2,
+  .card-audio,
+  .card-rage,
+  .card-keyboard,
   .card-vanishown,
   .card-hips {
     grid-column: 1;
@@ -322,22 +315,16 @@ body {
     min-height: 240px;
   }
 
-  .card-featured { min-height: 300px; }
-
   .card-title { font-size: 16px; }
-  .card-featured .card-title { font-size: 22px; }
 
   .about-btn {
-    top: auto;
-    bottom: 20px;
-    right: 20px;
     top: 20px;
+    right: 20px;
   }
 
   .insta-btn {
     left: 20px;
-    bottom: 20px;
-    top: auto;
+    top: 20px;
   }
 
   .panel {
@@ -459,16 +446,6 @@ body {
   transform: translateX(0);
 }
 
-.panel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 2px;
-  height: 35%;
-  background: linear-gradient(to bottom, var(--pink), transparent);
-}
-
 .panel-close {
   position: fixed;
   top: 20px;
@@ -570,6 +547,8 @@ body {
   display: block;
   opacity: 0.55;
 }
+
+.webgl-hint {
   position: absolute;
   bottom: 32px;
   left: 50%;
@@ -779,20 +758,15 @@ body {
 </head>
 <body>
 
-
-
-<!-- ② 그레인 -->
+<!-- 그레인 -->
 <div class="grain"></div>
 
-<!-- ③ 커서 라벨 -->
+<!-- 커서 라벨 -->
 <div class="cursor-label" id="cursorLabel"></div>
-
-
 
 <!-- 커스텀 커서 (옴 문양) -->
 <div class="cursor" id="cursor">
   <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- 옴(ॐ) 문양 -->
     <text
       x="50" y="72"
       text-anchor="middle"
@@ -822,76 +796,63 @@ body {
   <p class="subtitle fade-up">Interactive experiments · Visual systems · Real-time media</p>
 </div>
 
-<!-- 비대칭 카드 그리드 -->
+<!-- 카드 그리드 -->
 <section class="works fade-up">
 
-  <!-- 01 audio — 왼쪽 큰 카드 -->
-  <div class="card card-featured" data-project="audio">
+  <!-- 01 audio reactive — 정사각형 상단 -->
+  <div class="card card-audio" data-project="audio">
     <img class="card-thumb" src="thumb_audio.png" alt="">
     <video class="card-video" muted loop playsinline>
       <source src="audio_reactive.mov" type="video/mp4">
     </video>
     <div class="card-overlay">
-      <div class="card-number">01 / 06</div>
+      <div class="card-number">01 / 05</div>
       <h2 class="card-title">Audio Reactive</h2>
       <p class="card-desc">Real-time visual driven by kick frequency.</p>
     </div>
   </div>
 
-  <!-- 02 scanner — 세로 카드 -->
-  <div class="card card-scanner" data-project="scanner">
-    <img class="card-thumb" src="thumb_scanner.png" alt="">
-    <video class="card-video" muted loop playsinline>
-      <source src="scanner.mov" type="video/mp4">
-    </video>
-    <div class="card-overlay">
-      <div class="card-number">02 / 06</div>
-      <h2 class="card-title">Scanner</h2>
-      <p class="card-desc">Particle scan via POP node.</p>
-    </div>
-  </div>
-
-  <!-- 03 ragebeat — 오른쪽 위 -->
-  <div class="card card-sm" data-project="ragebeat">
+  <!-- 02 rage beat — 정사각형 하단 -->
+  <div class="card card-rage" data-project="ragebeat">
     <img class="card-thumb" src="thumb_rage.png" alt="">
     <video class="card-video" muted loop playsinline>
       <source src="ragebeat.mov" type="video/mp4">
     </video>
     <div class="card-overlay">
-      <div class="card-number">03 / 06</div>
+      <div class="card-number">02 / 05</div>
       <h2 class="card-title">Rage Beat</h2>
       <p class="card-desc">Beat visualized with Noise TOP.</p>
     </div>
   </div>
 
-  <!-- 04 keyboard — 오른쪽 아래 -->
-  <div class="card card-sm2" data-project="keyboard">
+  <!-- 03 keyboard reactive — 세로 -->
+  <div class="card card-keyboard" data-project="keyboard">
     <img class="card-thumb" src="thumb_key.png" alt="">
     <video class="card-video" muted loop playsinline>
       <source src="keyboardreactive.mov" type="video/mp4">
     </video>
     <div class="card-overlay">
-      <div class="card-number">04 / 06</div>
+      <div class="card-number">03 / 05</div>
       <h2 class="card-title">Keyboard Reactive</h2>
       <p class="card-desc">Grid visual system controlled by keyboard.</p>
     </div>
   </div>
 
-  <!-- 05 vanishown — 세로 카드 -->
+  <!-- 04 vanishown — 세로 -->
   <div class="card card-vanishown" data-project="vanishown">
     <img class="card-thumb" src="HIPS_2.jpeg" alt="">
     <div class="card-overlay">
-      <div class="card-number">05 / 06</div>
+      <div class="card-number">04 / 05</div>
       <h2 class="card-title">VANISHOWN</h2>
       <p class="card-desc">Mixed media sculpture · 2024</p>
     </div>
   </div>
 
-  <!-- 06 청결강박 — 세로 카드 -->
+  <!-- 05 청결강박 — 세로 -->
   <div class="card card-hips" data-project="hips">
     <img class="card-thumb" src="HIPS_1.jpeg" alt="">
     <div class="card-overlay">
-      <div class="card-number">06 / 06</div>
+      <div class="card-number">05 / 05</div>
       <h2 class="card-title">청결강박</h2>
       <p class="card-desc">Photography · 2024</p>
     </div>
@@ -914,7 +875,7 @@ body {
     <span><em>·</em></span>
     <span>2026</span>
     <span><em>·</em></span>
-    <!-- 반복 (seamless loop) -->
+    <!-- seamless loop -->
     <span>NOPAAIIN</span>
     <span><em>·</em></span>
     <span>TOUCHDESIGNER</span>
@@ -1006,10 +967,8 @@ body {
 </div>
 
 <script>
-// ── 커서 라벨 ──
+// ── 커서 ──
 const cursorLabel = document.getElementById('cursorLabel');
-
-// ── 커스텀 커서 ──
 const cursor = document.getElementById('cursor');
 document.addEventListener('mousemove', e => {
   cursor.style.left = e.clientX + 'px';
@@ -1021,7 +980,6 @@ document.querySelectorAll('.card, .panel-close, button').forEach(el => {
   el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
   el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
 });
-
 document.querySelectorAll('.card').forEach(card => {
   const num   = card.querySelector('.card-number');
   const title = card.querySelector('.card-title');
@@ -1037,25 +995,19 @@ document.querySelectorAll('.card').forEach(card => {
 // ── 프로젝트 데이터 ──
 const projects = {
   audio: {
-    number: '01 / 06', title: 'Audio Reactive', video: 'audio_reactive.mov',
+    number: '01 / 05', title: 'Audio Reactive', video: 'audio_reactive.mov',
     about: '킥 드럼의 저음역대 주파수를 TouchDesigner 내에서 실시간으로 감지하고, 그 신호값에 따라 원형 그래픽의 크기·형태·밀도가 동적으로 변화하는 반응형 비주얼 시스템입니다.',
     node: 'Grid SOP → Sprinkle SOP으로 파티클 포인트를 생성하고, Noise SOP으로 유기적인 변위를 만든 뒤 CHOP을 통해 오디오 신호값을 geometry의 transform에 실시간으로 연결했습니다. audioreactive CHOP이 주파수 대역별 진폭을 추출해 Sphere SOP의 스케일과 Displace SOP의 강도를 구동합니다.',
     images: ['audio_node_1.png', 'audio_node_2.png']
   },
-  scanner: {
-    number: '02 / 06', title: 'Scanner', video: 'scanner.mov',
-    about: 'TouchDesigner의 POP(Particle Operator) 노드를 활용해 무작위로 생성·소멸을 반복하는 파티클 시스템을 구축하고, 그 위를 스캐닝하듯 가로지르는 시선의 흐름을 시각화한 작업입니다.',
-    node: 'Point Generator SOP에서 생성된 파티클이 Noise CHOP의 흐름을 따라 이동하며, Feedback TOP을 통해 이전 프레임이 잔상처럼 누적됩니다. LFO CHOP 3개가 각각 위치·속도·밀도를 독립적으로 제어하며, Bloom TOP으로 파티클의 발광 효과를 마무리합니다.',
-    images: ['scanner_node.png']
-  },
   ragebeat: {
-    number: '03 / 06', title: 'Rage Beat', video: 'ragebeat.mov',
+    number: '02 / 05', title: 'Rage Beat', video: 'ragebeat.mov',
     about: 'Rage 장르는 Playboi Carti, Ken Carson 등으로 대표되는 하이퍼팝 계열의 음악 장르로, 과포화된 사운드와 공격적인 비트 패턴이 특징입니다. 이 작업은 그 비트의 리듬 구조를 TouchDesigner의 Noise TOP 노드를 통해 실시간 비주얼 신호로 변환한 시스템입니다.',
     node: 'Audio File In → Audio Spectrum Analyze → Math → Filter → Select CHOP 체인으로 특정 주파수 대역의 에너지를 추출합니다. 추출된 값이 Tube SOP에 연결된 Twist SOP의 강도를 구동하고, Mirror SOP 5개를 직렬로 연결해 대칭 구조를 만든 뒤 RGB Key TOP으로 색상을 분리해 최종 출력합니다.',
     images: ['rage_node.png']
   },
   keyboard: {
-    number: '04 / 06', title: 'Keyboard Reactive', video: 'keyboardreactive.mov',
+    number: '03 / 05', title: 'Keyboard Reactive', video: 'keyboardreactive.mov',
     about: '균일한 사각형 그리드 위에서 비정형적인 그래픽이 무작위로 생성되며, 루프의 주기와 활성화되는 셀의 수가 키보드 입력에 실시간으로 반응해 끊임없이 재편되는 인터랙티브 비주얼 시스템입니다.',
     node: 'Keyboard In CHOP이 키 입력을 실시간으로 감지해 신호를 발생시키고, Noise TOP → Edge TOP 체인이 그리드 위의 비정형 패턴을 생성합니다. Feedback TOP으로 이전 프레임이 누적되며, Displace TOP과 Composite TOP이 각 셀의 변형과 합성을 처리합니다.',
     images: ['keyboard_node.png'],
@@ -1063,7 +1015,7 @@ const projects = {
     liveHint: 'PRESS ANY KEY'
   },
   vanishown: {
-    number: '05 / 06', title: 'VANISHOWN', video: '',
+    number: '04 / 05', title: 'VANISHOWN', video: '',
     about: '연기—존재하지만 소유되지 않는 형상. 붙잡히지 않으려는 존재에게 붙인 이름들, 그 명함. 기록은 사라지는 존재를 달래는 방식이다. 머무르지 않는 결을 머무르게 하고자 한다.\n\nHIPS 정기전 DEMONSTRATION 출품작.',
     node: '복합매체 — 금속 봉, 종이(명함), 석고. 2024.',
     nodeLabel: '재료 및 정보',
@@ -1072,8 +1024,7 @@ const projects = {
     liveHint: 'VANISHOWN — 2024'
   },
   hips: {
-    number: '06 / 06', title: '청결강박',
-    video: '',
+    number: '05 / 05', title: '청결강박', video: '',
     about: '손 씻기 행위를 495회 반복한 뒤, 그 순서를 제거해 배열했다. 반복된 행위는 강박의 불안과 통제 욕구를 시각적 구조로 드러낸다.',
     node: '사진 · HIPS 새끼전 · 2024.',
     nodeLabel: '재료 및 정보',
@@ -1096,10 +1047,9 @@ let glInitialized = false;
 let runGLLoop     = () => {};
 let currentProject = '';
 
-// ── CSS: panel-content는 패딩으로 ──
 panelContent.style.cssText = 'padding: 48px 32px 60px;';
 
-// ── 카드 클릭 ──
+// ── 카드 클릭 & 호버 ──
 document.querySelectorAll('.card').forEach(card => {
   const vid = card.querySelector('.card-video');
   card.addEventListener('mouseenter', () => { if(vid){ vid.currentTime=0; vid.play(); } });
@@ -1117,11 +1067,9 @@ document.querySelectorAll('.card').forEach(card => {
     document.getElementById('panelAbout').textContent  = p.about;
     document.getElementById('panelNode').textContent   = p.node;
 
-    // 노드 라벨 — vanishown은 재료로
     const nodeLabel = document.getElementById('panelNodeLabel');
     if (nodeLabel) nodeLabel.textContent = p.nodeLabel || 'TouchDesigner Network';
 
-    // 스크린샷 — vanishown은 1컬럼 풀사이즈
     const shots = document.getElementById('panelScreenshots');
     shots.innerHTML = '';
     shots.style.gridTemplateColumns = p.images.length === 1 ? '1fr' : '1fr 1fr';
@@ -1137,7 +1085,6 @@ document.querySelectorAll('.card').forEach(card => {
     if (glRAF) { cancelAnimationFrame(glRAF); glRAF = null; }
 
     if (p.hasLive) {
-      // WebGL 히어로 먼저
       panelWebglWrap.style.display = 'block';
       panelVideoWrap.style.display = p.video ? 'block' : 'none';
       const hint = document.getElementById('webglHint');
@@ -1162,7 +1109,6 @@ document.querySelectorAll('.card').forEach(card => {
     panel.classList.add('active');
     overlayBg.classList.add('active');
     document.body.style.overflow = 'hidden';
-    // 패널 스크롤 맨 위로
     panel.scrollTop = 0;
   });
 });
@@ -1229,17 +1175,13 @@ function startCodeStream() {
     const type = Math.random();
     let text;
     if (type < 0.3) {
-      // 순수 숫자/수치
       text = (Math.random() * 999).toFixed(Math.floor(Math.random()*4)) + (Math.random()>0.5?' ms':'');
     } else if (type < 0.55) {
-      // 키워드 + 수치
       const w = dataWords[Math.floor(Math.random()*dataWords.length)];
       text = w + ': ' + (Math.random()*1).toFixed(6);
     } else if (type < 0.75) {
-      // hex
       text = '0x' + Math.floor(Math.random()*0xFFFFFF).toString(16).toUpperCase().padStart(6,'0');
     } else {
-      // 랜덤 문자열
       let s = '';
       const len = 8 + Math.floor(Math.random()*16);
       for(let i=0;i<len;i++) s += chars[Math.floor(Math.random()*chars.length)];
@@ -1261,15 +1203,11 @@ function startCodeStream() {
 
   function draw() {
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(0,0,0,0)';
-    ctx.fillRect(0, 0, W, H);
-
     lines.forEach(l => {
       l.y -= l.speed;
       l.updateTimer++;
       if (l.updateTimer > l.updateInterval) {
         l.updateTimer = 0;
-        // 텍스트 살짝 바꾸기
         if (Math.random() > 0.5) l.text = randLine().text;
       }
       if (l.y < -20) {
@@ -1328,7 +1266,6 @@ function startDemoGL() {
 
     demoPivot = new THREE.Group(); demoScene.add(demoPivot);
 
-    // 비정형 베이스
     const bMat = new THREE.MeshStandardMaterial({color:0xede8df,roughness:0.97,metalness:0});
     const bGeo = new THREE.SphereGeometry(0.95,48,32);
     const bPos = bGeo.attributes.position;
@@ -1342,12 +1279,10 @@ function startDemoGL() {
       const m=new THREE.Mesh(g,bMat);m.position.set(bd.x,.07,bd.z);m.castShadow=true;demoPivot.add(m);
     });
 
-    // 봉
     const rGeo=new THREE.CylinderGeometry(0.016,0.016,7,16);
     const rMat=new THREE.MeshStandardMaterial({color:0xd0d8e0,roughness:0.1,metalness:0.92,transparent:true,opacity:0.82});
     const rod=new THREE.Mesh(rGeo,rMat);rod.position.y=3.7;demoPivot.add(rod);
 
-    // 종이들
     const pMat=new THREE.MeshStandardMaterial({color:0xf8f5ee,roughness:0.9,metalness:0,side:THREE.DoubleSide});
     demoPapers=[];
     [{y:.62,ry:.3,w:1.7,h:.26,curl:.17},{y:.82,ry:1.8,w:1.35,h:.21,curl:-.14},{y:1.08,ry:.9,w:1.55,h:.24,curl:.15},{y:1.28,ry:2.5,w:1.25,h:.2,curl:-.12},{y:1.52,ry:1.2,w:1.45,h:.23,curl:.14},{y:1.72,ry:.1,w:1.18,h:.19,curl:-.1},{y:1.98,ry:2.0,w:1.38,h:.22,curl:.13},{y:2.18,ry:1.5,w:1.08,h:.18,curl:-.11},{y:2.42,ry:.6,w:1.28,h:.2,curl:.13},{y:2.62,ry:2.8,w:.98,h:.17,curl:-.09},{y:2.88,ry:1.1,w:1.18,h:.19,curl:.12},{y:3.08,ry:.4,w:.88,h:.16,curl:-.08},{y:3.32,ry:1.7,w:1.08,h:.18,curl:.1},{y:3.52,ry:2.3,w:.88,h:.15,curl:-.08},{y:3.78,ry:.8,w:.98,h:.16,curl:.09},{y:3.98,ry:1.4,w:.78,h:.14,curl:-.07},{y:4.22,ry:2.7,w:.88,h:.15,curl:.08},{y:4.42,ry:.2,w:.68,h:.13,curl:-.06},{y:4.68,ry:1.0,w:1.25,h:.21,curl:.17},{y:4.92,ry:2.1,w:1.05,h:.18,curl:-.14},{y:5.18,ry:.5,w:.78,h:.14,curl:.1}].forEach((pd,idx)=>{
@@ -1362,7 +1297,6 @@ function startDemoGL() {
       demoPivot.add(paper);demoPapers.push(paper);
     });
 
-    // 파티클
     const pCount=60,pGeo=new THREE.BufferGeometry(),pPos=new Float32Array(pCount*3);
     for(let i=0;i<pCount;i++){pPos[i*3]=(Math.random()-.5)*5;pPos[i*3+1]=Math.random()*7;pPos[i*3+2]=(Math.random()-.5)*4;}
     pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
