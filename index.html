@@ -227,17 +227,13 @@ projects.forEach((p, i) => {
   const cd = document.createElement('div'); cd.className='cd';
   const inner = document.createElement('div'); inner.className='cd-inner';
 
-  if (p.thumb) {
-    const img = document.createElement('img');
-    img.className='cd-img'; img.src=p.thumb; img.alt=p.name;
-    inner.appendChild(img);
-  } else {
-    const ic = document.createElement('div');
-    ic.className='cd-icon'; ic.textContent='𝄞';
-    inner.appendChild(ic);
-  }
+  // no thumbnail
 
   const sh = document.createElement('div'); sh.className='sheen';
+
+  // plain pink-tinted fill instead of image
+  inner.style.background = 'linear-gradient(135deg, #ffe0f4, #ffc8eb)';
+
   cd.appendChild(inner); cd.appendChild(sh);
 
   // number label
