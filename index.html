@@ -1025,12 +1025,13 @@ window.onYouTubeIframeAPIReady = function() {
     events: {
       onReady: function(e) {
         e.target.playVideo();
-        // 0~120s loop: poll every 500ms and seek back on overshoot
+        // 1~8s loop: seek to 1s on start, poll and loop back
+        e.target.seekTo(1, true);
         setInterval(() => {
           try {
-            if (ytPlayer.getCurrentTime() >= 120) ytPlayer.seekTo(0, true);
+            if (ytPlayer.getCurrentTime() >= 8) ytPlayer.seekTo(1, true);
           } catch(_) {}
-        }, 500);
+        }, 200);
       },
     }
   });
