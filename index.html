@@ -130,6 +130,15 @@
   }
   @keyframes sheenS { to { transform:rotate(-360deg); } }
 
+  /* iPod gloss on CD */
+  .cd-gloss {
+    position:absolute; top:5%; left:7%;
+    width:86%; height:40%;
+    background:linear-gradient(180deg,rgba(255,255,255,.58) 0%,rgba(255,255,255,0) 100%);
+    border-radius:50% 50% 50% 50% / 100% 100% 0 0;
+    z-index:6; pointer-events:none;
+  }
+
   /* note particles */
   .note {
     position:fixed; pointer-events:none;
@@ -250,6 +259,10 @@ projects.forEach((p, i) => {
   num.textContent = String(i+1).padStart(2,'0');
   cd.appendChild(num);
 
+  const gloss = document.createElement('div');
+  gloss.className = 'cd-gloss';
+  cd.appendChild(gloss);
+
   w.appendChild(cd);
   stage.appendChild(w);
   wrappers.push(w);
@@ -351,6 +364,27 @@ const DOTS = Array.from({length:18}, () => ({
 // ── Right-side icons
 const R_ICONS = ['▶','◀','▲','▼','◆','✦','⊕','⊗'];
 
+// ── Vector flourish arms (burst from bass cluster center)
+const FLOURISHES = Array.from({length:8}, (_,i) => ({
+  angle:    (i/8)*Math.PI*2 + 0.22,
+  maxLen:   65 + (i%3)*32,
+  curveSide: i%2===0 ? 1 : -1,
+  curveAmt:  18 + (i%4)*9,
+}));
+
+// ── Floating pink gradient blocks
+const GRAD_BLOCKS = Array.from({length:9}, (_,i) => ({
+  x:        Math.random(),
+  y:        Math.random()*1.2,
+  w:        0.06 + Math.random()*0.14,
+  isSquare: i%3===0,
+  hRatio:   0.4 + Math.random()*0.6,
+  vx:       (Math.random()-.5)*0.00005,
+  vy:       -(0.00005+Math.random()*0.00008),
+  opacity:  0.04 + Math.random()*0.04,
+  hDir:     Math.random()>.5,
+}));
+
 // ── Halftone helper
 function halftone(cx, cy, radius, spacing, alpha) {
   ctx.save();
@@ -413,6 +447,29 @@ function drawBg(ts) {
   const bassAlphaFlash = 0.12*beatVal;
 
   ctx.clearRect(0,0,W,H);
+
+  // ──────────────────────────────────────
+  // FLOATING GRADIENT BLOCKS (Frutiger Metro)
+  // ──────────────────────────────────────
+  GRAD_BLOCKS.forEach(b => {
+    b.x += b.vx; b.y += b.vy;
+    if (b.y < -0.3) { b.y=1.1; b.x=Math.random(); }
+    if (b.x < -0.3) b.x=1.2;
+    if (b.x >  1.2) b.x=-0.2;
+    const bw = b.w*W;
+    const bh = b.isSquare ? bw : bw*b.hRatio*(H/W);
+    const bX = b.x*W, bY = b.y*H;
+    ctx.save();
+    const grd = b.hDir
+      ? ctx.createLinearGradient(bX,bY, bX,bY+bh)
+      : ctx.createLinearGradient(bX,bY, bX+bw,bY);
+    grd.addColorStop(0,   `rgba(255,47,146,${b.opacity})`);
+    grd.addColorStop(0.55,`rgba(255,110,170,${b.opacity*0.5})`);
+    grd.addColorStop(1,   `rgba(255,47,146,0)`);
+    ctx.fillStyle=grd;
+    ctx.fillRect(bX,bY,bw,bh);
+    ctx.restore();
+  });
 
   // ──────────────────────────────────────
   // LEFT PANEL
@@ -578,6 +635,21 @@ function drawBg(ts) {
       ctx.stroke();
       ctx.restore();
     }
+
+    // ── iPod gloss highlight on cluster (white semi-ellipse on top)
+    if (cl.baseR > 20) {
+      const gr = cl.baseR * sc;
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(cx2, cy2 - gr*0.08, gr*0.76, gr*0.37, 0, Math.PI, 0);
+      const gGrad = ctx.createLinearGradient(cx2, cy2-gr*0.45, cx2, cy2-gr*0.08);
+      gGrad.addColorStop(0, 'rgba(255,255,255,0.26)');
+      gGrad.addColorStop(0.65,'rgba(255,255,255,0.07)');
+      gGrad.addColorStop(1,   'rgba(255,255,255,0)');
+      ctx.fillStyle = gGrad;
+      ctx.fill();
+      ctx.restore();
+    }
   });
 
   // curved connectors between clusters
@@ -588,6 +660,57 @@ function drawBg(ts) {
     ctx.strokeStyle=PINK; ctx.lineWidth=1.5; ctx.globalAlpha=.12;
     ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx2,by2);
     ctx.stroke(); ctx.restore();
+  });
+
+  // ──────────────────────────────────────
+  // VECTOR FLOURISH CURVES (beat-synced, sequential)
+  // ──────────────────────────────────────
+  const beatCycle = T * (BPM/60); // +1 per beat
+  FLOURISHES.forEach((fl, i) => {
+    // each arm delayed by i*0.1 beats → sequential spreading
+    const armPhase = ((beatCycle - i*0.1) % 1 + 1) % 1;
+    // fast rise 0→0.15, slow fall 0.15→0.65, off 0.65→1
+    const prog = armPhase < 0.15 ? armPhase/0.15
+      : armPhase < 0.65 ? Math.max(0, 1-(armPhase-0.15)/0.50) : 0;
+    if (prog < 0.01) return;
+
+    const startR = 28;
+    const endR   = startR + fl.maxLen * prog;
+    const sx = bx + Math.cos(fl.angle)*startR;
+    const sy = by + Math.sin(fl.angle)*startR;
+    const ex = bx + Math.cos(fl.angle)*endR;
+    const ey = by + Math.sin(fl.angle)*endR;
+
+    // bezier control point (perpendicular offset for organic curve)
+    const perpA = fl.angle + Math.PI/2;
+    const cpx = (sx+ex)/2 + Math.cos(perpA)*fl.curveSide*fl.curveAmt*prog;
+    const cpy = (sy+ey)/2 + Math.sin(perpA)*fl.curveSide*fl.curveAmt*prog;
+
+    ctx.save();
+    ctx.strokeStyle = PINK;
+    ctx.lineWidth   = 1.6;
+    ctx.globalAlpha = 0.48 * prog;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.quadraticCurveTo(cpx, cpy, ex, ey);
+    ctx.stroke();
+
+    // flower/leaf ornament at tip (appears after 50% progress)
+    if (prog > 0.5) {
+      const ornA = Math.min(1, (prog-0.5)/0.25) * 0.72;
+      ctx.globalAlpha = ornA;
+      ctx.fillStyle   = PINK;
+      // 5 petals
+      for (let p=0; p<5; p++) {
+        const pA = fl.angle + (p/5)*Math.PI*2;
+        ctx.beginPath();
+        ctx.ellipse(ex+Math.cos(pA)*3.8, ey+Math.sin(pA)*3.8, 2.8, 1.3, pA, 0, Math.PI*2);
+        ctx.fill();
+      }
+      // center bud
+      ctx.beginPath(); ctx.arc(ex, ey, 2.2, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
   });
 
   // ──────────────────────────────────────
