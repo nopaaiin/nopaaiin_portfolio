@@ -267,8 +267,8 @@ projects.forEach((p, i) => {
   stage.appendChild(w);
   wrappers.push(w);
 
-  w.addEventListener('mouseenter', () => { cur.classList.add('big'); spawnNotes(w,5); });
-  w.addEventListener('mouseleave', () => cur.classList.remove('big'));
+  w.addEventListener('mouseenter', () => { cur.classList.add('big'); spawnNotes(w,5); playScratch(1); });
+  w.addEventListener('mouseleave', () => { cur.classList.remove('big'); playScratch(-1); });
   w.addEventListener('click', () => spawnNotes(w,12));
 });
 
@@ -707,6 +707,126 @@ function drawBg(ts) {
 }
 
 requestAnimationFrame(drawBg);
+
+// ═══════════════════════════════════════
+// VINYL SCRATCH SFX  (Web Audio API)
+// ═══════════════════════════════════════
+let audioCtx = null;
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playScratch(dir) { // dir: 1=hover-in, -1=hover-out
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const dur = 0.20;
+
+  // White noise
+  const bufLen = Math.ceil(audioCtx.sampleRate * dur);
+  const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+  const nd  = buf.getChannelData(0);
+  for (let i = 0; i < bufLen; i++) nd[i] = Math.random() * 2 - 1;
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buf;
+
+  // Vinyl bandpass — keeps mid-frequency "hhh" texture
+  const bpf = audioCtx.createBiquadFilter();
+  bpf.type = 'bandpass';
+  bpf.frequency.value = 2800;
+  bpf.Q.value = 1.2;
+
+  // Sawtooth pitch sweep → "휘이" slide
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sawtooth';
+  const f0 = dir > 0 ? 160 : 820;
+  const f1 = dir > 0 ? 820 : 160;
+  osc.frequency.setValueAtTime(f0, now);
+  osc.frequency.linearRampToValueAtTime(f1, now + dur);
+
+  // Individual gain envelopes
+  const ng = audioCtx.createGain();
+  ng.gain.setValueAtTime(0.07, now);
+  ng.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+  const og = audioCtx.createGain();
+  og.gain.setValueAtTime(0.04, now);
+  og.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+  // Master (keep overall volume gentle)
+  const master = audioCtx.createGain();
+  master.gain.value = 0.42;
+
+  noise.connect(bpf); bpf.connect(ng); ng.connect(master);
+  osc.connect(og);                     og.connect(master);
+  master.connect(audioCtx.destination);
+
+  noise.start(now); noise.stop(now + dur);
+  osc.start(now);   osc.stop(now + dur);
+}
+
+// ═══════════════════════════════════════
+// YOUTUBE BACKGROUND PLAYER
+// ═══════════════════════════════════════
+let ytPlayer   = null;
+let ytUnmuted  = false;
+
+// Hidden player container (off-screen, invisible)
+const ytWrap = document.createElement('div');
+ytWrap.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;pointer-events:none;opacity:0;';
+const ytEl = document.createElement('div');
+ytEl.id = 'yt-player';
+ytWrap.appendChild(ytEl);
+document.body.appendChild(ytWrap);
+
+// Called automatically by YouTube IFrame API when loaded
+window.onYouTubeIframeAPIReady = function() {
+  ytPlayer = new YT.Player('yt-player', {
+    videoId: 'g8-r0WId7oY',
+    playerVars: {
+      autoplay:        1,
+      mute:            1,   // start muted → unmuted on first interaction
+      controls:        0,
+      disablekb:       1,
+      fs:              0,
+      rel:             0,
+      modestbranding:  1,
+      iv_load_policy:  3,
+      playsinline:     1,
+    },
+    events: {
+      onReady: function(e) {
+        e.target.playVideo();
+        // 0~120s loop: poll every 500ms and seek back on overshoot
+        setInterval(() => {
+          try {
+            if (ytPlayer.getCurrentTime() >= 120) ytPlayer.seekTo(0, true);
+          } catch(_) {}
+        }, 500);
+      },
+    }
+  });
+};
+
+// Inject YouTube IFrame API script dynamically
+(function() {
+  const s = document.createElement('script');
+  s.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(s);
+})();
+
+// On first user interaction: unmute YT + unlock Web Audio
+function onFirstInteraction() {
+  initAudio();
+  if (!ytUnmuted && ytPlayer && ytPlayer.unMute) {
+    ytPlayer.unMute();
+    ytPlayer.setVolume(72);
+    ytUnmuted = true;
+  }
+}
+['click', 'keydown', 'touchstart'].forEach(ev =>
+  document.addEventListener(ev, onFirstInteraction, { once: true })
+);
 </script>
 </body>
 </html>
