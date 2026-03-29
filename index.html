@@ -139,6 +139,92 @@
     z-index:6; pointer-events:none;
   }
 
+  /* ── PS2 Memory Card Popup ── */
+  #popup-overlay {
+    position:fixed; inset:0; z-index:50;
+    background:rgba(0,0,0,.30);
+    display:none; align-items:center; justify-content:center;
+  }
+  #popup-overlay.active { display:flex; }
+
+  #popup-card {
+    width:min(460px,90vw); max-height:82vh;
+    background:#fff; border:2.5px solid var(--pink);
+    border-radius:4px; display:flex; overflow:hidden;
+    font-family:'Space Mono',monospace;
+    opacity:0; transform:translateY(60px);
+    pointer-events:none;
+  }
+  #popup-card.open {
+    animation:popupIn .46s cubic-bezier(.34,1.56,.64,1) forwards;
+    pointer-events:all;
+  }
+  @keyframes popupIn {
+    from { transform:translateY(60px); opacity:0; }
+    to   { transform:translateY(0);    opacity:1; }
+  }
+
+  .ps2-sidebar {
+    width:36px; flex-shrink:0;
+    border-right:1.5px solid var(--pink);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:space-between;
+    padding:10px 0;
+  }
+  .ps2-label {
+    writing-mode:vertical-rl; transform:rotate(180deg);
+    font-size:7px; letter-spacing:.22em;
+    color:var(--pink); font-weight:700;
+    text-transform:uppercase; opacity:.85;
+  }
+  .ps2-dots {
+    display:grid; grid-template-columns:repeat(3,6px); gap:3px;
+  }
+  .ps2-dots span {
+    width:6px; height:6px;
+    background:var(--pink); opacity:.32; border-radius:1px;
+  }
+  .ps2-mb {
+    font-size:6px; color:var(--pink); opacity:.55;
+    letter-spacing:.1em; writing-mode:vertical-rl;
+    transform:rotate(180deg);
+  }
+
+  .popup-body {
+    flex:1; min-width:0; overflow-y:auto;
+    display:flex; flex-direction:column;
+    scrollbar-width:thin; scrollbar-color:rgba(255,47,146,.25) transparent;
+  }
+  .popup-body::-webkit-scrollbar { width:3px; }
+  .popup-body::-webkit-scrollbar-thumb { background:rgba(255,47,146,.28); border-radius:2px; }
+
+  .popup-header {
+    display:flex; align-items:baseline; gap:10px;
+    padding:12px 14px 10px;
+    border-bottom:1px solid rgba(255,47,146,.16);
+    position:sticky; top:0; background:#fff; z-index:2;
+  }
+  .popup-num   { font-size:10px; font-weight:700; color:var(--pink); opacity:.5; }
+  .popup-title { font-size:13px; font-weight:700; color:#111; letter-spacing:.07em; flex:1; }
+  .popup-close {
+    background:none; border:none; cursor:pointer;
+    color:var(--pink); font-size:20px; line-height:1;
+    padding:0 2px; font-family:'Space Mono',monospace;
+    opacity:.65; transition:opacity .15s;
+  }
+  .popup-close:hover { opacity:1; }
+
+  .popup-media { padding:12px 14px 0; display:flex; flex-direction:column; gap:10px; }
+  .popup-media img,
+  .popup-media video {
+    width:100%; height:auto; display:block;
+    border:1px solid rgba(255,47,146,.14); border-radius:2px;
+  }
+  .popup-desc {
+    padding:12px 14px 18px;
+    font-size:9.5px; line-height:1.82; color:rgba(0,0,0,.56); letter-spacing:.02em;
+  }
+
   /* note particles */
   .note {
     position:fixed; pointer-events:none;
@@ -171,20 +257,36 @@
 <div id="stage"></div>
 <div id="eq"></div>
 
+<div id="popup-overlay">
+  <div id="popup-card"></div>
+</div>
+
 <script>
 // ═══════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════
 const projects = [
-  { name:'연기',     thumb:'HIPS_2.jpeg'       },
-  { name:'오디오',   thumb:'thumb_audio.png'   },
-  { name:'레이지',   thumb:'thumb_rage.png'    },
-  { name:'키보드',   thumb:'thumb_key.png'     },
-  { name:'스캐너',   thumb:'thumb_scanner.png' },
-  { name:'청결강박', thumb:'HIPS_1.jpeg'       },
-  { name:'rice',     thumb:'rice.png'          },
-  { name:'effie',    thumb:'effie.png'         },
-  { name:'self',     thumb:null                },
+  { id:'01', title:'VANISHOWN',
+    files:[{src:'HIPS_2.jpeg', type:'img'}],
+    desc:'연기-존재하지만 소유되지 않는 현상. 붙잡히지 않으려는 존재에게 붙인 이름, 그 명함. 기록은 사라지는 존재를 달래는 방식이다. 머물지 않는 결을 머무르게 하고자 한다. HIPS 정기전 [demonstration]에 전시된 작품.' },
+  { id:'02', title:'RADIUS',
+    files:[{src:'audio_reactive.mov', type:'vid'}],
+    desc:'TouchDesigner를 통해 구현한 오디오 리액티브 비주얼. 음악의 킥 신호를 실시간으로 분석해 원형 그래픽이 비트에 반응하며 변형된다. 소리의 물리적 진동을 기하학적 형태로 번역한 작업.' },
+  { id:'03', title:'청결강박',
+    files:[{src:'HIPS_1.jpeg', type:'img'}],
+    desc:'손 씻기 행위를 495회 반복한 뒤, 그 순서를 제거해 배열했다. 반복된 행위는 강박의 불안과 통제 욕구를 시각적 구조로 드러낸다. HIPS 새끼전 [보행]에 전시된 작품.' },
+  { id:'04', title:'RICE',
+    files:[{src:'rice.png', type:'img'}],
+    desc:'소비의 과정에서 재료의 원형은 지워진다. 쌀국수 안에서 쌀알은 더 이상 쌀의 형태를 갖지 않는다. 이 은폐된 변환을 가시화하기 위해, 쌀국수의 실루엣을 왜곡하고 해체하는 그래픽 작업을 진행했다.' },
+  { id:'05', title:'RAGE',
+    files:[{src:'ragebeat.mov', type:'vid'}],
+    desc:'레이지 장르가 내포한 음향적 공격성과 파열의 질감을 시각 언어로 번역했다. TouchDesigner를 기반으로 음악의 충돌과 찢김을 실시간 그래픽으로 구현한 작업.' },
+  { id:'06', title:'album E',
+    files:[{src:'effie.png', type:'img'}, {src:'effie_in.png', type:'img'}],
+    desc:'effie의 앨범 E를 위한 커버 아트와 수록곡 부클릿 디자인. 그녀의 음악이 품은 노스탤직한 정서를 닌텐도 게임팩의 물성과 형태로 치환해, 디지털 감성과 아날로그 매체 사이의 간극을 시각화했다.' },
+  { id:'07', title:'GRID',
+    files:[{src:'keyboardreactive.mov', type:'vid'}],
+    desc:'균일한 사각형 그리드를 기반으로, 비정형 그래픽이 실시간으로 생성되는 인터랙티브 비주얼 시스템. 키보드 입력을 이벤트로 받아 루프 주기, 분포 패턴 등의 주요 파라미터를 즉각적으로 변경한다. 동일한 구조 위에서 매 순간 다른 시각적 상태를 생성하는 시스템으로 설계되었다.' },
 ];
 const NOTES = ['♩','♪','♫','♬','𝄞','♭','♮','♯'];
 const PINK  = '#ff2f92';
@@ -269,7 +371,7 @@ projects.forEach((p, i) => {
 
   w.addEventListener('mouseenter', () => { cur.classList.add('big'); spawnNotes(w,5); playScratch(1); });
   w.addEventListener('mouseleave', () => { cur.classList.remove('big'); playScratch(-1); });
-  w.addEventListener('click', () => spawnNotes(w,12));
+  w.addEventListener('click', () => { spawnNotes(w,4); openPopup(projects[i]); });
 });
 
 // ═══════════════════════════════════════
@@ -707,6 +809,97 @@ function drawBg(ts) {
 }
 
 requestAnimationFrame(drawBg);
+
+// ═══════════════════════════════════════
+// PS2 MEMORY CARD POPUP
+// ═══════════════════════════════════════
+const popupOverlay = document.getElementById('popup-overlay');
+const popupCard    = document.getElementById('popup-card');
+let   activeVid    = null;
+
+function openPopup(p) {
+  // stop previous video if any
+  if (activeVid) { activeVid.pause(); activeVid = null; }
+
+  // rebuild card contents
+  popupCard.innerHTML = '';
+
+  // ── left PS2 sidebar
+  const sidebar = document.createElement('div');
+  sidebar.className = 'ps2-sidebar';
+  sidebar.innerHTML =
+    `<span class="ps2-label">Memory Card</span>` +
+    `<div class="ps2-dots">${'<span></span>'.repeat(9)}</div>` +
+    `<span class="ps2-mb">8MB</span>`;
+
+  // ── right body
+  const body = document.createElement('div');
+  body.className = 'popup-body';
+
+  // header
+  const hdr = document.createElement('div');
+  hdr.className = 'popup-header';
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'popup-close';
+  closeBtn.textContent = '×';
+  closeBtn.addEventListener('click', closePopup);
+  const numEl = document.createElement('span');
+  numEl.className = 'popup-num';
+  numEl.textContent = p.id;
+  const titleEl = document.createElement('span');
+  titleEl.className = 'popup-title';
+  titleEl.textContent = p.title;
+  hdr.appendChild(numEl); hdr.appendChild(titleEl); hdr.appendChild(closeBtn);
+
+  // media
+  const media = document.createElement('div');
+  media.className = 'popup-media';
+  p.files.forEach(f => {
+    if (f.type === 'img') {
+      const img = document.createElement('img');
+      img.src = f.src; img.alt = p.title;
+      media.appendChild(img);
+    } else {
+      const vid = document.createElement('video');
+      vid.src = f.src;
+      vid.autoplay = true; vid.muted = true;
+      vid.loop = true; vid.playsInline = true;
+      vid.controls = true;
+      activeVid = vid;
+      media.appendChild(vid);
+    }
+  });
+
+  // description
+  const desc = document.createElement('div');
+  desc.className = 'popup-desc';
+  desc.textContent = p.desc;
+
+  body.appendChild(hdr); body.appendChild(media); body.appendChild(desc);
+  popupCard.appendChild(sidebar); popupCard.appendChild(body);
+
+  // animate in
+  popupCard.classList.remove('open');
+  void popupCard.offsetWidth; // force reflow to reset animation
+  popupOverlay.classList.add('active');
+  popupCard.classList.add('open');
+}
+
+function closePopup() {
+  popupOverlay.classList.remove('active');
+  popupCard.classList.remove('open');
+  if (activeVid) { activeVid.pause(); activeVid = null; }
+}
+
+// close on overlay background click
+popupOverlay.addEventListener('click', e => {
+  if (e.target === popupOverlay) closePopup();
+});
+
+// close on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePopup();
+});
 
 // ═══════════════════════════════════════
 // VINYL SCRATCH SFX  (Web Audio API)
