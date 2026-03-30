@@ -762,7 +762,7 @@ function drawBg(ts) {
 
       // stroke outline — pink + teal accent on k%3===1
       ctx.beginPath(); ctx.arc(cx2, cy2, r, 0, Math.PI*2);
-      ctx.strokeStyle = k % 3 === 1 ? '#00e8d0' : PINK;
+      ctx.strokeStyle = PINK;
       ctx.lineWidth   = k === cl.rings ? 3 + rv*2 : 1.2;
       ctx.globalAlpha = 0.7 + rv*0.2;
       ctx.stroke();
