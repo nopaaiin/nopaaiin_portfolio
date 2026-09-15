@@ -22,7 +22,7 @@ GitHub 저장소: https://github.com/nopaaiin/nopaaiin_portfolio
 | `portfolio.js` | 작품명·설명·이미지·영상 목록, 상세창, 첫 화면 사진 경로 |
 | `backgrounds/` | 첫 화면 격자 뒤에 넣을 원본 사진 |
 | 기존 이미지·영상 파일 | 작품 원본과 대표 이미지 |
-| `about.html`, `last.html`, `index_backup.html` | 기존에 보관되어 있던 별도 페이지 |
+
 
 작품 순서는 01 RADIUS, 02 청결강박, 03 RICE, 04 RAGE, 05 album E, 06 GRID입니다.
 
