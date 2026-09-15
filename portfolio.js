@@ -33,11 +33,61 @@ if (heroImage) {
   heroPhoto.src = heroImage;
 }
 
-// 첫 화면이 보이지 않을 때는 장식 애니메이션을 멈춥니다.
+// 여러 주기의 곡선을 겹쳐 흰색 경계가 파도처럼 흐르게 합니다.
 const hero = document.querySelector('.hero');
+const wavePaths = [...document.querySelectorAll('.hero-wave')];
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+let heroVisible = true;
+let waveFrame = null;
+let previousWaveTime = null;
+let waveTime = 0;
+
+function drawHeroWaves(time) {
+  wavePaths.forEach((path, layer) => {
+    const offset = (2 - layer) * 84;
+    const phase = time + layer * .75;
+    let shape = 'M -240 -180';
+    for (let y = -180; y <= 1180; y += 34) {
+      const x = 510 + offset
+        + 87 * Math.sin(y / 180 - phase * .8)
+        + 34 * Math.sin(y / 93 + phase * .53)
+        + 24 * Math.sin(phase * .67);
+      shape += ` L ${x.toFixed(1)} ${y}`;
+    }
+    path.setAttribute('d', `${shape} L -240 1180 Z`);
+  });
+}
+
+function animateHeroWaves(now) {
+  if (previousWaveTime === null) previousWaveTime = now;
+  const elapsed = now - previousWaveTime;
+  // 30fps면 충분히 부드럽고 모바일의 불필요한 재그리기를 줄일 수 있습니다.
+  if (elapsed >= 1000 / 30) {
+    waveTime += Math.min(elapsed, 100) / 1000;
+    previousWaveTime = now;
+    drawHeroWaves(waveTime);
+  }
+  waveFrame = requestAnimationFrame(animateHeroWaves);
+}
+
+function syncHeroMotion() {
+  const shouldAnimate = heroVisible && !document.hidden && !reducedMotion.matches;
+  hero.classList.toggle('is-offscreen', !heroVisible || document.hidden);
+  if (waveFrame !== null) cancelAnimationFrame(waveFrame);
+  waveFrame = null;
+  previousWaveTime = null;
+  if (reducedMotion.matches) drawHeroWaves(0);
+  if (shouldAnimate) waveFrame = requestAnimationFrame(animateHeroWaves);
+}
+
+drawHeroWaves(0);
+syncHeroMotion();
+reducedMotion.addEventListener('change', syncHeroMotion);
+document.addEventListener('visibilitychange', syncHeroMotion);
 if ('IntersectionObserver' in window) {
   new IntersectionObserver(entries => {
-    hero.classList.toggle('is-offscreen', !entries[0].isIntersecting);
+    heroVisible = entries[0].isIntersecting;
+    syncHeroMotion();
   }).observe(hero);
 }
 

@@ -21,9 +21,26 @@
     <div class="hero-visual" aria-hidden="true">
       <div class="hero-mosaic"></div>
     </div>
-    <div class="hero-wash" aria-hidden="true"></div>
+    <div class="hero-wash" aria-hidden="true">
+      <svg class="hero-waves" viewBox="0 0 1200 1000" preserveAspectRatio="none" focusable="false">
+        <defs>
+          <linearGradient id="wave-paper" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="55%" stop-color="#ffffff" />
+            <stop offset="100%" stop-color="#fff5fa" />
+          </linearGradient>
+          <filter id="wave-softness" x="-40%" y="-30%" width="180%" height="160%" color-interpolation-filters="sRGB">
+            <feGaussianBlur stdDeviation="28" />
+          </filter>
+        </defs>
+        <g fill="url(#wave-paper)" filter="url(#wave-softness)">
+          <path class="hero-wave" opacity=".24" d="M -240 -180 H 720 V 1180 H -240 Z" />
+          <path class="hero-wave" opacity=".5" d="M -240 -180 H 630 V 1180 H -240 Z" />
+          <path class="hero-wave" d="M -240 -180 H 520 V 1180 H -240 Z" />
+        </g>
+      </svg>
+    </div>
     <h1 class="hero-title" id="hero-title">nopaaiin</h1>
-    <a class="hero-scroll" href="#work">VIEW WORK <span aria-hidden="true">↓</span></a>
   </section>
 
   <main id="work" tabindex="-1">
@@ -36,9 +53,9 @@
       <section class="contact-panel" id="contact" aria-labelledby="contact-heading" tabindex="-1">
         <h2 class="small-heading" id="contact-heading">CONTACT</h2>
         <div class="contact-links">
-          <a href="https://www.instagram.com/nopaiin/" target="_blank" rel="noopener noreferrer">
+          <a href="https://www.instagram.com/nopaaiin/" target="_blank" rel="noopener noreferrer">
             <span class="contact-label">Instagram</span>
-            <span class="contact-value">@nopaiin <span aria-hidden="true">↗</span></span>
+            <span class="contact-value">@nopaaiin <span aria-hidden="true">↗</span></span>
           </a>
           <a href="mailto:a01064941102@gmail.com">
             <span class="contact-label">Email</span>

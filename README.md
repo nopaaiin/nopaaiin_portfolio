@@ -4,11 +4,11 @@ GitHub 저장소: https://github.com/nopaaiin/nopaaiin_portfolio
 
 ## 현재 디자인
 
-- 첫 화면 왼쪽 중앙에 큰 `nopaaiin` 이름
-- 오른쪽의 둥근 사각형 격자와 가운데를 천천히 움직이는 흰색 그라데이션
+- 첫 화면 왼쪽 중앙에 핑크색이 흐르는 큰 `nopaaiin` 이름
+- 오른쪽의 둥근 사각형 격자와 가운데에서 파도처럼 일렁이는 흰색 그라데이션
 - 첫 화면 아래의 정적인 작품 그리드 6개와 이미지·영상 상세창
 - 위쪽 흰색, 아래쪽 핑크 배경
-- Instagram: https://www.instagram.com/nopaiin/
+- Instagram: https://www.instagram.com/nopaaiin/
 - Email: a01064941102@gmail.com
 
 첫 화면에는 제공된 `pink_found-12.tif`를 연결했습니다. 원본은 수정하지 않고 색상 프로파일을 sRGB로 변환한 웹용 사본 `backgrounds/hero.webp`를 사용합니다.
