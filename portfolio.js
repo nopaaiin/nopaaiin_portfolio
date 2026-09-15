@@ -20,7 +20,7 @@ const projects = [
     desc:'균일한 사각형 그리드를 기반으로, 비정형 그래픽이 실시간으로 생성되는 인터랙티브 비주얼 시스템. 키보드 입력을 이벤트로 받아 루프 주기, 분포 패턴 등의 주요 파라미터를 즉각적으로 변경한다. 동일한 구조 위에서 매 순간 다른 시각적 상태를 생성하는 시스템으로 설계되었다.' },
 ];
 
-// 첫 화면 오른쪽 격자 뒤에 들어갈 원본 사진입니다.
+// 첫 화면 위쪽 절반의 격자 뒤에 들어갈 원본 사진입니다.
 // 사진을 backgrounds 폴더에 넣은 뒤 아래 경로를 지정하세요.
 // 현재 사진: pink_found-12.tif의 웹용 sRGB 사본.
 const heroImage = 'backgrounds/hero.webp';
@@ -44,17 +44,17 @@ let waveTime = 0;
 
 function drawHeroWaves(time) {
   wavePaths.forEach((path, layer) => {
-    const offset = (2 - layer) * 84;
+    const offset = (2 - layer) * 75;
     const phase = time + layer * .75;
-    let shape = 'M -240 -180';
-    for (let y = -180; y <= 1180; y += 34) {
-      const x = 510 + offset
-        + 87 * Math.sin(y / 180 - phase * .8)
-        + 34 * Math.sin(y / 93 + phase * .53)
-        + 24 * Math.sin(phase * .67);
-      shape += ` L ${x.toFixed(1)} ${y}`;
+    let shape = 'M -180 1180';
+    for (let x = -180; x <= 1380; x += 30) {
+      const y = 850 - offset
+        + 85 * Math.sin(x / 185 - phase * .8)
+        + 30 * Math.sin(x / 97 + phase * .53)
+        + 18 * Math.sin(phase * .67);
+      shape += ` L ${x} ${y.toFixed(1)}`;
     }
-    path.setAttribute('d', `${shape} L -240 1180 Z`);
+    path.setAttribute('d', `${shape} L 1380 1180 Z`);
   });
 }
 

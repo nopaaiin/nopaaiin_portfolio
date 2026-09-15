@@ -49,19 +49,21 @@ a:focus-visible, button:focus-visible { outline: 2px solid #971d58; outline-offs
 
 .hero {
   position: relative;
-  min-height: 620px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   height: 100svh;
+  min-height: 0;
   overflow: hidden;
   isolation: isolate;
-  background: linear-gradient(180deg, #fff 0%, #fff 35%, #fff7fb 72%, #f8d7e9 100%);
+  background: #fff;
 }
-.hero-visual { position: absolute; inset: 0 0 0 30%; pointer-events: none; }
+.hero-visual { position: relative; grid-row: 1; min-height: 0; pointer-events: none; }
 .hero-mosaic {
   position: absolute;
   inset: 0;
   background-color: #e5d9e3;
-  background-image: var(--hero-image, linear-gradient(128deg, #d3e8f3 0%, #cad7df 24%, #b6abb8 42%, #79727c 64%, #cba9c0 86%, #ecd4e3 100%));
-  background-position: left top;
+  background-image: var(--hero-image, linear-gradient(128deg, #ecd4e3, #cba9c0));
+  background-position: center 42%;
   background-size: cover;
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect x='1.2' y='1.2' width='45.6' height='45.6' rx='11' fill='white'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect x='1.2' y='1.2' width='45.6' height='45.6' rx='11' fill='white'/%3E%3C/svg%3E");
@@ -70,24 +72,22 @@ a:focus-visible, button:focus-visible { outline: 2px solid #971d58; outline-offs
   -webkit-mask-repeat: repeat;
   mask-repeat: repeat;
 }
-.hero-wash {
-  position: absolute;
-  z-index: 1;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,.8) 20%, rgba(255,255,255,0) 48%);
-}
+.hero-wash { position: absolute; z-index: 1; inset: 0; pointer-events: none; }
 .hero-waves { display: block; width: 100%; height: 100%; overflow: visible; }
+.hero-identity {
+  position: relative;
+  z-index: 2;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  padding: 20px var(--page-gutter);
+  min-height: 0;
+  background: #fff;
+}
 .hero.is-offscreen .hero-title { animation-play-state: paused; }
 .hero-title {
-  position: absolute;
-  z-index: 2;
-  left: var(--page-gutter);
-  top: auto;
-  bottom: clamp(28px, 5vh, 64px);
-  transform: none;
   margin: 0;
-  font-size: clamp(44px, 5.2vw, 88px);
+  font-size: clamp(60px, 8vw, 144px);
   font-weight: 400;
   line-height: 1;
   letter-spacing: -.065em;
@@ -183,11 +183,8 @@ main { outline: none; padding: 55px var(--page-gutter) 0; }
 @media (max-width: 640px) {
   :root { --page-gutter: 12px; --grid-gap: 5px; }
   .site-header { gap: 20px; padding: 19px var(--page-gutter); }
-  .hero { min-height: 560px; }
-  .hero-visual { left: 18%; }
-  .hero-mosaic { background-position: 28% top; }
-  .hero-title { left: var(--page-gutter); top: auto; bottom: 24px; font-size: clamp(40px, 9vw, 58px); }
-  .hero-wash { left: -16%; right: -5%; }
+  .hero-mosaic { background-position: center; }
+  .hero-title { font-size: clamp(54px, 14vw, 84px); }
   .header-work, .header-contact { font-size: 11px; }
   .header-work span { margin-left: 3px; }
   main { padding-top: 24px; }
