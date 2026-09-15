@@ -87,7 +87,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid #971d58; outline-offs
 .hero.is-offscreen .hero-title { animation-play-state: paused; }
 .hero-title {
   margin: 0;
-  font-size: clamp(60px, 8vw, 144px);
+  font-size: clamp(52px, 6.5vw, 116px);
   font-weight: 400;
   line-height: 1;
   letter-spacing: -.065em;
@@ -184,7 +184,7 @@ main { outline: none; padding: 55px var(--page-gutter) 0; }
   :root { --page-gutter: 12px; --grid-gap: 5px; }
   .site-header { gap: 20px; padding: 19px var(--page-gutter); }
   .hero-mosaic { background-position: center; }
-  .hero-title { font-size: clamp(54px, 14vw, 84px); }
+  .hero-title { font-size: clamp(46px, 11vw, 70px); }
   .header-work, .header-contact { font-size: 11px; }
   .header-work span { margin-left: 3px; }
   main { padding-top: 24px; }
