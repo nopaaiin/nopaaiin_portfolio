@@ -2,7 +2,7 @@
   color-scheme: light;
   font-family: Arial, "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
   color: #171316;
-  background: #fff;
+  background: #f3afd0;
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   --page-gutter: 20px;
@@ -13,15 +13,7 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 84px; scrollbar-gutter: stable; }
-body { margin: 0; min-width: 280px; min-height: 100svh; position: relative; isolation: isolate; }
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  background: linear-gradient(180deg, #fff 0%, #fff 17%, #fff4f8 40%, #fbd8e9 70%, #f3afd0 100%);
-  pointer-events: none;
-}
+body { margin: 0; min-width: 280px; min-height: 100svh; position: relative; background: #f3afd0; }
 a { color: inherit; text-decoration: none; }
 button { color: inherit; font: inherit; cursor: pointer; }
 button, a { -webkit-tap-highlight-color: transparent; }
@@ -63,7 +55,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid #971d58; outline-offs
   inset: 0;
   background-color: #e5d9e3;
   background-image: var(--hero-image, linear-gradient(128deg, #ecd4e3, #cba9c0));
-  background-position: center 42%;
+  background-position: center 60%;
   background-size: cover;
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect x='1.2' y='1.2' width='45.6' height='45.6' rx='11' fill='white'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect x='1.2' y='1.2' width='45.6' height='45.6' rx='11' fill='white'/%3E%3C/svg%3E");
@@ -82,7 +74,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid #971d58; outline-offs
   align-items: center;
   padding: 20px var(--page-gutter);
   min-height: 0;
-  background: #fff;
+  background: linear-gradient(180deg, #fff 0%, #fff 48%, #fff9fc 72%, #fff1f7 100%);
 }
 .hero.is-offscreen .hero-title { animation-play-state: paused; }
 .hero-title {
@@ -108,7 +100,11 @@ a:focus-visible, button:focus-visible { outline: 2px solid #971d58; outline-offs
   to { background-position: 100% 50%; }
 }
 
-main { outline: none; padding: 55px var(--page-gutter) 0; }
+main {
+  outline: none;
+  padding: 55px var(--page-gutter) 0;
+  background: linear-gradient(180deg, #fff1f7 0, #fbd8e9 46svh, #f3afd0 95svh);
+}
 .work-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px var(--grid-gap); align-items: start; }
 .index-panel { padding: 1px 26px 0 0; }
 .small-heading { margin: 0 0 24px; font-size: 12px; font-weight: 400; line-height: 1.3; }
