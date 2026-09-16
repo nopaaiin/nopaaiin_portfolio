@@ -72,20 +72,20 @@ a:focus-visible, button:focus-visible { outline: 2px solid #971d58; outline-offs
   grid-row: 2;
   display: flex;
   align-items: center;
-  padding: 20px var(--page-gutter);
+  justify-content: center;
+  padding: 0 var(--page-gutter) clamp(24px, 4svh, 48px);
   min-height: 0;
   background: linear-gradient(180deg, #fff 0%, #fff 48%, #fff9fc 72%, #fff1f7 100%);
 }
 .hero-title {
   position: relative;
   margin: 0;
-  /* Match the former title width, while keeping the supplied wordmark proportional. */
-  width: min(3.261em, calc((50svh - 40px) * 516 / 415));
+  /* Keep the wordmark balanced with the image, including on short screens. */
+  width: min(clamp(180px, 20vw, 320px), calc(36svh * 516 / 415));
   max-width: 100%;
   aspect-ratio: 516 / 415;
   overflow: hidden;
   flex-shrink: 0;
-  font-size: clamp(52px, 6.5vw, 116px);
   line-height: 1;
 }
 .hero-wordmark {
@@ -177,7 +177,6 @@ main {
   :root { --page-gutter: 12px; --grid-gap: 5px; }
   .site-header { gap: 20px; padding: 19px var(--page-gutter); }
   .hero-mosaic { background-position: center; }
-  .hero-title { font-size: clamp(46px, 11vw, 70px); }
   .header-work, .header-contact { font-size: 11px; }
   .header-work span { margin-left: 3px; }
   main { padding-top: 24px; }
