@@ -125,14 +125,14 @@ main {
 .project-card:hover .project-arrow, .project-card:focus-visible .project-arrow { opacity: 1; }
 .project-card:hover .project-name { text-decoration: underline; text-underline-offset: 3px; }
 
-.contact-panel { grid-column: 1 / -1; padding: clamp(76px, 10vw, 160px) 0 20px; display: flex; flex-direction: column; align-items: flex-start; outline: none; scroll-margin-top: 30px; }
-.contact-name { margin: 0 0 48px; font-size: clamp(26px, 2.5vw, 36px); font-weight: 700; line-height: 1.15; letter-spacing: -.035em; }
-.contact-bio { margin: 0 0 34px; font-size: 14px; line-height: 1.8; }
+.contact-panel { min-width: 0; padding: 5px 0 30px 22px; align-self: stretch; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; outline: none; scroll-margin-top: 30px; }
+.contact-name { margin: 0 0 22px; font-size: 14px; font-weight: 700; line-height: 1.5; letter-spacing: 0; }
+.contact-bio { margin: 0 0 22px; font-size: 12px; line-height: 1.8; }
 .contact-bio span { display: block; }
-.contact-subheading { margin: 0 0 9px; font-size: 14px; font-weight: 500; line-height: 1.5; }
+.contact-subheading { margin: 0 0 9px; font-size: 12px; font-weight: 500; line-height: 1.5; }
 .contact-links { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
 .contact-links a { display: block; }
-.contact-value { font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.contact-value { font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 .contact-value > span { margin-left: 5px; }
 .contact-links a:hover .contact-value { text-decoration: underline; text-underline-offset: 4px; }
 .site-footer { margin: 76px var(--page-gutter) 0; padding: 15px 0 18px; display: flex; justify-content: space-between; gap: 20px; border-top: 1px solid var(--rule); font-size: 11px; line-height: 1.5; }
@@ -171,6 +171,7 @@ main {
   .index-panel .small-heading { margin-bottom: 14px; }
   .project-index { flex-direction: row; flex-wrap: wrap; gap: 8px 25px; }
   .index-link { gap: 8px; }
+  .contact-panel { grid-column: 1 / -1; padding: 30px 0 0; }
   .site-footer { margin-top: 52px; }
 }
 @media (max-width: 640px) {
@@ -187,8 +188,6 @@ main {
   .index-link { font-size: 12px; gap: 7px; min-height: 25px; }
   .project-caption { grid-template-columns: 20px 1fr 12px; gap: 4px; font-size: 12px; padding-top: 8px; }
   .project-arrow { opacity: 1; }
-  .contact-panel { padding-top: 66px; }
-  .contact-name { margin-bottom: 38px; }
   .site-footer { margin-top: 42px; font-size: 10px; }
   .project-dialog { width: calc(100% - 20px); max-height: calc(100svh - 20px); padding: 0 16px 20px; }
   .detail-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 16px; }
