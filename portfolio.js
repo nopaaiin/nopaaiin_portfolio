@@ -275,7 +275,7 @@ const index = document.getElementById('project-index');
 const contact = document.getElementById('contact');
 const dialog = document.getElementById('project-dialog');
 const detailMedia = document.getElementById('detail-media');
-const heroTitle = document.getElementById('hero-title');
+const heroWordmark = document.getElementById('hero-wordmark');
 const workCount = document.getElementById('work-count');
 const indexRange = document.getElementById('index-range');
 
@@ -350,7 +350,7 @@ function buildCard(project) {
 function render() {
   const total = content.projects.length;
 
-  heroTitle.textContent = content.hero.title;
+  heroWordmark.alt = content.hero.title;
   document.title = content.hero.title || 'nopaaiin';
   const heroUrl = resolveSource(content.hero.image);
   document.body.style.setProperty('--hero-image', heroUrl ? `url("${heroUrl}")` : '');
