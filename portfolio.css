@@ -88,7 +88,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid #971d58; outline-offs
   flex-shrink: 0;
   line-height: 1;
 }
-.hero-wordmark {
+.hero-wordmark, .hero-title::after {
   /* Visible pixels occupy x:75–591, y:124–539 of the original 667px PNG. */
   position: absolute;
   top: -29.879518%;
@@ -96,6 +96,15 @@ a:focus-visible, button:focus-visible { outline: 2px solid #971d58; outline-offs
   width: 129.263566%;
   max-width: none;
   height: auto;
+}
+.hero-wordmark { opacity: 0; }
+.hero-title::after {
+  content: "";
+  aspect-ratio: 1;
+  background: #f3afd0;
+  -webkit-mask: url("assets/webhead.png") center / contain no-repeat;
+  mask: url("assets/webhead.png") center / contain no-repeat;
+  pointer-events: none;
 }
 
 main {
