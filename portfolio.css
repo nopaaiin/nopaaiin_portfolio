@@ -57,8 +57,9 @@ a:focus-visible, button:focus-visible { outline: 2px solid #971d58; outline-offs
   background-image: var(--hero-image, linear-gradient(128deg, #ecd4e3, #cba9c0));
   background-position: center 60%;
   background-size: cover;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect x='1.2' y='1.2' width='45.6' height='45.6' rx='11' fill='white'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect x='1.2' y='1.2' width='45.6' height='45.6' rx='11' fill='white'/%3E%3C/svg%3E");
+  /* Reveal the photograph through a repeating field of thick plus signs. */
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cpath d='M19 5a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v14h14a3 3 0 0 1 3 3v4a3 3 0 0 1-3 3H29v14a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3V29H5a3 3 0 0 1-3-3v-4a3 3 0 0 1 3-3h14V5Z' fill='white'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cpath d='M19 5a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v14h14a3 3 0 0 1 3 3v4a3 3 0 0 1-3 3H29v14a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3V29H5a3 3 0 0 1-3-3v-4a3 3 0 0 1 3-3h14V5Z' fill='white'/%3E%3C/svg%3E");
   -webkit-mask-size: clamp(35px, 3.7vw, 64px) clamp(35px, 3.7vw, 64px);
   mask-size: clamp(35px, 3.7vw, 64px) clamp(35px, 3.7vw, 64px);
   -webkit-mask-repeat: repeat;
@@ -105,6 +106,8 @@ a:focus-visible, button:focus-visible { outline: 2px solid #971d58; outline-offs
   background: #f3afd0;
   -webkit-mask: url("assets/webhead.png") center / contain no-repeat;
   mask: url("assets/webhead.png") center / contain no-repeat;
+  filter: blur(2.4px);
+  opacity: .94;
   pointer-events: none;
 }
 
