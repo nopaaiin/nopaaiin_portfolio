@@ -1,5 +1,5 @@
 // 포트폴리오에 들어가는 글과 사진 목록입니다.
-// 관리자 모드에서 2026. 9. 16. 오후 1:24:39 에 내보냈습니다.
+// 관리자 모드에서 2026. 9. 20. 오전 2:02:48 에 내보냈습니다.
 window.PORTFOLIO_CONTENT = {
   "hero": {
     "title": "nopaaiin",
@@ -57,8 +57,8 @@ window.PORTFOLIO_CONTENT = {
       "title": "SRRY♥",
       "category": "Graphic design / Book design / 2026",
       "desc": "『SRRY♥』, 2026, 종이에 디지털 인쇄, 무선제본,\n\n180mm*180mm\n\n『SRRY♥』는 Effie와 The Deep의 동명 곡을 책이라는 환경 안으로 옮겨온 뮤직북이다. 이 책은 핑크로서 존재하고, 핑크로서 설명된다. 글로스를 바른 입술, 무기이자 갑옷이 되는 네일, 미안한 것마저 꾸미고 마는 태도. 책은 Effie와 The Deep이 그리는 이 과장된 미소녀의 세계를 설명한다. 결국 책은 스트리밍으로 흘러가버리는 노래를 만져지고 갖고 싶은 물성으로 붙잡으려는 시도로 기능한다.\n​\n이들의 언어는 한국어도 영어도 아니라 둘이 뒤섞인 말이다. 그래서 용어마다 각주를 달고 화자의 입장에서 사전식으로 번역해 조판한다. 번역은 곧 해석이고, 각주는 좋아하는 마음이 멈추지 않고 끝까지 파고든 흔적이된다.",
-      "poster": "media/media-1.png",
-      "coverClass": "cover-dark",
+      "poster": "media/5DFAF9D1-EB17-42F4-9EF5-1ED2A20F7503_4_5005_c.jpeg",
+      "coverClass": "cover-poster",
       "files": [
         {
           "src": "media/dkzkdlqld.jpeg",
