@@ -57,13 +57,15 @@ a:focus-visible, button:focus-visible { outline: 2px solid #971d58; outline-offs
   background-image: var(--hero-image, linear-gradient(128deg, #ecd4e3, #cba9c0));
   background-position: center 60%;
   background-size: cover;
-  /* Reveal the photograph through a repeating field of thick plus signs. */
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cpath d='M19 1h10a4 4 0 0 1 4 4v6q0 4 4 4h6a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-6q-4 0-4 4v6a4 4 0 0 1-4 4H19a4 4 0 0 1-4-4v-6q0-4-4-4H5a4 4 0 0 1-4-4V19a4 4 0 0 1 4-4h6q4 0 4-4V5a4 4 0 0 1 4-4Z' fill='white'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cpath d='M19 1h10a4 4 0 0 1 4 4v6q0 4 4 4h6a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-6q-4 0-4 4v6a4 4 0 0 1-4 4H19a4 4 0 0 1-4-4v-6q0-4-4-4H5a4 4 0 0 1-4-4V19a4 4 0 0 1 4-4h6q4 0 4-4V5a4 4 0 0 1 4-4Z' fill='white'/%3E%3C/svg%3E");
-  -webkit-mask-size: clamp(35px, 3.7vw, 64px) clamp(35px, 3.7vw, 64px);
-  mask-size: clamp(35px, 3.7vw, 64px) clamp(35px, 3.7vw, 64px);
-  -webkit-mask-repeat: repeat;
-  mask-repeat: repeat;
+}
+.hero-mosaic::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* A solid white plus stays legible while the photograph fills the rounded cells. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cpath d='M19 0h10a4 4 0 0 1 4 4v7q0 4 4 4h7a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-7q-4 0-4 4v7a4 4 0 0 1-4 4H19a4 4 0 0 1-4-4v-7q0-4-4-4H4a4 4 0 0 1-4-4V19a4 4 0 0 1 4-4h7q4 0 4-4V4a4 4 0 0 1 4-4Z' fill='white'/%3E%3C/svg%3E");
+  background-size: clamp(35px, 3.7vw, 64px) clamp(35px, 3.7vw, 64px);
+  background-repeat: repeat;
 }
 .hero-wash { position: absolute; z-index: 1; inset: 0; pointer-events: none; }
 .hero-waves { display: block; width: 100%; height: 100%; overflow: visible; }
