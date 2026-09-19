@@ -63,7 +63,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid #971d58; outline-offs
   position: absolute;
   inset: 0;
   /* A solid white plus stays legible while the photograph fills the rounded cells. */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cpath d='M19 0h10a4 4 0 0 1 4 4v7q0 4 4 4h7a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-7q-4 0-4 4v7a4 4 0 0 1-4 4H19a4 4 0 0 1-4-4v-7q0-4-4-4H4a4 4 0 0 1-4-4V19a4 4 0 0 1 4-4h7q4 0 4-4V4a4 4 0 0 1 4-4Z' fill='white'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cpath d='M20 4h8a4 4 0 0 1 4 4v5q0 3 3 3h5a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4h-5q-3 0-3 3v5a4 4 0 0 1-4 4h-8a4 4 0 0 1-4-4v-5q0-3-3-3H8a4 4 0 0 1-4-4v-8a4 4 0 0 1 4-4h5q3 0 3-3V8a4 4 0 0 1 4-4Z' fill='white'/%3E%3C/svg%3E");
   background-size: clamp(35px, 3.7vw, 64px) clamp(35px, 3.7vw, 64px);
   background-repeat: repeat;
 }
