@@ -192,6 +192,11 @@ main {
 @media (max-width: 640px) {
   :root { --page-gutter: 12px; --grid-gap: 5px; }
   .site-header { gap: 20px; padding: 19px var(--page-gutter); }
+  .hero {
+    grid-template-rows: minmax(0, 56fr) minmax(0, 44fr);
+    height: 100dvh;
+    min-height: 100svh;
+  }
   .hero-mosaic { background-position: center; }
   .header-work, .header-contact { font-size: 11px; }
   .header-work span { margin-left: 3px; }
