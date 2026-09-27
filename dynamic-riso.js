@@ -15,8 +15,9 @@ window.DynamicRiso = (() => {
   const FIRST_OBJECT_RELEASE = 2;
   const RELEASE_INTERVAL = 0.3;
   const SEESAW_RELEASE_TIME = 4.6;
-  const PRIMARY_ALPHA = 230;
-  const UNDERPRINT_ALPHA = 0;
+  // 실제 시소처럼 끝이 땅에 닿는 각도에서 멈춘다.
+  const SEESAW_MAX_TILT = 0.4;
+  const INK_ALPHA = 230;
 
   const INKS = [
     {
@@ -55,7 +56,7 @@ window.DynamicRiso = (() => {
 
   const ALL_LAYER_CATEGORIES = INKS.reduce((mask, ink) => mask | ink.category, 0);
 
-  // 배열 순서가 위에서 아래로 해제되는 순서다.
+  // 위에서 아래 순서로 적고, 해제는 맨 아래 도형부터 한다.
   const TOWER_DEFS = [
     { type: 'circle', x: 354, y: 242, d: 104 },
     { type: 'triangle', x: 432, y: 335, r: 54, angle: -Math.PI / 2 },
@@ -142,7 +143,9 @@ window.DynamicRiso = (() => {
 
       let engine;
       let world;
-      let layers = [];
+      let seesaw;
+      let seesawReleased = false;
+      let objects = [];
       let floorBody;
       let pinBodies = [];
       let grainLayer;
@@ -158,7 +161,7 @@ window.DynamicRiso = (() => {
         canvas.elt.setAttribute('role', 'img');
         canvas.elt.setAttribute(
           'aria-label',
-          '네 가지 리소그래프 잉크 레이어가 물성 차이로 무너지고 어긋나는 물리 생성 스케치',
+          '네 가지 리소그래프 잉크 색 도형이 물성 차이로 무너지며 겹쳐 찍히는 물리 생성 스케치',
         );
 
         p.pixelDensity(1);
@@ -181,7 +184,7 @@ window.DynamicRiso = (() => {
 
         createPaperGrain();
         createEnvironment();
-        createLayers();
+        createBodies();
         lastFrameMillis = p.millis();
       };
 
@@ -237,37 +240,38 @@ window.DynamicRiso = (() => {
         World.add(world, pinBodies);
       }
 
-      function createLayers() {
-        layers = INKS.map(ink => {
-          // 시소의 밀도는 동일하게 두어 위 도형의 질량 차이가 기울기에 드러나게 한다.
-          const seesaw = Bodies.rectangle(400, 630, 520, 18, {
-            density: 0.003,
-            restitution: ink.restitution,
-            friction: ink.friction,
-            // 회전 감쇠 역할: 시소가 탁 치지 않고 천천히 기운다.
-            frictionAir: 0.02,
-            collisionFilter: {
-              category: ink.category,
-              mask: ink.category | WORLD_CATEGORY,
-            },
-          });
-          Body.rotate(seesaw, -0.08);
-          Body.setStatic(seesaw, true);
-          seesaw.shapeData = { type: 'rect', w: 520, h: 18 };
-
-          const pivot = Constraint.create({
-            pointA: { x: 400, y: 630 },
-            bodyB: seesaw,
-            pointB: { x: 0, y: 0 },
-            length: 0,
-            stiffness: 1,
-            damping: 0.08,
-          });
-
-          const objects = TOWER_DEFS.map(definition => createTowerBody(definition, ink));
-          World.add(world, [seesaw, pivot, ...objects]);
-          return { ink, inkIndex: INKS.indexOf(ink), seesaw, pivot, seesawReleased: false, objects };
+      function createBodies() {
+        // 시소는 하나. 모든 잉크 도형을 받친다.
+        seesaw = Bodies.rectangle(400, 630, 520, 18, {
+          density: 0.003,
+          restitution: 0.1,
+          friction: 0.5,
+          // 회전 감쇠 역할: 시소가 탁 치지 않고 천천히 기운다.
+          frictionAir: 0.02,
+          collisionFilter: {
+            category: WORLD_CATEGORY,
+            mask: ALL_LAYER_CATEGORIES,
+          },
         });
+        Body.rotate(seesaw, -0.08);
+        Body.setStatic(seesaw, true);
+        seesaw.shapeData = { type: 'rect', w: 520, h: 18 };
+        seesaw.ink = INKS[2];
+
+        const pivot = Constraint.create({
+          pointA: { x: 400, y: 630 },
+          bodyB: seesaw,
+          pointB: { x: 0, y: 0 },
+          length: 0,
+          stiffness: 1,
+          damping: 0.08,
+        });
+
+        // 도형은 한 세트뿐이다. 도형마다 잉크 하나를 맡고 그 잉크의 물성을 따른다.
+        objects = TOWER_DEFS.map((definition, index) => (
+          createTowerBody(definition, INKS[index % INKS.length])
+        ));
+        World.add(world, [seesaw, pivot, ...objects]);
       }
 
       function createTowerBody(definition, ink) {
@@ -304,39 +308,45 @@ window.DynamicRiso = (() => {
 
         if (definition.angle) Body.rotate(body, definition.angle);
         Body.setStatic(body, true);
+        body.ink = ink;
         body.released = false;
         body.removed = false;
         return body;
       }
 
       function releaseAccordingToTimeline(elapsed) {
-        if (elapsed >= SEESAW_RELEASE_TIME) {
-          layers.forEach(layer => {
-            if (layer.seesawReleased) return;
-            Body.setStatic(layer.seesaw, false);
-            wakeLayer(layer);
-            Body.setAngularVelocity(layer.seesaw, 0);
-            layer.seesawReleased = true;
-          });
+        if (elapsed >= SEESAW_RELEASE_TIME && !seesawReleased) {
+          Body.setStatic(seesaw, false);
+          Body.setAngularVelocity(seesaw, 0);
+          seesawReleased = true;
+          wakeAll();
         }
 
-        layers.forEach(layer => {
-          layer.objects.forEach((body, position) => {
-            const releaseTime = FIRST_OBJECT_RELEASE + position * RELEASE_INTERVAL;
-            if (elapsed < releaseTime || body.released || body.removed) return;
-            body.collisionFilter.mask = layer.ink.category | WORLD_CATEGORY;
-            Body.setStatic(body, false);
-            body.released = true;
-            // 먼저 떨어져 위에서 잠든 도형이 받침이 빠진 뒤 공중에 멈추지 않게 깨운다.
-            wakeLayer(layer);
-          });
+        objects.forEach((body, index) => {
+          // 아래 도형부터 푼다. 위 도형이 먼저 떨어지면 아직 고정된 같은 잉크 도형과 겹쳤다가
+          // 풀리는 순간 서로 밀어내며 튕겨 나간다.
+          const position = objects.length - 1 - index;
+          const releaseTime = FIRST_OBJECT_RELEASE + position * RELEASE_INTERVAL;
+          if (elapsed < releaseTime || body.released || body.removed) return;
+          // 같은 잉크끼리만 부딪히고 다른 잉크는 서로 통과해 겹쳐 찍힌다.
+          body.collisionFilter.mask = body.ink.category | WORLD_CATEGORY;
+          Body.setStatic(body, false);
+          body.released = true;
+          // 먼저 떨어져 위에서 잠든 도형이 받침이 빠진 뒤 공중에 멈추지 않게 깨운다.
+          wakeAll();
         });
       }
 
-      function wakeLayer(layer) {
-        [layer.seesaw, ...layer.objects].forEach(body => {
+      function wakeAll() {
+        [seesaw, ...objects].forEach(body => {
           if (!body.isStatic && !body.removed) Sleeping.set(body, false);
         });
+      }
+
+      function limitSeesawTilt() {
+        if (!seesawReleased || Math.abs(seesaw.angle) <= SEESAW_MAX_TILT) return;
+        Body.setAngle(seesaw, Math.sign(seesaw.angle) * SEESAW_MAX_TILT);
+        Body.setAngularVelocity(seesaw, 0);
       }
 
       function stepPhysics() {
@@ -347,30 +357,31 @@ window.DynamicRiso = (() => {
           // 타임라인도 시뮬레이션 시간 기준이라 느린 기기에서도 순서가 어긋나지 않는다.
           releaseAccordingToTimeline(simTime / 1000);
           Engine.update(engine, PHYSICS_STEP);
+          limitSeesawTilt();
           simTime += PHYSICS_STEP;
           accumulator -= PHYSICS_STEP;
         }
       }
 
       function removeEscapedBodies() {
-        layers.forEach(layer => {
-          layer.objects.forEach(body => {
-            if (body.removed || body.isStatic) return;
-            const outside = body.position.y > CANVAS_H + 260
-              || body.position.x < -360
-              || body.position.x > CANVAS_W + 360;
-            if (!outside) return;
-            World.remove(world, body);
-            body.removed = true;
-          });
+        objects.forEach(body => {
+          if (body.removed || body.isStatic) return;
+          const outside = body.position.y > CANVAS_H + 260
+            || body.position.x < -360
+            || body.position.x > CANVAS_W + 360;
+          if (!outside) return;
+          World.remove(world, body);
+          body.removed = true;
         });
       }
 
-      function drawInkShape(target, body, shape, rgb, alpha) {
+      function drawInkShape(target, body) {
         if (!body || body.removed) return;
+        const shape = body.shapeData;
+        const rgb = body.ink.rgb;
         target.push();
         target.noStroke();
-        target.fill(rgb[0], rgb[1], rgb[2], alpha);
+        target.fill(rgb[0], rgb[1], rgb[2], INK_ALPHA);
 
         if (shape.type === 'triangle') {
           const vertices = body.vertices;
@@ -391,44 +402,24 @@ window.DynamicRiso = (() => {
         target.pop();
       }
 
-      function inkAlpha(layer, shapeIndex) {
-        // 네 판은 같은 좌표를 유지하되, 도형마다 주 잉크와 옅은 밑인쇄를 구분한다.
-        // 네 색을 모두 진하게 곱해 검은 덩어리가 되는 대신 잉크색이 남는다.
-        if (layer.inkIndex === shapeIndex % INKS.length) return PRIMARY_ALPHA;
-        const body = layer.objects[shapeIndex] || layer.seesaw;
-        const span = body.shapeData.w || body.shapeData.d || 108;
-        const nearest = Math.min(...layers.filter(other => other !== layer).map(other => {
-          const peer = other.objects[shapeIndex] || other.seesaw;
-          if (peer.removed) return span;
-          return Math.hypot(body.position.x - peer.position.x, body.position.y - peer.position.y)
-            + Math.abs(Math.sin(body.angle - peer.angle)) * span * 0.4;
-        }));
-        // 물리적으로 판이 벌어지면 밑인쇄도 원래 잉크 농도로 드러난다.
-        return p.lerp(UNDERPRINT_ALPHA, 170, p.constrain(nearest / span, 0, 1));
-      }
-
       function drawEnvironment(target) {
+        target.noStroke();
         INKS.forEach((ink, index) => {
-          target.noStroke();
           target.fill(ink.rgb[0], ink.rgb[1], ink.rgb[2], 180);
           // 공통 바닥은 네 색의 띠를 조금씩 겹쳐 인쇄한다.
           target.rect(floorBody.position.x, 1037 + index * 22, 900, 28);
-          pinBodies.forEach((pin, pinIndex) => {
-            target.fill(...ink.rgb, index === pinIndex % INKS.length ? PRIMARY_ALPHA : UNDERPRINT_ALPHA);
-            target.ellipse(pin.position.x, pin.position.y, pin.drawRadius * 2, pin.drawRadius * 2);
-          });
-          target.fill(...ink.rgb, index === 3 ? PRIMARY_ALPHA : UNDERPRINT_ALPHA);
-          target.ellipse(400, 630, 22, 22);
+        });
+        pinBodies.forEach((pin, pinIndex) => {
+          target.fill(...INKS[pinIndex % INKS.length].rgb, INK_ALPHA);
+          target.ellipse(pin.position.x, pin.position.y, pin.drawRadius * 2, pin.drawRadius * 2);
         });
       }
 
       function drawCurrentBodies() {
-        layers.forEach(layer => {
-          drawInkShape(p, layer.seesaw, layer.seesaw.shapeData, layer.ink.rgb, inkAlpha(layer, TOWER_DEFS.length));
-          layer.objects.forEach((body, index) => {
-            drawInkShape(p, body, body.shapeData, layer.ink.rgb, inkAlpha(layer, index));
-          });
-        });
+        drawInkShape(p, seesaw);
+        objects.forEach(body => drawInkShape(p, body));
+        p.fill(...INKS[3].rgb, INK_ALPHA);
+        p.ellipse(400, 630, 22, 22);
       }
 
       function drawPaperGrain() {
