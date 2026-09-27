@@ -36,7 +36,10 @@ function normalizeProject(raw, position, usedKeys) {
     coverClass: COVER_OPTIONS.some(option => option.value === item.coverClass) ? item.coverClass : 'cover-dark',
     files: files
       .filter(file => file && typeof file === 'object' && asText(file.src))
-      .map(file => ({ src: asText(file.src), type: file.type === 'vid' ? 'vid' : 'img' })),
+      .map(file => ({
+        src: asText(file.src),
+        type: file.type === 'vid' ? 'vid' : (file.type === 'interactive' ? 'interactive' : 'img'),
+      })),
   };
 }
 
@@ -284,6 +287,7 @@ let content = normalizeContent(draftStore.read() || window.PORTFOLIO_CONTENT);
 let openProjectKey = null;
 let openedFrom = null;
 let backdropPointerDown = false;
+let interactiveCleanup = null;
 const renderListeners = new Set();
 
 function pad(value) {
@@ -411,12 +415,25 @@ function fillDialog(project) {
   const signature = JSON.stringify({ poster: project.poster, files: project.files });
   if (detailMedia.dataset.signature === signature) return;
   detailMedia.dataset.signature = signature;
-  releaseDialogVideos();
+  releaseDialogMedia();
   detailMedia.replaceChildren();
 
   project.files.forEach((file, position2) => {
     const source = resolveSource(file.src);
     if (!source) return;
+    if (file.type === 'interactive') {
+      const mount = document.createElement('div');
+      mount.className = 'dynamic-riso-mount';
+      mount.setAttribute('aria-label', `${project.title} 인터랙티브 스케치`);
+      detailMedia.append(mount);
+      if (window.DynamicRiso && typeof window.DynamicRiso.mount === 'function') {
+        interactiveCleanup = window.DynamicRiso.mount(mount);
+      } else {
+        mount.classList.add('dynamic-riso-error');
+        mount.textContent = '스케치를 불러오지 못했습니다. 페이지를 새로고침해 주세요.';
+      }
+      return;
+    }
     if (file.type === 'img') {
       const image = document.createElement('img');
       image.src = source;
@@ -458,6 +475,12 @@ function releaseDialogVideos() {
   });
 }
 
+function releaseDialogMedia() {
+  releaseDialogVideos();
+  if (typeof interactiveCleanup === 'function') interactiveCleanup();
+  interactiveCleanup = null;
+}
+
 document.getElementById('close-project').addEventListener('click', () => dialog.close());
 dialog.addEventListener('pointerdown', event => {
   backdropPointerDown = isOutsideDialog(event);
@@ -467,7 +490,7 @@ dialog.addEventListener('click', event => {
   backdropPointerDown = false;
 });
 dialog.addEventListener('close', () => {
-  releaseDialogVideos();
+  releaseDialogMedia();
   detailMedia.replaceChildren();
   delete detailMedia.dataset.signature;
   document.body.classList.remove('dialog-open');
