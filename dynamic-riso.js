@@ -6,10 +6,15 @@ window.DynamicRiso = (() => {
   const CANVAS_H = 1100;
   const PAPER = '#FFFFFF';
   const WORLD_CATEGORY = 0x0010;
-  const END_TIME = 18;
-  const SEESAW_RELEASE_TIME = 2;
-  const FIRST_OBJECT_RELEASE = 2.25;
+  const END_TIME = 14;
+  // 물리는 화면 프레임과 분리된 고정 스텝으로 돌린다. 프레임이 떨어져도 시뮬레이션 속도는 일정하다.
+  const PHYSICS_STEP = 1000 / 120;
+  const MAX_FRAME_DELTA = 50;
+  // 탑이 고정된 시소 위에 먼저 내려앉은 뒤 시소를 푼다.
+  // 흔들리는 시소 위로 도형이 떨어지면 투석기처럼 튕겨 나간다.
+  const FIRST_OBJECT_RELEASE = 2;
   const RELEASE_INTERVAL = 0.3;
+  const SEESAW_RELEASE_TIME = 4.6;
   const PRIMARY_ALPHA = 230;
   const UNDERPRINT_ALPHA = 0;
 
@@ -132,6 +137,7 @@ window.DynamicRiso = (() => {
         Bodies,
         Body,
         Constraint,
+        Sleeping,
       } = window.Matter;
 
       let engine;
@@ -140,7 +146,9 @@ window.DynamicRiso = (() => {
       let floorBody;
       let pinBodies = [];
       let grainLayer;
-      let startMillis = 0;
+      let simTime = 0;
+      let accumulator = 0;
+      let lastFrameMillis = 0;
       let finished = false;
       let lastStatus = '';
 
@@ -158,16 +166,23 @@ window.DynamicRiso = (() => {
         p.rectMode(p.CENTER);
         p.ellipseMode(p.CENTER);
 
-        engine = Engine.create({ enableSleeping: false });
+        // 반복 계산을 늘려 쌓인 도형이 떨거나 서로 파고들지 않게 하고,
+        // 멈춘 도형은 잠재워 미세한 진동을 없앤다.
+        engine = Engine.create({
+          enableSleeping: true,
+          positionIterations: 12,
+          velocityIterations: 10,
+          constraintIterations: 4,
+        });
         world = engine.world;
         engine.gravity.x = 0;
         engine.gravity.y = 1;
-        engine.timing.timeScale = 0.5;
+        engine.timing.timeScale = 1;
 
         createPaperGrain();
         createEnvironment();
         createLayers();
-        startMillis = p.millis();
+        lastFrameMillis = p.millis();
       };
 
       function createPaperGrain() {
@@ -229,7 +244,8 @@ window.DynamicRiso = (() => {
             density: 0.003,
             restitution: ink.restitution,
             friction: ink.friction,
-            frictionAir: 0.003,
+            // 회전 감쇠 역할: 시소가 탁 치지 않고 천천히 기운다.
+            frictionAir: 0.02,
             collisionFilter: {
               category: ink.category,
               mask: ink.category | WORLD_CATEGORY,
@@ -259,7 +275,8 @@ window.DynamicRiso = (() => {
           density: ink.density,
           restitution: ink.restitution,
           friction: ink.friction,
-          frictionAir: 0.012,
+          frictionAir: 0.004,
+          frictionStatic: 0.6,
           collisionFilter: {
             category: ink.category,
             // 고정된 도형은 움직이는 도형을 붙잡지 않는다. 해제 순간 충돌을 켠다.
@@ -297,6 +314,7 @@ window.DynamicRiso = (() => {
           layers.forEach(layer => {
             if (layer.seesawReleased) return;
             Body.setStatic(layer.seesaw, false);
+            wakeLayer(layer);
             Body.setAngularVelocity(layer.seesaw, 0);
             layer.seesawReleased = true;
           });
@@ -309,8 +327,29 @@ window.DynamicRiso = (() => {
             body.collisionFilter.mask = layer.ink.category | WORLD_CATEGORY;
             Body.setStatic(body, false);
             body.released = true;
+            // 먼저 떨어져 위에서 잠든 도형이 받침이 빠진 뒤 공중에 멈추지 않게 깨운다.
+            wakeLayer(layer);
           });
         });
+      }
+
+      function wakeLayer(layer) {
+        [layer.seesaw, ...layer.objects].forEach(body => {
+          if (!body.isStatic && !body.removed) Sleeping.set(body, false);
+        });
+      }
+
+      function stepPhysics() {
+        const now = p.millis();
+        accumulator += Math.min(now - lastFrameMillis, MAX_FRAME_DELTA);
+        lastFrameMillis = now;
+        while (accumulator >= PHYSICS_STEP) {
+          // 타임라인도 시뮬레이션 시간 기준이라 느린 기기에서도 순서가 어긋나지 않는다.
+          releaseAccordingToTimeline(simTime / 1000);
+          Engine.update(engine, PHYSICS_STEP);
+          simTime += PHYSICS_STEP;
+          accumulator -= PHYSICS_STEP;
+        }
       }
 
       function removeEscapedBodies() {
@@ -402,7 +441,7 @@ window.DynamicRiso = (() => {
       }
 
       function updateStatus(elapsed) {
-        const phase = elapsed < SEESAW_RELEASE_TIME
+        const phase = elapsed < FIRST_OBJECT_RELEASE
           ? 'REGISTERED'
           : (elapsed < END_TIME ? 'MISREGISTERING' : 'FINAL IMPRESSION');
         const seconds = Math.min(Math.floor(elapsed), END_TIME);
@@ -414,9 +453,8 @@ window.DynamicRiso = (() => {
       }
 
       p.draw = () => {
-        const elapsed = (p.millis() - startMillis) / 1000;
-        releaseAccordingToTimeline(elapsed);
-        Engine.update(engine, 1000 / 60);
+        stepPhysics();
+        const elapsed = simTime / 1000;
         removeEscapedBodies();
 
         p.blendMode(p.BLEND);
