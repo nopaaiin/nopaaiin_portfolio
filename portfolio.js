@@ -283,9 +283,11 @@ const workCount = document.getElementById('work-count');
 const indexRange = document.getElementById('index-range');
 
 const cardCache = new Map();
-let content = normalizeContent(draftStore.read() || window.PORTFOLIO_CONTENT);
+// 공개 화면에는 배포된 내용을 표시합니다. 임시본은 관리자 모드에서만 복원합니다.
+let content = normalizeContent(window.PORTFOLIO_CONTENT);
 let openProjectKey = null;
 let openedFrom = null;
+let projectReturnHash = '';
 let backdropPointerDown = false;
 let interactiveCleanup = null;
 const renderListeners = new Set();
@@ -459,12 +461,35 @@ function fillDialog(project) {
 }
 
 function openProject(project, trigger) {
+  if (!dialog.open) {
+    projectReturnHash = projectKeyFromHash() === project.key ? '' : window.location.hash;
+  }
   openedFrom = trigger;
   openProjectKey = project.key;
   fillDialog(project);
   document.body.classList.add('dialog-open');
   dialog.showModal();
   dialog.scrollTop = 0;
+  if (projectKeyFromHash() !== project.key) {
+    history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${encodeURIComponent(project.key)}`);
+  }
+}
+
+function projectKeyFromHash() {
+  try {
+    return decodeURIComponent(window.location.hash.slice(1));
+  } catch (error) {
+    return '';
+  }
+}
+
+function openLinkedProject() {
+  const project = findProject(projectKeyFromHash());
+  if (project) {
+    if (!dialog.open || openProjectKey !== project.key) openProject(project, cardCache.get(project.key)?.card);
+  } else if (dialog.open) {
+    dialog.close();
+  }
 }
 
 function releaseDialogVideos() {
@@ -490,13 +515,19 @@ dialog.addEventListener('click', event => {
   backdropPointerDown = false;
 });
 dialog.addEventListener('close', () => {
+  // close 이벤트가 도착하기 전에 다시 열린 상세창은 정리하지 않습니다.
+  if (dialog.open) return;
   releaseDialogMedia();
   detailMedia.replaceChildren();
   delete detailMedia.dataset.signature;
   document.body.classList.remove('dialog-open');
+  if (projectKeyFromHash() === openProjectKey) {
+    history.replaceState(null, '', `${window.location.pathname}${window.location.search}${projectReturnHash}`);
+  }
   openProjectKey = null;
   openedFrom?.focus({ preventScroll: true });
 });
+window.addEventListener('hashchange', openLinkedProject);
 
 function isOutsideDialog(event) {
   const rect = dialog.getBoundingClientRect();
@@ -506,6 +537,7 @@ function isOutsideDialog(event) {
 }
 
 render();
+openLinkedProject();
 
 if (contentUsesLocalMedia(content)) {
   loadStoredMedia().then(render).catch(() => render());
@@ -525,6 +557,9 @@ window.Portfolio = {
   },
   hasDraft() {
     return draftStore.read() !== null;
+  },
+  get savedDraft() {
+    return draftStore.read();
   },
   set(next, { persist = true } = {}) {
     content = normalizeContent(next);

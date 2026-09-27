@@ -795,7 +795,9 @@
       toast('저장된 사진 목록을 불러오지 못했습니다. 이번 세션에서 올린 파일만 보입니다.', 5000);
     }
 
-    draft = Portfolio.cloneContent(Portfolio.current);
+    if (!open) return;
+    draft = Portfolio.cloneContent(Portfolio.savedDraft || Portfolio.base);
+    Portfolio.set(draft, { persist: false });
     history.length = 0;
     hidePanelForPreview(false);
     panel.hidden = false;
@@ -812,6 +814,8 @@
     panel.hidden = true;
     nodes.reopen.hidden = true;
     document.body.classList.remove('np-admin-open');
+    Portfolio.closeDialog();
+    Portfolio.set(Portfolio.base, { persist: false });
   }
 
   /* -------------------------------------------------------------- 여는 단축키 */

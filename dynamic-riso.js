@@ -4,41 +4,43 @@
 window.DynamicRiso = (() => {
   const CANVAS_W = 800;
   const CANVAS_H = 1100;
-  const PAPER = '#F2EEE5';
+  const PAPER = '#FFFFFF';
   const WORLD_CATEGORY = 0x0010;
   const END_TIME = 18;
   const SEESAW_RELEASE_TIME = 2;
   const FIRST_OBJECT_RELEASE = 2.25;
   const RELEASE_INTERVAL = 0.3;
+  const PRIMARY_ALPHA = 230;
+  const UNDERPRINT_ALPHA = 0;
 
   const INKS = [
     {
-      name: 'Fluorescent Pink',
-      rgb: [255, 72, 176],
+      name: 'Candy Pink',
+      rgb: [255, 100, 183],
       density: 0.001,
       restitution: 0.9,
       friction: 0,
       category: 0x0001,
     },
     {
-      name: 'Orange',
-      rgb: [255, 108, 47],
+      name: 'Lemon Yellow',
+      rgb: [255, 227, 64],
       density: 0.002,
       restitution: 0.6,
       friction: 0.2,
       category: 0x0002,
     },
     {
-      name: 'Green',
-      rgb: [0, 169, 92],
+      name: 'Mint',
+      rgb: [86, 221, 177],
       density: 0.004,
       restitution: 0.3,
       friction: 0.5,
       category: 0x0004,
     },
     {
-      name: 'Blue',
-      rgb: [0, 120, 191],
+      name: 'Sky Blue',
+      rgb: [91, 193, 245],
       density: 0.008,
       restitution: 0.05,
       friction: 1,
@@ -184,17 +186,13 @@ window.DynamicRiso = (() => {
         p.randomSeed(9282026);
         p.noiseSeed(9282026);
 
-        // 한 번 만든 노이즈 점을 프레임마다 조금씩 이동해 종이 결을 만든다.
-        for (let i = 0; i < 6500; i += 1) {
+        // 흰 종이는 그대로 두고, 잉크 안에만 종이가 비치는 미세한 결을 만든다.
+        for (let i = 0; i < 14000; i += 1) {
           const x = p.random(grainLayer.width);
           const y = p.random(grainLayer.height);
-          const size = p.random(0.6, 1.7);
+          const size = p.random(0.7, 1.8);
           const texture = p.noise(x * 0.018, y * 0.018);
-          if (p.random() < 0.82) {
-            grainLayer.fill(45, 38, 31, p.map(texture, 0, 1, 3, 10));
-          } else {
-            grainLayer.fill(255, 255, 250, p.map(texture, 0, 1, 4, 13));
-          }
+          grainLayer.fill(255, 255, 255, p.map(texture, 0, 1, 25, 120));
           grainLayer.rect(x, y, size, size);
         }
       }
@@ -254,7 +252,7 @@ window.DynamicRiso = (() => {
 
           const objects = TOWER_DEFS.map(definition => createTowerBody(definition, ink));
           World.add(world, [seesaw, pivot, ...objects]);
-          return { ink, seesaw, pivot, seesawReleased: false, objects };
+          return { ink, inkIndex: INKS.indexOf(ink), seesaw, pivot, seesawReleased: false, objects };
         });
       }
 
@@ -356,14 +354,33 @@ window.DynamicRiso = (() => {
         target.pop();
       }
 
-      function drawEnvironment(target, alpha) {
-        INKS.forEach(ink => {
+      function inkAlpha(layer, shapeIndex) {
+        // 네 판은 같은 좌표를 유지하되, 도형마다 주 잉크와 옅은 밑인쇄를 구분한다.
+        // 네 색을 모두 진하게 곱해 검은 덩어리가 되는 대신 잉크색이 남는다.
+        if (layer.inkIndex === shapeIndex % INKS.length) return PRIMARY_ALPHA;
+        const body = layer.objects[shapeIndex] || layer.seesaw;
+        const span = body.shapeData.w || body.shapeData.d || 108;
+        const nearest = Math.min(...layers.filter(other => other !== layer).map(other => {
+          const peer = other.objects[shapeIndex] || other.seesaw;
+          if (peer.removed) return span;
+          return Math.hypot(body.position.x - peer.position.x, body.position.y - peer.position.y)
+            + Math.abs(Math.sin(body.angle - peer.angle)) * span * 0.4;
+        }));
+        // 물리적으로 판이 벌어지면 밑인쇄도 원래 잉크 농도로 드러난다.
+        return p.lerp(UNDERPRINT_ALPHA, 170, p.constrain(nearest / span, 0, 1));
+      }
+
+      function drawEnvironment(target) {
+        INKS.forEach((ink, index) => {
           target.noStroke();
-          target.fill(ink.rgb[0], ink.rgb[1], ink.rgb[2], alpha);
-          target.rect(floorBody.position.x, floorBody.position.y, 900, 90);
-          pinBodies.forEach(pin => {
+          target.fill(ink.rgb[0], ink.rgb[1], ink.rgb[2], 180);
+          // 공통 바닥은 네 색의 띠를 조금씩 겹쳐 인쇄한다.
+          target.rect(floorBody.position.x, 1037 + index * 22, 900, 28);
+          pinBodies.forEach((pin, pinIndex) => {
+            target.fill(...ink.rgb, index === pinIndex % INKS.length ? PRIMARY_ALPHA : UNDERPRINT_ALPHA);
             target.ellipse(pin.position.x, pin.position.y, pin.drawRadius * 2, pin.drawRadius * 2);
           });
+          target.fill(...ink.rgb, index === 3 ? PRIMARY_ALPHA : UNDERPRINT_ALPHA);
           target.ellipse(400, 630, 22, 22);
         });
       }
@@ -371,43 +388,25 @@ window.DynamicRiso = (() => {
       function recordTrails(elapsed) {
         if (elapsed < SEESAW_RELEASE_TIME || p.frameCount % 3 !== 0) return;
         layers.forEach(layer => {
-          const bodies = [layer.seesaw, ...layer.objects];
-          bodies.forEach(body => {
+          const bodies = [...layer.objects, layer.seesaw];
+          bodies.forEach((body, shapeIndex) => {
             if (!body || body.removed || body.isStatic) return;
-            drawInkShape(trailLayer, body, body.shapeData, layer.ink.rgb, 9);
+            // 같은 자리에 오래 머무는 도형은 덧찍지 않아 잔상이 검게 쌓이지 않는다.
+            const last = body.lastTrail;
+            if (last && Math.hypot(body.position.x - last.x, body.position.y - last.y) < 5
+              && Math.abs(body.angle - last.angle) < 0.04) return;
+            body.lastTrail = { x: body.position.x, y: body.position.y, angle: body.angle };
+            const alpha = layer.inkIndex === shapeIndex % INKS.length ? 4 : 1;
+            drawInkShape(trailLayer, body, body.shapeData, layer.ink.rgb, alpha);
           });
         });
       }
 
-      function drawTitle(target) {
-        const offsets = [
-          [-2, -1],
-          [1, -2],
-          [-1, 2],
-          [2, 1],
-        ];
-        target.push();
-        target.textFont('Arial, Helvetica, sans-serif');
-        target.textSize(17);
-        target.textStyle(p.BOLD);
-        target.textAlign(p.LEFT, p.BASELINE);
-        INKS.forEach((ink, position) => {
-          target.fill(ink.rgb[0], ink.rgb[1], ink.rgb[2], 205);
-          target.noStroke();
-          target.text(
-            'DYNAMIC BALANCE',
-            54 + offsets[position][0],
-            72 + offsets[position][1],
-          );
-        });
-        target.pop();
-      }
-
       function drawCurrentBodies() {
         layers.forEach(layer => {
-          drawInkShape(p, layer.seesaw, layer.seesaw.shapeData, layer.ink.rgb, 205);
-          layer.objects.forEach(body => {
-            drawInkShape(p, body, body.shapeData, layer.ink.rgb, 205);
+          drawInkShape(p, layer.seesaw, layer.seesaw.shapeData, layer.ink.rgb, inkAlpha(layer, TOWER_DEFS.length));
+          layer.objects.forEach((body, index) => {
+            drawInkShape(p, body, body.shapeData, layer.ink.rgb, inkAlpha(layer, index));
           });
         });
       }
@@ -444,9 +443,8 @@ window.DynamicRiso = (() => {
         p.background(PAPER);
         p.image(trailLayer, 0, 0);
         p.blendMode(p.MULTIPLY);
-        drawEnvironment(p, 190);
+        drawEnvironment(p);
         drawCurrentBodies();
-        drawTitle(p);
         drawPaperGrain();
         updateStatus(elapsed);
 
@@ -458,7 +456,7 @@ window.DynamicRiso = (() => {
       };
 
       p.keyPressed = () => {
-        if (p.key === 's' || p.key === 'S') p.saveCanvas('dynamic-riso-final', 'png');
+        if (p.key === 's' || p.key === 'S') p.saveCanvas('dynamic-riso', 'png');
       };
     };
   }
