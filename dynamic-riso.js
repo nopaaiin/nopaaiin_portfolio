@@ -18,15 +18,15 @@ window.DynamicRiso = (() => {
       name: 'Candy Pink',
       rgb: [255, 100, 183],
       density: 0.001,
-      restitution: 0.9,
-      friction: 0,
+      restitution: 0.3,
+      friction: 0.05,
       category: 0x0001,
     },
     {
       name: 'Lemon Yellow',
       rgb: [255, 227, 64],
       density: 0.002,
-      restitution: 0.6,
+      restitution: 0.2,
       friction: 0.2,
       category: 0x0002,
     },
@@ -34,7 +34,7 @@ window.DynamicRiso = (() => {
       name: 'Mint',
       rgb: [86, 221, 177],
       density: 0.004,
-      restitution: 0.3,
+      restitution: 0.1,
       friction: 0.5,
       category: 0x0004,
     },
@@ -42,7 +42,7 @@ window.DynamicRiso = (() => {
       name: 'Sky Blue',
       rgb: [91, 193, 245],
       density: 0.008,
-      restitution: 0.05,
+      restitution: 0.02,
       friction: 1,
       category: 0x0008,
     },
@@ -54,10 +54,10 @@ window.DynamicRiso = (() => {
   const TOWER_DEFS = [
     { type: 'circle', x: 354, y: 242, d: 104 },
     { type: 'triangle', x: 432, y: 335, r: 54, angle: -Math.PI / 2 },
-    { type: 'rect', x: 348, y: 402, w: 62, h: 62, angle: 0 },
-    { type: 'rect', x: 408, y: 450, w: 220, h: 28, angle: 0.035 },
-    { type: 'circle', x: 468, y: 510, d: 90 },
-    { type: 'rect', x: 400, y: 588, w: 190, h: 64, angle: 0 },
+    { type: 'rect', x: 348, y: 370, w: 62, h: 62, angle: 0 },
+    { type: 'rect', x: 408, y: 426, w: 220, h: 28, angle: 0.035 },
+    { type: 'circle', x: 468, y: 494, d: 90 },
+    { type: 'rect', x: 400, y: 574, w: 190, h: 64, angle: 0 },
   ];
 
   const PINS = [
@@ -139,7 +139,6 @@ window.DynamicRiso = (() => {
       let layers = [];
       let floorBody;
       let pinBodies = [];
-      let trailLayer;
       let grainLayer;
       let startMillis = 0;
       let finished = false;
@@ -164,13 +163,6 @@ window.DynamicRiso = (() => {
         engine.gravity.x = 0;
         engine.gravity.y = 1;
         engine.timing.timeScale = 0.5;
-
-        trailLayer = p.createGraphics(CANVAS_W, CANVAS_H);
-        trailLayer.pixelDensity(1);
-        trailLayer.clear();
-        trailLayer.rectMode(p.CENTER);
-        trailLayer.ellipseMode(p.CENTER);
-        trailLayer.blendMode(p.MULTIPLY);
 
         createPaperGrain();
         createEnvironment();
@@ -209,7 +201,13 @@ window.DynamicRiso = (() => {
           restitution: 0.1,
           collisionFilter,
         });
-        World.add(world, floorBody);
+        // 보이지 않는 양옆 벽: 도형이 화면 밖으로 튀지 않고 바닥에 쌓이게 한다.
+        const wallOptions = { isStatic: true, friction: 0.3, restitution: 0, collisionFilter };
+        World.add(world, [
+          floorBody,
+          Bodies.rectangle(-30, CANVAS_H / 2, 60, CANVAS_H * 3, wallOptions),
+          Bodies.rectangle(CANVAS_W + 30, CANVAS_H / 2, 60, CANVAS_H * 3, wallOptions),
+        ]);
 
         pinBodies = PINS.map(definition => {
           const pin = Bodies.circle(definition.x, definition.y, definition.r, {
@@ -261,7 +259,7 @@ window.DynamicRiso = (() => {
           density: ink.density,
           restitution: ink.restitution,
           friction: ink.friction,
-          frictionAir: 0.002,
+          frictionAir: 0.012,
           collisionFilter: {
             category: ink.category,
             // 고정된 도형은 움직이는 도형을 붙잡지 않는다. 해제 순간 충돌을 켠다.
@@ -385,23 +383,6 @@ window.DynamicRiso = (() => {
         });
       }
 
-      function recordTrails(elapsed) {
-        if (elapsed < SEESAW_RELEASE_TIME || p.frameCount % 3 !== 0) return;
-        layers.forEach(layer => {
-          const bodies = [...layer.objects, layer.seesaw];
-          bodies.forEach((body, shapeIndex) => {
-            if (!body || body.removed || body.isStatic) return;
-            // 같은 자리에 오래 머무는 도형은 덧찍지 않아 잔상이 검게 쌓이지 않는다.
-            const last = body.lastTrail;
-            if (last && Math.hypot(body.position.x - last.x, body.position.y - last.y) < 5
-              && Math.abs(body.angle - last.angle) < 0.04) return;
-            body.lastTrail = { x: body.position.x, y: body.position.y, angle: body.angle };
-            const alpha = layer.inkIndex === shapeIndex % INKS.length ? 4 : 1;
-            drawInkShape(trailLayer, body, body.shapeData, layer.ink.rgb, alpha);
-          });
-        });
-      }
-
       function drawCurrentBodies() {
         layers.forEach(layer => {
           drawInkShape(p, layer.seesaw, layer.seesaw.shapeData, layer.ink.rgb, inkAlpha(layer, TOWER_DEFS.length));
@@ -437,11 +418,9 @@ window.DynamicRiso = (() => {
         releaseAccordingToTimeline(elapsed);
         Engine.update(engine, 1000 / 60);
         removeEscapedBodies();
-        recordTrails(elapsed);
 
         p.blendMode(p.BLEND);
         p.background(PAPER);
-        p.image(trailLayer, 0, 0);
         p.blendMode(p.MULTIPLY);
         drawEnvironment(p);
         drawCurrentBodies();
