@@ -5,6 +5,11 @@
   const Portfolio = window.Portfolio;
   if (!Portfolio) return;
 
+  const settings = Portfolio.settings || {};
+  const CONTENT_FILE = settings.contentFile || 'content.js';
+  const EXPORT_SLUG = settings.exportSlug || 'nopaaiin-content';
+  const ADMIN_LABEL = settings.adminLabel || '포트폴리오 관리자 모드';
+
   const TRIGGER_KEY = '1';
   const TRIGGER_COUNT = 5;
   const TRIGGER_WINDOW = 1500;
@@ -187,7 +192,7 @@
     panel = h('div', {
       class: 'np-admin',
       role: 'dialog',
-      'aria-label': '포트폴리오 관리자 모드',
+      'aria-label': ADMIN_LABEL,
       hidden: true,
     }, bar, nodes.body);
 
@@ -352,6 +357,10 @@
         project.desc = value;
         commit({ redraw: false });
       }, { multiline: true, rows: 7, focusId: focusKey(project.key, 'desc') }),
+      textField('링크 (선택)', project.href, value => {
+        project.href = value.trim();
+        commit({ redraw: false });
+      }, { placeholder: '예: interactive-2.html', focusId: focusKey(project.key, 'href') }),
       h('label', { class: 'np-field' },
         h('span', { class: 'np-field-label', text: '커버 배경' }),
         coverSelect),
@@ -442,6 +451,7 @@
                 category: '',
                 desc: '',
                 poster: '',
+                href: '',
                 coverClass: 'cover-dark',
                 files: [],
               });
@@ -455,7 +465,7 @@
     const resetSection = h('section', { class: 'np-section' },
       h('h2', { class: 'np-section-title', text: '정리' }),
       h('div', { class: 'np-section-body' },
-        h('p', { class: 'np-empty', text: '임시 저장을 지우면 content.js 에 저장된 내용으로 되돌아갑니다.' }),
+        h('p', { class: 'np-empty', text: `임시 저장을 지우면 ${CONTENT_FILE} 에 저장된 내용으로 되돌아갑니다.` }),
         h('div', { class: 'np-row' },
           button('임시 저장 지우기', { variant: 'danger', onClick: discardDraft }))));
 
@@ -465,7 +475,7 @@
         '수정한 내용을 실제 사이트에 올리려면 ',
         h('strong', { text: '내보내기' }),
         ' → 받은 ',
-        h('code', { text: 'content.js' }),
+        h('code', { text: CONTENT_FILE }),
         ' 와 ',
         h('code', { text: 'media/' }),
         ' 폴더를 프로젝트 폴더에 덮어쓰고 커밋·푸시하세요.'),
@@ -619,7 +629,7 @@
 
   function contentFileText(content) {
     return [
-      '// 포트폴리오에 들어가는 글과 사진 목록입니다.',
+      `// ${ADMIN_LABEL}에 들어가는 글과 사진 목록입니다.`,
       `// 관리자 모드에서 ${new Date().toLocaleString('ko-KR')} 에 내보냈습니다.`,
       'window.PORTFOLIO_CONTENT = ' + JSON.stringify(content, null, 2) + ';',
       '',
@@ -627,17 +637,17 @@
   }
 
   const APPLY_GUIDE = [
-    'nopaaiin 포트폴리오 — 내보낸 파일 적용하기',
+    `nopaaiin ${ADMIN_LABEL} — 내보낸 파일 적용하기`,
     '',
-    '1. 이 zip 을 풀면 content.js 와 (새 사진·영상이 있으면) media 폴더가 나옵니다.',
+    `1. 이 zip 을 풀면 ${CONTENT_FILE} 와 (새 사진·영상이 있으면) media 폴더가 나옵니다.`,
     '2. 두 가지를 프로젝트 폴더(index.html 이 있는 곳)에 그대로 덮어씁니다.',
-    '   - content.js : 기존 파일을 덮어쓰기',
+    `   - ${CONTENT_FILE} : 기존 파일을 덮어쓰기`,
     '   - media/     : 폴더째 복사 (기존 media 폴더가 있으면 파일만 합치기)',
     '3. 브라우저에서 사이트를 새로고침해 확인합니다.',
     '4. 관리자 모드에서 "임시 저장 지우기"를 눌러 브라우저 임시본을 정리합니다.',
     '5. 확인이 끝나면 git 으로 커밋·푸시합니다.',
     '',
-    '   git add content.js media',
+    `   git add ${CONTENT_FILE} media`,
     '   git commit -m "포트폴리오 내용 수정"',
     '   git push',
     '',
@@ -699,7 +709,7 @@
     const encoder = new TextEncoder();
     const text = contentFileText(exported);
     const entries = [
-      { name: 'content.js', data: encoder.encode(text) },
+      { name: CONTENT_FILE, data: encoder.encode(text) },
       ...files,
       { name: 'HOW-TO-APPLY.txt', data: encoder.encode(APPLY_GUIDE) },
     ];
@@ -713,7 +723,7 @@
     setStatus('내보내는 중…');
     try {
       const bundle = await buildBundle();
-      downloadBlob(bundle.zip, `nopaaiin-content-${stamp()}.zip`);
+      downloadBlob(bundle.zip, `${EXPORT_SLUG}-${stamp()}.zip`);
       showNotice(bundle);
       setStatus('내보냈습니다');
     } catch (error) {
@@ -735,7 +745,7 @@
     nodes.notice.replaceChildren(
       h('strong', { text: warn ? '일부 파일을 찾지 못했습니다' : 'zip 파일을 받았습니다' }),
       h('ol', {},
-        h('li', {}, 'zip 을 풀어 ', h('code', { text: 'content.js' }),
+        h('li', {}, 'zip 을 풀어 ', h('code', { text: CONTENT_FILE }),
           bundle.mediaCount ? [' 와 ', h('code', { text: 'media/' }), ' 폴더를'] : ' 를',
           ' 프로젝트 폴더에 덮어쓰기'),
         heroMoved
@@ -749,14 +759,14 @@
         ? h('p', { text: `저장된 원본을 찾지 못한 파일 ${bundle.missing.length}개는 목록에서 빠졌습니다. 해당 사진을 다시 넣어 주세요.` })
         : null,
       h('div', { class: 'np-row' },
-        button('content.js 만 다시 받기', {
-          onClick: () => downloadBlob(new Blob([bundle.text], { type: 'text/javascript' }), 'content.js'),
+        button(`${CONTENT_FILE} 만 다시 받기`, {
+          onClick: () => downloadBlob(new Blob([bundle.text], { type: 'text/javascript' }), CONTENT_FILE),
         }),
         button('닫기', { onClick: () => { nodes.notice.hidden = true; } })));
   }
 
   async function discardDraft() {
-    if (!window.confirm('이 브라우저의 임시 저장을 지우고 content.js 내용으로 되돌릴까요?\n내보내지 않은 수정은 사라집니다.')) return;
+    if (!window.confirm(`이 브라우저의 임시 저장을 지우고 ${CONTENT_FILE} 내용으로 되돌릴까요?\n내보내지 않은 수정은 사라집니다.`)) return;
     const records = await Portfolio.media.store.all();
     for (const record of records) {
       Portfolio.media.forget(record.key);
@@ -768,7 +778,7 @@
     draft = Portfolio.cloneContent(Portfolio.current);
     renderPanel();
     setStatus('기본 내용으로 되돌림');
-    toast('content.js 의 내용으로 되돌렸습니다.');
+    toast(`${CONTENT_FILE} 의 내용으로 되돌렸습니다.`);
   }
 
   /* --------------------------------------------------------------- 열고 닫기 */
@@ -803,7 +813,7 @@
     panel.hidden = false;
     document.body.classList.add('np-admin-open');
     renderPanel();
-    setStatus(Portfolio.hasDraft() ? '이 브라우저에 임시 저장됨' : 'content.js 내용을 불러옴');
+    setStatus(Portfolio.hasDraft() ? '이 브라우저에 임시 저장됨' : `${CONTENT_FILE} 내용을 불러옴`);
     toast('관리자 모드입니다. Esc 로 닫습니다.');
   }
 

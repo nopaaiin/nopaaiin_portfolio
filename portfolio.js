@@ -1,8 +1,15 @@
 // 화면을 그리는 파일입니다. 작품 내용은 content.js 에서 관리합니다.
 // 관리자 모드(admin.js)가 이 파일이 내보내는 window.Portfolio 를 사용합니다.
 
-const DRAFT_KEY = 'nopaaiin:portfolio-draft:v1';
-const DB_NAME = 'nopaaiin-portfolio';
+const PAGE_SETTINGS = Object.freeze({
+  draftKey: document.body?.dataset.draftKey || 'nopaaiin:portfolio-draft:v1',
+  contentFile: document.body?.dataset.contentFile || 'content.js',
+  exportSlug: document.body?.dataset.exportSlug || 'nopaaiin-content',
+  adminLabel: document.body?.dataset.adminLabel || '포트폴리오 관리자 모드',
+  mediaDb: document.body?.dataset.mediaDb || 'nopaaiin-portfolio',
+});
+const DRAFT_KEY = PAGE_SETTINGS.draftKey;
+const DB_NAME = PAGE_SETTINGS.mediaDb;
 const DB_STORE = 'media';
 const LOCAL_PREFIX = 'local:';
 const BLANK_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -33,6 +40,7 @@ function normalizeProject(raw, position, usedKeys) {
     category: asText(item.category),
     desc: asText(item.desc),
     poster: asText(item.poster),
+    href: asText(item.href).trim(),
     coverClass: COVER_OPTIONS.some(option => option.value === item.coverClass) ? item.coverClass : 'cover-dark',
     files: files
       .filter(file => file && typeof file === 'object' && asText(file.src))
@@ -310,10 +318,8 @@ function setImageSource(image, src) {
 }
 
 function buildCard(project) {
-  const card = document.createElement('button');
-  card.type = 'button';
+  const card = document.createElement('a');
   card.className = 'project-card';
-  card.setAttribute('aria-haspopup', 'dialog');
 
   const cover = document.createElement('span');
   const image = document.createElement('img');
@@ -332,22 +338,24 @@ function buildCard(project) {
   arrow.textContent = '↗';
   caption.append(number, title, arrow);
   card.append(cover, caption);
-  card.addEventListener('click', () => {
+  card.addEventListener('click', event => {
     const current = findProject(project.key);
-    if (current) openProject(current, card);
+    if (!current || current.href) return;
+    event.preventDefault();
+    openProject(current, card);
   });
 
-  const indexButton = document.createElement('button');
-  indexButton.type = 'button';
+  const indexButton = document.createElement('a');
   indexButton.className = 'index-link';
-  indexButton.setAttribute('aria-haspopup', 'dialog');
   const indexNumber = document.createElement('span');
   indexNumber.className = 'index-number';
   const indexTitle = document.createElement('span');
   indexButton.append(indexNumber, indexTitle);
-  indexButton.addEventListener('click', () => {
+  indexButton.addEventListener('click', event => {
     const current = findProject(project.key);
-    if (current) openProject(current, indexButton);
+    if (!current || current.href) return;
+    event.preventDefault();
+    openProject(current, indexButton);
   });
 
   return { card, cover, image, number, title, indexButton, indexNumber, indexTitle };
@@ -374,7 +382,16 @@ function render() {
     }
     const number = projectNumber(position);
     nodes.card.dataset.project = number;
-    nodes.card.setAttribute('aria-label', `${number} ${project.title} — 작품 보기`);
+    nodes.card.href = project.href || `#${encodeURIComponent(project.key)}`;
+    nodes.indexButton.href = project.href || `#${encodeURIComponent(project.key)}`;
+    nodes.card.setAttribute('aria-label', `${number} ${project.title} — ${project.href ? '아카이브 열기' : '작품 보기'}`);
+    if (project.href) {
+      nodes.card.removeAttribute('aria-haspopup');
+      nodes.indexButton.removeAttribute('aria-haspopup');
+    } else {
+      nodes.card.setAttribute('aria-haspopup', 'dialog');
+      nodes.indexButton.setAttribute('aria-haspopup', 'dialog');
+    }
     nodes.cover.className = `project-cover ${project.coverClass}`;
     nodes.image.alt = project.title;
     nodes.image.loading = position <= 2 ? 'eager' : 'lazy';
@@ -546,6 +563,7 @@ if (contentUsesLocalMedia(content)) {
 /* ------------------------------------------------- 관리자 모드가 사용하는 창구 */
 
 window.Portfolio = {
+  settings: PAGE_SETTINGS,
   COVER_OPTIONS,
   LOCAL_PREFIX,
   BLANK_IMAGE,

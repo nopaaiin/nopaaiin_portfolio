@@ -4,22 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ffffff">
-  <meta name="description" content="nopaaiin — selected works and contact.">
-  <title>nopaaiin</title>
+  <meta name="description" content="nopaaiin — Interactive Design (2) assignment archive.">
+  <title>nopaaiin — Interactive Design (2)</title>
   <link rel="preload" as="image" href="backgrounds/hero.webp" fetchpriority="high">
-  <link rel="stylesheet" href="portfolio.css?v=20260928-riso-color-2">
-  <link rel="stylesheet" href="admin.css?v=20260915-admin">
+  <link rel="stylesheet" href="portfolio.css?v=20260929-interactive-archive-1">
+  <link rel="stylesheet" href="admin.css?v=20260929-interactive-archive-1">
   <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js" defer></script>
-  <script src="content.js?v=20260929-interactive-archive-1" defer></script>
+  <script src="interactive-2-content.js?v=20260929-interactive-archive-1" defer></script>
   <script src="dynamic-riso.js?v=20260928-single-set" defer></script>
   <script src="portfolio.js?v=20260929-interactive-archive-1" defer></script>
   <script src="admin.js?v=20260929-interactive-archive-1" defer></script>
 </head>
-<body id="top">
-  <a class="skip-link" href="#work">작품 목록으로 건너뛰기</a>
+<body id="top"
+  data-draft-key="nopaaiin:interactive-2-draft:v1"
+  data-content-file="interactive-2-content.js"
+  data-export-slug="nopaaiin-interactive-2"
+  data-admin-label="인터랙티브 디자인 2 아카이브 관리자 모드"
+  data-media-db="nopaaiin-interactive-2">
+  <a class="skip-link" href="#work">과제 목록으로 건너뛰기</a>
   <header class="site-header">
-    <a class="header-work" href="#work">WORK <span id="work-count">(07)</span></a>
+    <a class="header-contact" href="index.html">PORTFOLIO <span aria-hidden="true">↙</span></a>
+    <a class="header-work" href="#work">WORK <span id="work-count">(01)</span></a>
     <a class="header-contact" href="#contact">CONTACT <span aria-hidden="true">↗</span></a>
   </header>
 
@@ -43,7 +49,7 @@
     </div>
     <div class="hero-identity">
       <h1 class="hero-title" id="hero-title">
-        <img class="hero-wordmark" id="hero-wordmark" src="assets/webhead.png" width="667" height="667" alt="nopaaiin" fetchpriority="high">
+        <img class="hero-wordmark" id="hero-wordmark" src="assets/webhead.png" width="667" height="667" alt="nopaaiin — Interactive Design (2)" fetchpriority="high">
       </h1>
     </div>
   </section>
@@ -51,8 +57,8 @@
   <main id="work" tabindex="-1">
     <div class="work-grid" id="work-grid">
       <aside class="index-panel" aria-labelledby="index-heading">
-        <h2 class="small-heading" id="index-heading">INDEX / <span id="index-range">01—07</span></h2>
-        <nav class="project-index" id="project-index" aria-label="작품 바로 보기"></nav>
+        <h2 class="small-heading" id="index-heading">INTERACTIVE DESIGN (2) / <span id="index-range">01—01</span></h2>
+        <nav class="project-index" id="project-index" aria-label="과제 바로 보기"></nav>
       </aside>
 
       <section class="contact-panel" id="contact" aria-labelledby="contact-heading" tabindex="-1">
@@ -76,18 +82,18 @@
         </div>
       </section>
     </div>
-    <noscript><p class="noscript">작품을 보려면 브라우저의 JavaScript를 켜 주세요.</p></noscript>
+    <noscript><p class="noscript">과제를 보려면 브라우저의 JavaScript를 켜 주세요.</p></noscript>
   </main>
 
   <footer class="site-footer">
-    <span>© nopaaiin</span>
+    <span>© nopaaiin / Interactive Design (2)</span>
     <a href="#top">BACK TO TOP <span aria-hidden="true">↑</span></a>
   </footer>
 
   <dialog class="project-dialog" id="project-dialog" aria-labelledby="detail-title" aria-describedby="detail-description">
     <div class="dialog-bar">
       <span class="detail-number" id="detail-number"></span>
-      <button class="close-button" id="close-project" type="button" autofocus aria-label="작품 상세 닫기">CLOSE <span aria-hidden="true">×</span></button>
+      <button class="close-button" id="close-project" type="button" autofocus aria-label="과제 상세 닫기">CLOSE <span aria-hidden="true">×</span></button>
     </div>
     <div class="detail-layout">
       <div class="detail-media" id="detail-media"></div>
