@@ -1,0 +1,311 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><style>html,body{margin:0}[hidden]{display:none!important}</style></head><body><title>뽁뽁이 지우기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* layout: one bubble-wrap sheet fills the screen edge to edge; 1 2 3 top right, reset bottom center */
+:root{
+  --sheet:#E6E9E6;
+  --bubble:#F7F8F6;
+  --shade:#BAC2BD;
+  --ink:#121311;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  color-scheme:light;
+}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{background:var(--sheet);color:var(--ink);-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block;cursor:pointer}
+button{font:inherit;color:var(--ink);background:none;border:0;cursor:pointer;padding:0}
+button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.levels{position:fixed;top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;display:flex;gap:6px}
+.lv{width:34px;height:34px;border-radius:50%;border:1px solid var(--ink);background:var(--sheet);font-family:var(--f-mono);font-weight:500;font-size:13px;font-variant-numeric:tabular-nums;display:grid;place-items:center}
+.lv[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+.lv:active{transform:scale(.94)}
+.reset{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);width:48px;height:48px;border-radius:50%;border:1px solid var(--ink);background:var(--sheet);display:grid;place-items:center}
+.reset:active{transform:translateX(-50%) scale(.94)}
+.reset svg{width:20px;height:20px;stroke:var(--ink);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+</style>
+
+<canvas id="c" aria-label="뽁뽁이 한 장"></canvas>
+
+<div class="levels" role="group" aria-label="단계">
+  <button class="lv" id="lv1" data-lv="1" aria-pressed="true" aria-label="1단계 탭">1</button>
+  <button class="lv" id="lv2" data-lv="2" aria-pressed="false" aria-label="2단계 핀치">2</button>
+  <button class="lv" id="lv3" data-lv="3" aria-pressed="false" aria-label="3단계 빠른 핀치">3</button>
+</div>
+
+<button class="reset" id="reset" aria-label="다시">
+  <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v4.5h-4.5"/></svg>
+</button>
+
+<script>
+(() => {
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const css = getComputedStyle(document.documentElement);
+const C = {
+  sheet: css.getPropertyValue('--sheet').trim(),
+  bubble: css.getPropertyValue('--bubble').trim(),
+  shade: css.getPropertyValue('--shade').trim(),
+  ink: css.getPropertyValue('--ink').trim()
+};
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+let W = 0, H = 0, DPR = 1, S = 1, R = 17;
+let bubbles = [], level = 1, clock = 0;
+
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR;
+  S = Math.max(0.8, Math.min(1.4, Math.min(W, H) / 420));
+  R = 17 * S;
+  build();
+}
+function build(){
+  bubbles = [];
+  const gap = 6 * S, dx = R * 2 + gap, dy = dx * 0.866;
+  const rows = Math.ceil(H / dy) + 2, cols = Math.ceil(W / dx) + 2;
+  for (let j = -1; j < rows; j++) for (let i = -1; i < cols; i++) {
+    const x = i * dx + (j % 2 ? dx / 2 : 0) + ((W % dx) / 2) - dx / 4;
+    const y = j * dy + ((H % dy) / 2);
+    bubbles.push({ x, y, state: 'full', t: 0, sq: 0, sqv: 0, sqx: 0, sqy: 0, ax: 0, wob: rnd(0, 6.28),
+      crumple: Array.from({ length: 9 }, () => rnd(0.65, 1)) });
+  }
+}
+addEventListener('resize', resize);
+
+function setLevel(lv){
+  level = lv;
+  for (const b of document.querySelectorAll('.lv')) b.setAttribute('aria-pressed', String(+b.dataset.lv === lv));
+  build();
+}
+document.querySelectorAll('.lv').forEach(b => b.addEventListener('click', () => setLevel(+b.dataset.lv)));
+document.getElementById('reset').addEventListener('click', build);
+
+/* ---------- pop sound + buzz ---------- */
+let ac = null, noise = null, lastSound = 0;
+function audioWake(){
+  try {
+    if (!ac) {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      noise = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.06), ac.sampleRate);
+      const d = noise.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+    }
+    if (ac.state === 'suspended') ac.resume();
+  } catch (_) { ac = null; }
+}
+function popSound(){
+  if (!ac) return;
+  const now = ac.currentTime;
+  if (now - lastSound < 0.012) return;
+  lastSound = now;
+  const src = ac.createBufferSource(); src.buffer = noise;
+  const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = rnd(1400, 3200); f.Q.value = 1.4;
+  const g = ac.createGain(); g.gain.setValueAtTime(rnd(0.5, 0.8), now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+  src.connect(f); f.connect(g); g.connect(ac.destination);
+  src.start(now);
+}
+
+function pop(b, delay = 0){
+  if (b.state !== 'full') return;
+  b.state = 'queued'; b.t = -delay;
+}
+
+/* ---------- gestures ---------- */
+const ptrs = new Map();
+let pinch = null, tapCandidate = null;
+
+function bubbleAt(x, y){
+  let best = null, bd = 1e9;
+  for (const b of bubbles) {
+    if (b.state !== 'full') continue;
+    const d = Math.hypot(b.x - x, b.y - y);
+    if (d < bd) { bd = d; best = b; }
+  }
+  return bd < R * 1.15 ? best : null;
+}
+
+function startPinch(a, b, viaWheel){
+  const d = Math.hypot(a.x - b.x, a.y - b.y);
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const ax = Math.atan2(b.y - a.y, b.x - a.x);
+  // the squeezed area: a capsule between the two fingers
+  const half = Math.max(R * 2.2, d * 0.32);
+  const region = [];
+  for (const bb of bubbles) {
+    if (bb.state !== 'full') continue;
+    const t = clamp(((bb.x - a.x) * (b.x - a.x) + (bb.y - a.y) * (b.y - a.y)) / (d * d || 1), 0, 1);
+    const px = a.x + (b.x - a.x) * t, py = a.y + (b.y - a.y) * t;
+    if (Math.hypot(bb.x - px, bb.y - py) < half) region.push(bb);
+  }
+  region.sort(() => Math.random() - 0.5);
+  pinch = { d0: d, ratio: 1, mx, my, ax, region, popped: 0, t0: performance.now(), fired: false, failed: false, viaWheel };
+}
+
+function movePinch(ratio, mx, my){
+  if (!pinch) return;
+  pinch.ratio = ratio; pinch.mx = mx; pinch.my = my;
+  const squeeze = clamp(1 - ratio, 0, 0.8);
+  for (const b of pinch.region) if (b.state === 'full') { b.sq = squeeze; b.sqx = mx; b.sqy = my; b.ax = pinch.ax; }
+
+  if (level === 2) {
+    // pops follow the fingers: the further they close, the more go
+    const f = clamp((1 - ratio) / 0.55, 0, 1);
+    const want = Math.floor(f * pinch.region.length);
+    let k = 0;
+    while (pinch.popped < want) { pop(pinch.region[pinch.popped], k * rnd(0.018, 0.05)); pinch.popped++; k++; }
+  } else if (level === 3 && !pinch.fired && !pinch.failed && ratio < 0.72) {
+    const elapsed = performance.now() - pinch.t0;
+    if (elapsed < 320) {
+      pinch.fired = true;
+      pinch.region.forEach((b, i) => pop(b, i * rnd(0.012, 0.03)));
+      pinch.popped = pinch.region.length;
+    } else {
+      pinch.failed = true;
+    }
+  }
+}
+
+function endPinch(){
+  if (!pinch) return;
+  for (const b of pinch.region) if (b.state === 'full') { b.sqv = 0; }
+  pinch = null;
+}
+
+cv.addEventListener('pointerdown', e => {
+  audioWake();
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (ptrs.size === 1) tapCandidate = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), moved: 0 };
+  if (ptrs.size === 2) {
+    tapCandidate = null;
+    const [a, b] = [...ptrs.values()];
+    startPinch(a, b, false);
+  }
+});
+cv.addEventListener('pointermove', e => {
+  const p = ptrs.get(e.pointerId); if (!p) return;
+  if (tapCandidate && tapCandidate.id === e.pointerId) tapCandidate.moved += Math.hypot(e.clientX - p.x, e.clientY - p.y);
+  p.x = e.clientX; p.y = e.clientY;
+  if (pinch && ptrs.size >= 2) {
+    const [a, b] = [...ptrs.values()];
+    movePinch(Math.hypot(a.x - b.x, a.y - b.y) / pinch.d0, (a.x + b.x) / 2, (a.y + b.y) / 2);
+  }
+});
+function up(e){
+  ptrs.delete(e.pointerId);
+  if (tapCandidate && tapCandidate.id === e.pointerId) {
+    if (level === 1 && tapCandidate.moved < 12 && performance.now() - tapCandidate.t < 450) {
+      const b = bubbleAt(e.clientX, e.clientY);
+      if (b) pop(b);
+    }
+    tapCandidate = null;
+  }
+  if (ptrs.size < 2) endPinch();
+}
+cv.addEventListener('pointerup', up);
+cv.addEventListener('pointercancel', e => { ptrs.delete(e.pointerId); tapCandidate = null; if (ptrs.size < 2) endPinch(); });
+
+/* trackpad pinch on a computer arrives as ctrl + wheel */
+let wheelScale = 1, wheelTimer = 0;
+cv.addEventListener('wheel', e => {
+  if (!e.ctrlKey) return;
+  e.preventDefault();
+  audioWake();
+  if (!pinch) {
+    const r = 120 * S;
+    startPinch({ x: e.clientX - r, y: e.clientY }, { x: e.clientX + r, y: e.clientY }, true);
+    wheelScale = 1;
+  }
+  wheelScale = clamp(wheelScale * Math.exp(-e.deltaY * 0.012), 0.2, 1.3);
+  movePinch(wheelScale, pinch.mx, pinch.my);
+  clearTimeout(wheelTimer);
+  wheelTimer = setTimeout(endPinch, 220);
+}, { passive: false });
+
+/* ---------- simulation ---------- */
+function update(dt){
+  clock += dt;
+  let pops = 0;
+  for (const b of bubbles) {
+    if (b.state === 'queued') { b.t += dt; if (b.t >= 0) { b.state = 'pop'; b.t = 0; pops++; } }
+    else if (b.state === 'pop') { b.t += dt; if (b.t > 0.2) b.state = 'gone'; }
+    else if (b.state === 'full' && (!pinch || !pinch.region.includes(b))) {
+      // springs back after a squeeze, with a little wobble
+      const acc = -b.sq * 260 - b.sqv * 14;
+      b.sqv += acc * dt; b.sq += b.sqv * dt;
+      if (Math.abs(b.sq) < 0.002 && Math.abs(b.sqv) < 0.01) { b.sq = 0; b.sqv = 0; }
+    }
+  }
+  if (pops) {
+    popSound();
+    try { if (navigator.vibrate) navigator.vibrate(6); } catch (_) {}
+  }
+}
+
+/* ---------- drawing ---------- */
+function drawFull(b){
+  ctx.save();
+  let x = b.x, y = b.y, sx = 1, sy = 1;
+  const s = b.sq;
+  if (s) {
+    x += (b.sqx - b.x) * s * 0.25; y += (b.sqy - b.y) * s * 0.25;
+    sx = 1 - 0.42 * s; sy = 1 + 0.14 * s;
+  }
+  ctx.translate(x, y);
+  if (s) { ctx.rotate(b.ax); ctx.scale(sx, sy); ctx.rotate(-b.ax); }
+  ctx.fillStyle = C.bubble;
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = C.shade; ctx.lineWidth = 2.4 * S; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(0, 0, R * 0.74, Math.PI * 0.08, Math.PI * 0.62); ctx.stroke();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath(); ctx.ellipse(-R * 0.36, -R * 0.38, R * 0.26, R * 0.13, -0.7, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = C.ink; ctx.globalAlpha = 0.75; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
+function drawPop(b){
+  const k = b.t / 0.2;
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  // flattened, crumpled film shrinking away
+  ctx.globalAlpha = 1 - k;
+  ctx.strokeStyle = C.ink; ctx.lineWidth = 1;
+  ctx.beginPath();
+  const n = b.crumple.length, rr = R * (0.95 - 0.35 * k);
+  for (let i = 0; i <= n; i++) {
+    const a = (i % n) / n * Math.PI * 2, r = rr * b.crumple[i % n];
+    i ? ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  ctx.stroke();
+  // burst ticks
+  ctx.lineWidth = 1.4; ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = i / 6 * Math.PI * 2 + b.wob, r0 = R * (1.05 + 0.5 * k), r1 = r0 + R * 0.35;
+    ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); ctx.lineTo(Math.cos(a) * r1, Math.sin(a) * r1);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(0.033, (now - last) / 1000); last = now;
+  update(dt);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = C.sheet; ctx.fillRect(0, 0, W, H);
+  for (const b of bubbles) if (b.state === 'full' || b.state === 'queued') drawFull(b);
+  for (const b of bubbles) if (b.state === 'pop') drawPop(b);
+  requestAnimationFrame(frame);
+}
+
+resize();
+setLevel(1);
+requestAnimationFrame(frame);
+})();
+</script>
+</body></html>
