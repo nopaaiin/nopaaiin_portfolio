@@ -4,7 +4,7 @@
   class ClockGestures {
     constructor(surface,options={}){
       this.surface=surface;this.o=options;this.points=new Map();this.single=null;this.pinch=null;this.multi=false;
-      this.wheelSum=0;this.wheelAt=-Infinity;this.wheelUsed=false;this.bindings=[];
+      this.wheelSum=0;this.wheelAt=-Infinity;this.wheelUsed=false;this.wheelLastDelta=0;this.wheelFiredAt=-Infinity;this.bindings=[];
       const listen=(name,fn)=>{const handler=fn.bind(this);surface.addEventListener(name,handler,{passive:false});this.bindings.push([name,handler]);};
       listen('pointerdown',this.down);listen('pointermove',this.move);listen('pointerup',this.up);
       listen('pointercancel',this.cancel);listen('lostpointercapture',this.cancel);
@@ -82,14 +82,18 @@
         this.wheelTimer=setTimeout(()=>{this.commitPinch();this.wheelPinch=null;this.pinch=null;this.preview();this.hint();},160);return;
       }
       if(Math.abs(e.deltaY)<Math.abs(e.deltaX))return;
-      this.prevent(e);const now=this.now();
-      if(now-this.wheelAt>240){this.wheelSum=0;this.wheelUsed=false;}
-      this.wheelAt=now;
-      if(this.wheelUsed)return;
       const dy=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?this.surface.clientHeight:1);
-      if(Math.sign(dy)!==Math.sign(this.wheelSum))this.wheelSum=0;
+      if(!dy)return;
+      this.prevent(e);const now=this.now();
+      // Keep a flick's momentum on one day, but accept a fresh flick before its tail ends.
+      const reversed=Math.abs(dy)>=4&&Math.sign(dy)!==Math.sign(this.wheelLastDelta);
+      const freshFlick=this.wheelUsed&&now-this.wheelFiredAt>=280&&Math.abs(dy)>=12&&Math.abs(dy)>Math.abs(this.wheelLastDelta)*1.8;
+      if(now-this.wheelAt>160||reversed||freshFlick){this.wheelSum=0;this.wheelUsed=false;}
+      this.wheelAt=now;this.wheelLastDelta=dy;
+      if(this.wheelUsed)return;
       this.wheelSum+=dy;
-      if(Math.abs(this.wheelSum)>=75){this.wheelUsed=true;this.suppress();this.o.onDay?.(this.wheelSum<0?-1:1);}
+      // Positive wheel movement raises the content, matching an upward touch swipe.
+      if(Math.abs(this.wheelSum)>=48){this.wheelUsed=true;this.wheelFiredAt=now;this.suppress();this.o.onDay?.(this.wheelSum>0?-1:1);}
     }
     gestureStart(e){
       if(this.ignored(e))return;

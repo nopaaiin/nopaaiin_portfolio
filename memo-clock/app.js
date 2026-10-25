@@ -16,6 +16,36 @@
     const [h,m,s] = time.split(':').map(Number);
     return {id:`demo_${i+1}`,text,createdAt:`${date}T${time}+09:00`,h,m,s,deleted:false};
   });
+  const octoberDays = [
+    ['01','창문 열기','새 공책 첫 장','점심 산책','오늘의 빈칸'],
+    ['02','빵과 커피','종이 샘플 찾기','빛이 접힌 자리','내일은 일찍'],
+    ['03','늦잠','다 쓴 연필','강가의 바람','이름 없는 색'],
+    ['04','물을 끓이는 동안','주머니 속 동전','그림자 길이','책상 정리'],
+    ['05','첫차 소리','사진 한 장','흔들리는 커튼','남은 문장'],
+    ['06','흐린 아침','접힌 지도','천천히 걷기','메모 옮기기'],
+    ['07','가방 속 영수증','새로운 여백','커피가 식었다','지우지 않은 선'],
+    ['08','낮은 구름','도서관 가기','창틀의 먼지','책갈피'],
+    ['09','비 오는 소리','우산 챙기기','젖은 아스팔트','늦은 저녁'],
+    ['10','계란 두 개','종이의 무게','걸음의 간격','천장 바라보기'],
+    ['11','아침 햇빛','모르는 골목','동그란 얼룩','조용한 밤'],
+    ['12','조금 더 자고 싶다','출력 테스트','흩어진 글자','백업하기'],
+    ['13','계단의 발소리','다 쓴 볼펜','오래된 간판','다시 읽기'],
+    ['14','버스 창가','책 한 권 빌리기','겹쳐진 그림자','생각의 높이'],
+    ['15','흰 운동화','줄 간격 조정','바람에 넘겨진 페이지','마지막 한 줄'],
+    ['20','컵에 남은 물','자료 정리','등고선 드로잉','선을 따라 걷는 생각'],
+    ['21','아침의 소음','짧은 문장 모으기','편집하기','불 끄기 전에'],
+    ['22','맑은 공기','잉크 번짐','종이를 접었다','잊기 전에 적기'],
+    ['23','일찍 도착했다','프린트 찾기','의자 끄는 소리','느리게 읽은 문장'],
+    ['24','토요일 아침','전시 보러 가기','유리 너머 사람들','손에 남은 종이 냄새'],
+    ['25','새로운 페이지','시간을 모으는 일','발표 순서 정리','내일 보여줄 것']
+  ];
+  const octoberTimes=['08:12:14','11:28:23','16:42:47','22:18:09'];
+  for(const [day,...notes] of octoberDays)notes.forEach((text,i)=>{
+    const date=`2026-10-${day}`,[h,minute,second]=octoberTimes[i].split(':').map(Number);
+    const m=(minute+Number(day)*7)%60,s=(second+Number(day)*11)%60,time=[h,m,s].map(pad).join(':');
+    demoMemos.push({id:`demo_oct_${day}_${i+1}`,text,createdAt:`${date}T${time}+09:00`,h,m,s,deleted:false});
+  });
+  demoMemos.sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
   const fmt = new Intl.DateTimeFormat('en-GB',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
   function nowParts(date = new Date()) {
     const p = Object.fromEntries(fmt.formatToParts(date).filter(x => x.type !== 'literal').map(x => [x.type,x.value]));
@@ -29,13 +59,21 @@
     };
   }
   function loadData() {
-    try { const stored = localStorage.getItem(STORAGE); if (stored) return safeData(JSON.parse(stored)) || {memos:[...demoMemos],sentences:[]}; }
+    try {
+      const stored=localStorage.getItem(STORAGE),saved=stored&&safeData(JSON.parse(stored));
+      if(saved){
+        const known=new Set(saved.memos.map(m=>m.id));
+        saved.memos.push(...demoMemos.filter(m=>!known.has(m.id)));
+        saved.memos.sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
+        return saved;
+      }
+    }
     catch (_) { /* local storage can be disabled; the page still runs in memory */ }
     return {memos:[...demoMemos],sentences:[]};
   }
   let data = loadData();
   function persist() { try { localStorage.setItem(STORAGE,JSON.stringify(data)); } catch (_) { showStatus('Session only'); } }
-  try {if (!localStorage.getItem(STORAGE)) persist();} catch (_) { /* storage is optional */ }
+  try {localStorage.setItem(STORAGE,JSON.stringify(data));} catch (_) { /* storage is optional */ }
 
   const clockButton = $('#clock-toggle');
   const board = $('#memo-board');
