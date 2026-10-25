@@ -203,7 +203,7 @@
     $('#day-list').replaceChildren();
     if(past){
       const notes=dayMemos();$('#day-note-count').textContent=`${notes.length} notes`;
-      if(!notes.length){const empty=document.createElement('p');empty.className='day-empty';empty.textContent='No notes';$('#day-list').append(empty);renderClock('000000');}
+      if(!notes.length){const empty=document.createElement('p');empty.className='day-empty';empty.textContent='No notes';$('#day-list').append(empty);$('#day-state').textContent='No notes';}
       for(const memo of notes){
         const row=document.createElement('button');row.type='button';row.className='day-note';row.dataset.id=memo.id;
         const time=document.createElement('span');time.textContent=memo.createdAt.slice(11,19);
