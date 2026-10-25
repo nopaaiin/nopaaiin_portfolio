@@ -1,4 +1,4 @@
-// 인터랙티브 디자인 2 과제 아카이브 (bubble-wrap 주소)의 글과 미디어 목록입니다.
+// Published project archive.
 window.PORTFOLIO_CONTENT = {
   "hero": {
     "title": "nopaaiin — Interactive Design (2)",
@@ -30,6 +30,21 @@ window.PORTFOLIO_CONTENT = {
         {
           "src": "bubblewrap/index.html",
           "type": "embed"
+        }
+      ]
+    },
+    {
+      "key": "memo-clock",
+      "title": "mem o'clock",
+      "category": "Interactive Design (2) / 2026",
+      "desc": "시계와 메모장을 결합한 인터랙티브 웹 작업. 작성한 날짜와 시·분·초를 함께 기록하며, 시간이 흐르며 메모가 쌓이는 개념을 등고선의 중첩으로 표현했다.\n\n시계 위에서 위·아래로 쓸어 날짜를 넘기고, 두 손가락을 오므리면 무작위 메모 세 개를 조합한다. AI가 연결한 문장의 밑줄 친 조각을 누르면 원래 메모로 돌아간다.",
+      "poster": "../memo-clock/cover.png",
+      "href": "../memo-clock/",
+      "coverClass": "cover-poster",
+      "files": [
+        {
+          "src": "../memo-clock/cover.png",
+          "type": "img"
         }
       ]
     }
