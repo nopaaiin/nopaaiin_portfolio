@@ -1,34 +1,74 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
-  <meta name="description" content="mem o'clock — 시간과 함께 기록하고, 탐색하고, 재조합하는 메모 시계. C546162 정준용.">
+  <meta name="description" content="A clock for notes.">
   <title>mem o'clock — nopaaiin</title>
-  <style>
-    *{box-sizing:border-box}html,body{margin:0;background:#fff;color:#000;font-family:Arial,"Apple SD Gothic Neo",sans-serif}
-    body{min-height:100svh}.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:54px;padding:10px max(20px,env(safe-area-inset-right)) 10px max(20px,env(safe-area-inset-left));border-bottom:1px solid #000;font-size:12px}
-    .bar h1{margin:0;font-size:14px;font-weight:600;letter-spacing:-.03em}.links{display:flex;gap:22px}.bar a{color:inherit;text-decoration:none;display:inline-flex;align-items:center;min-height:34px}.bar a:hover{text-decoration:underline;text-underline-offset:4px}a:focus-visible{outline:1px solid #000;outline-offset:4px}
-    iframe{display:block;width:100%;height:calc(100svh - 55px);border:0;background:#fff}
-    .about{max-width:760px;margin:0 auto;padding:42px 24px 52px;font-size:14px;line-height:1.8;border-top:1px solid #ddd}.about h2{margin:0 0 12px;font-size:16px;font-weight:600}.about p{margin:0 0 12px}.about a{color:inherit;text-underline-offset:3px}
-    @media(max-width:480px){.bar{gap:10px;padding-top:6px;padding-bottom:6px}.links{gap:14px}.bar h1{font-size:13px}.bar a{min-height:40px}iframe{height:calc(100svh - 55px)}}
-  </style>
+  <meta name="memo-clock-api" content="https://memo-clock-ink-20261019.icy-spice-6810.chatgpt.site/api/mix">
+  <link rel="stylesheet" href="./style.css?v=27cbc7929e11">
+  <script src="./ink-clock.js?v=27cbc7929e11" defer></script>
+  <script src="./clock-gestures.js?v=27cbc7929e11" defer></script>
+  <script src="./app.js?v=27cbc7929e11" defer></script>
 </head>
 <body>
-  <header class="bar">
-    <a href="../bubble-wrap/">← Archive</a>
-    <h1>mem o'clock</h1>
-    <nav class="links" aria-label="Project links"><a href="project.pdf" target="_blank" rel="noopener">PDF ↗</a><a href="https://memo-clock-ink-20261019.icy-spice-6810.chatgpt.site/" target="_blank" rel="noopener">Open ↗</a></nav>
+  <nav class="archive-bar" aria-label="Project navigation"><a href="../bubble-wrap/">← Archive</a><strong>mem o'clock</strong><span><a href="project.pdf" target="_blank" rel="noopener">PDF ↗</a><a href="https://memo-clock-ink-20261019.icy-spice-6810.chatgpt.site/" target="_blank" rel="noopener">Open ↗</a></span></nav>
+  <canvas id="paper" aria-hidden="true"></canvas>
+  <canvas id="particles" aria-hidden="true"></canvas>
+  <header class="masthead">
+    <span class="wordmark">MEMO CLOCK</span>
+    <nav class="day-nav" aria-label="Day navigation">
+      <button id="previous-day" type="button" aria-label="Previous day">↑</button>
+      <span id="today-date" class="date" aria-live="polite">20-OCT-2026</span>
+      <button id="next-day" type="button" aria-label="Next day" disabled>↓</button>
+      <button id="today-button" type="button" hidden>Today</button>
+    </nav>
+    <button id="tools-toggle" type="button" aria-expanded="false" aria-controls="tools-panel">Tools ↗</button>
   </header>
-  <main>
-    <iframe src="https://memo-clock-ink-20261019.icy-spice-6810.chatgpt.site/" title="mem o'clock 메모 시계" allow="fullscreen"></iframe>
-    <section class="about" aria-labelledby="about-title">
-      <h2 id="about-title">mem o'clock</h2>
-      <p>시계와 메모장을 결합한 인터랙티브 웹 작업이다. 메모를 작성한 날짜와 시·분·초를 함께 저장하고, 시간이 흐르며 기록이 쌓이는 개념을 등고선의 중첩으로 표현했다.</p>
-      <p>시계 위에서 위·아래로 쓸어 날짜를 넘기고, 두 손가락을 오므리면 무작위 메모 세 개를 조합한다. AI가 연결한 문장의 밑줄 친 조각은 원래 메모로 이어진다.</p>
-      <p><a href="project.pdf" target="_blank" rel="noopener">작업 설명 PDF ↗</a> · C546162 정준용 · Interactive Design (2) / 2026</p>
+  <main class="main">
+    <div class="stage">
+      <section class="clock-section" aria-label="Clock">
+        <div class="clock-meta"><span id="day-state">Live</span><span id="gesture-hint">Swipe ↑ ↓ · Pinch</span></div>
+        <button id="clock-toggle" class="clock" type="button" aria-expanded="false" aria-controls="memo-board" aria-label="Open archive">
+          <span class="clock-group" data-unit="h"><span class="digit-row" id="hour-digits" aria-hidden="true"></span><span class="unit-label">H</span></span>
+          <span class="clock-colon" aria-hidden="true"><i></i><i></i></span>
+          <span class="clock-group" data-unit="m"><span class="digit-row" id="minute-digits" aria-hidden="true"></span><span class="unit-label">M</span></span>
+          <span class="clock-colon" aria-hidden="true"><i></i><i></i></span>
+          <span class="clock-group" data-unit="s"><span class="digit-row" id="second-digits" aria-hidden="true"></span><span class="unit-label">S</span></span>
+        </button>
+        <div class="clock-foot" data-gesture-ignore><button id="clock-hint" type="button">Archive ↗</button><span id="time-readout">00:00:00</span><span><span id="memo-count">035</span> notes</span></div>
+      </section>
+      <section id="day-records" class="day-records" aria-label="Day notes" hidden>
+        <div class="section-kicker"><span>Notes</span><span id="day-note-count">0 notes</span></div>
+        <div id="day-list" class="day-list" data-native-scroll></div>
+      </section>
+      <section class="sentence-section" aria-live="polite" aria-label="Remix">
+        <div class="section-kicker"><span>Remix</span><span id="sentence-count-top">000</span></div>
+        <div id="sentence-display" class="sentence-display empty">—</div>
+        <div id="sentence-caption" class="sentence-caption"></div>
+      </section>
+    </div>
+    <section id="memo-board" class="memo-board" role="dialog" aria-modal="true" aria-label="Archive" aria-hidden="true">
+      <div class="board-header"><span>Archive</span><span id="board-count">035 entries</span><button id="close-board" type="button" aria-label="Close archive">Close ×</button></div>
+      <div id="board-scroll" class="board-scroll"><div id="board-list"></div></div>
+      <div class="board-footer"><span>Remixes <span id="figure-count">000</span></span><span>↑ ↓</span></div>
     </section>
   </main>
+  <aside id="remix-popover" class="remix-popover" role="dialog" aria-label="Random mix" hidden>
+    <div class="remix-head"><span id="remix-state">Mix</span><button id="remix-close" type="button" aria-label="Close mix">×</button></div>
+    <div id="remix-copy" class="remix-copy" aria-live="polite"></div>
+  </aside>
+  <aside id="tools-panel" class="tools-panel" hidden aria-label="Tools">
+    <div class="tools-head"><strong>Tools</strong><button id="tools-close" type="button" aria-label="Close tools">×</button></div>
+    <div class="tools-actions"><button id="export-data" type="button">Export ↓</button><button id="import-data" type="button">Import ↑</button><input id="import-file" type="file" accept="application/json,.json" hidden></div>
+    <button id="restore-demo" class="subtle-button" type="button">Restore demo</button>
+    <details class="privacy-note"><summary>AI notice</summary><p>Mix sends three selected notes to OpenAI.</p></details>
+  </aside>
+  <form id="memo-form" class="composer">
+    <div class="composer-label"><span>Note</span><span id="composer-time">00:00:00</span></div>
+    <div class="composer-main"><textarea id="memo-input" rows="1" placeholder="Write here" aria-label="Write note"></textarea><button id="save-button" type="submit" aria-label="Save note">Save ↵</button><button id="mix-button" type="button">Mix ↗</button></div>
+    <div class="composer-bottom"><span id="status" role="status"></span><span>Enter ↵</span></div>
+  </form>
 </body>
 </html>
