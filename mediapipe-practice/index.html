@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MediaPipe Practice</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fff;color:#171717;font-family:Arial,'Apple SD Gothic Neo',sans-serif}main{max-width:1500px;margin:auto;padding:64px 5vw}header{border-bottom:1px solid #171717;padding-bottom:32px;margin-bottom:48px}h1{font-size:clamp(36px,5vw,76px);font-weight:500;letter-spacing:-.055em;margin:0}section{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}a{color:inherit;text-decoration:none;display:block}a:focus-visible{outline:3px solid #265eff;outline-offset:8px}.visual{aspect-ratio:1;background:#f5f5f5;overflow:hidden;transition:background .2s}a:hover .visual{background:#eee}.visual canvas{width:100%;height:100%;display:block}.visual img{width:100%;height:100%;object-fit:contain;padding:12%}.tag{font-size:14px;letter-spacing:.05em;margin-top:24px}h2{font-size:25px;font-weight:500;letter-spacing:-.035em;margin:10px 0 12px}p{font-size:16px;line-height:1.65;word-break:keep-all;color:#616161;margin:0}footer{margin-top:88px;padding-top:22px;border-top:1px solid #ddd;font-size:12px;line-height:1.8;color:#777}@media(max-width:750px){main{padding:32px 6vw}header{margin-bottom:28px}section{grid-template-columns:1fr;gap:40px}.visual{aspect-ratio:1.2}footer{margin-top:56px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head>
+<body><main>
+<header><h1>MediaPipe Practice</h1></header>
+<section aria-label="실습 목록">
+<a href="./hand/"><div class="visual" data-zombie><canvas aria-label="마인크래프트 좀비 3D 미리보기"></canvas></div><div class="tag">01 HAND</div><h2>Minecraft Zombie Hand</h2><p>손을 꺾으면 좀비가 돌고, 주먹을 쥐면 좀비가 쪼그라든다.</p></a>
+<a href="./pose/"><div class="visual" data-zombie><canvas aria-label="마인크래프트 좀비 3D 미리보기"></canvas></div><div class="tag">02 POSE</div><h2>Minecraft Zombie Pose</h2><p>내 몸 동작을 마인크래프트 좀비가 그대로 따라한다.</p></a>
+<a href="./banana/"><div class="visual"><img src="./assets/banana_cat.gif" alt="바나나 고양이" width="400" height="400"></div><div class="tag">03 SEGMENTER</div><h2>Banana Cat Me</h2><p>바나나 고양이 얼굴이 내 얼굴로 바뀌고, 스페이스바를 누를 때마다 한 마리씩 줄을 선다.</p></a>
+</section>
+<footer>"minecraft zombie" by JoohnElkes, Sketchfab, CC BY 4.0<br>Built with Google MediaPipe Tasks Vision</footer>
+</main><script type="module" src="./thumbnails.js"></script></body></html>
