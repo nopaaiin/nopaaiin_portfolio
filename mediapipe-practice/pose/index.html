@@ -1,1 +1,154 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MediaPipe Practice</title><style>body{margin:0;background:#fff}a{position:fixed;top:24px;left:24px;text-decoration:none;color:#111;font:24px Arial;padding:8px}a:focus-visible{outline:2px solid #111}</style></head><body><a href="../" aria-label="Back to index">←</a></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Minecraft Zombie Pose</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
+#gl{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+#pip{position:fixed;top:16px;right:16px;height:min(46vh,480px);aspect-ratio:9/16;border-radius:14px;background:#111}
+video{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head>
+<body>
+<a class="back" href="../" aria-label="Back to index">←</a>
+<canvas id="gl"></canvas>
+<canvas id="pip"></canvas>
+<video id="v" playsinline muted></video>
+<script type="module">
+import * as THREE from 'three';
+import { MODELS, MOCK, createTask, safeRunner, startCamera, injectCSS, drawCover, clamp, damp } from '../common.js';
+import { loadZombie, setupScene } from '../zombie.js';
+injectCSS();
+
+const video = document.getElementById('v');
+const pip = document.getElementById('pip'), pctx = pip.getContext('2d');
+const { renderer, scene, camera } = setupScene(document.getElementById('gl'), { background: 0x000000 });
+
+// ---------- zombie ----------
+const Z = await loadZombie('../assets/minecraft_zombie.glb');
+scene.add(Z.root);
+// keep the whole body in frame even with both arms up
+const fitCam = () => {
+  const need = Z.size.y * 1.75;
+  const vfov = THREE.MathUtils.degToRad(camera.fov);
+  const dH = need / 2 / Math.tan(vfov / 2);
+  const dW = (Z.size.y * 1.3) / 2 / (Math.tan(vfov / 2) * camera.aspect);
+  camera.position.set(0, Z.size.y * 0.12, Math.max(dH, dW));
+  camera.lookAt(0, Z.size.y * 0.12, 0);
+};
+addEventListener('resize', fitCam); fitCam();
+
+// ---------- pose tracking ----------
+let holder = null, run = null;
+if (!MOCK) createTask('PoseLandmarker', { baseOptions: { modelAssetPath: MODELS.pose }, runningMode: 'VIDEO', numPoses: 1 })
+  .then(h => { holder = h; run = safeRunner(holder, 'detectForVideo'); })
+  .catch(err => console.error('Pose model could not load', err));
+startCamera(video, { width: 1280, height: 720 });
+
+const CONN = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,29],[29,31],[28,30],[30,32],[15,17],[15,19],[16,18],[16,20],[0,7],[0,8]];
+
+function mockPose(t) { // test only
+  const P = Array.from({ length: 33 }, () => ({ x: .5, y: .5, z: 0, visibility: .99 }));
+  const set = (i, x, y) => { P[i] = { x, y, z: 0, visibility: .99 }; };
+  const aR = 0.3 + (Math.sin(t * 1.2) * .5 + .5) * 2.6, aL = 0.3 + (Math.sin(t * 0.8 + 1) * .5 + .5) * 1.6;
+  set(0, .5 + Math.sin(t) * .02, .2); set(7, .54, .2 + Math.sin(t * .9) * .015); set(8, .46, .2 - Math.sin(t * .9) * .015);
+  set(12, .42, .34); set(11, .58, .34);
+  const L = .2;
+  set(16, .42 - Math.sin(aR) * L, .34 + Math.cos(aR) * L); set(14, .42 - Math.sin(aR) * L / 2, .34 + Math.cos(aR) * L / 2);
+  set(15, .58 + Math.sin(aL) * L, .34 + Math.cos(aL) * L); set(13, .58 + Math.sin(aL) * L / 2, .34 + Math.cos(aL) * L / 2);
+  set(24, .46, .6); set(23, .54, .6);
+  const k = Math.max(0, Math.sin(t * 1.5)) * .5;
+  set(28, .45 - Math.sin(k) * .3, .6 + Math.cos(k) * .3); set(26, .455 - Math.sin(k) * .15, .6 + Math.cos(k) * .15);
+  set(27, .55, .9); set(25, .55, .75);
+  return P;
+}
+
+// ---------- mapping ----------
+const DOWN = new THREE.Vector3(0, -1, 0);
+const tmpQ = new THREE.Quaternion(), tmpQ2 = new THREE.Quaternion(), tmpV = new THREE.Vector3();
+const limbs = [
+  { part: 'armR', a: 12, b: 16 }, { part: 'armL', a: 11, b: 15 },
+  { part: 'legR', a: 24, b: 28 }, { part: 'legL', a: 23, b: 27 }
+];
+for (const l of limbs) { l.target = Z.rest[l.part].q.clone(); l.seen = -1e9; }
+const headT = { yaw: 0, nod: 0, roll: 0, seen: -1e9 }, head = { yaw: 0, nod: 0, roll: 0 };
+let lean = 0, leanT = 0, lm = null, lastTime = -1;
+const ok = p => p && (p.visibility === undefined || p.visibility > 0.55);
+
+function apply(P, W3, now) {
+  const asp = video.videoWidth / video.videoHeight || 16 / 9;
+  for (const l of limbs) {
+    const A = P[l.a], B = P[l.b];
+    if (!ok(A) || !ok(B)) continue;
+    // mirrored screen direction (+x right, +y up), small depth hint from world landmarks
+    const dz = W3 ? -(W3[l.b].z - W3[l.a].z) * 0.5 : 0;
+    tmpV.set(-(B.x - A.x) * asp, -(B.y - A.y), dz).normalize();
+    const obj = Z.rig[l.part];
+    obj.parent.getWorldQuaternion(tmpQ).invert();
+    tmpV.applyQuaternion(tmpQ);                     // into parent space
+    tmpQ2.copy(Z.rest[l.part].q).invert();
+    tmpV.applyQuaternion(tmpQ2);                    // into rest space
+    l.target.copy(Z.rest[l.part].q).multiply(tmpQ.setFromUnitVectors(DOWN, tmpV));
+    l.seen = now;
+  }
+  if (ok(P[0]) && ok(P[7]) && ok(P[8])) {
+    const n = P[0], eL = P[7], eR = P[8];
+    const mx = (eL.x + eR.x) / 2, my = (eL.y + eR.y) / 2, ed = Math.hypot((eL.x - eR.x) * asp, eL.y - eR.y) || 1;
+    headT.yaw = clamp(-((n.x - mx) * asp) / ed * 2.2, -1, 1);
+    headT.nod = clamp(((n.y - my) / ed - 0.2) * 1.4, -0.6, 0.6);
+    // ear line, screen left ear -> screen right ear (mirrored)
+    const sl = eL.x > eR.x ? eL : eR, sr = sl === eL ? eR : eL;
+    headT.roll = clamp(Math.atan2(sr.y - sl.y, (sl.x - sr.x) * asp), -0.7, 0.7);
+    headT.seen = now;
+  }
+  if (ok(P[11]) && ok(P[12])) {
+    const sl = P[11].x > P[12].x ? P[11] : P[12], sr = sl === P[11] ? P[12] : P[11];
+    leanT = clamp(-Math.atan2(sr.y - sl.y, (sl.x - sr.x) * asp) * 0.6, -0.3, 0.3);
+  }
+}
+
+// ---------- loop ----------
+let prev = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - prev) / 1000); prev = now;
+  if (MOCK) { lm = mockPose(now / 1000); apply(lm, null, now); }
+  else if (run && video.readyState >= 2 && video.currentTime !== lastTime) {
+    lastTime = video.currentTime;
+    const r = run(video, now);
+    if (r && r.landmarks && r.landmarks.length) { lm = r.landmarks[0]; apply(lm, r.worldLandmarks && r.worldLandmarks[0], now); } else lm = null;
+  }
+  for (const l of limbs) {
+    const lost = now - l.seen > 1500;
+    const obj = Z.rig[l.part];
+    obj.quaternion.slerp(lost ? Z.rest[l.part].q : l.target, damp(lost ? 3 : 14, dt));
+  }
+  const hl = now - headT.seen > 1500;
+  for (const k of ['yaw', 'nod', 'roll']) head[k] += ((hl ? 0 : headT[k]) - head[k]) * damp(10, dt);
+  Z.rig.head.quaternion.copy(Z.rest.head.q).multiply(tmpQ.setFromEuler(new THREE.Euler(-head.nod, head.yaw, head.roll, 'YXZ')));
+  lean += ((hl ? 0 : leanT) - lean) * damp(6, dt);
+  Z.root.rotation.z = lean;
+  renderer.render(scene, camera);
+  drawPip();
+  requestAnimationFrame(frame);
+}
+function drawPip() {
+  if (!video.videoWidth) return;
+  const H = Math.round(pip.clientHeight * Math.min(devicePixelRatio, 2)), W = Math.round(H * 9 / 16);
+  if (pip.width !== W || pip.height !== H) { pip.width = W; pip.height = H; }
+  pctx.fillStyle = '#111'; pctx.fillRect(0, 0, W, H);
+  const map = drawCover(pctx, video, 0, 0, W, H);
+  if (!lm || !map) return;
+  const P = lm.map(map);
+  pctx.strokeStyle = '#fff'; pctx.lineWidth = Math.max(2, W / 90);
+  pctx.beginPath();
+  for (const [a, b] of CONN) if (ok(lm[a]) && ok(lm[b])) { pctx.moveTo(P[a].x, P[a].y); pctx.lineTo(P[b].x, P[b].y); }
+  pctx.stroke();
+  pctx.fillStyle = '#ff2f7d';
+  for (let i = 0; i < P.length; i++) if (ok(lm[i])) { pctx.beginPath(); pctx.arc(P[i].x, P[i].y, Math.max(3, W / 70), 0, 7); pctx.fill(); }
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

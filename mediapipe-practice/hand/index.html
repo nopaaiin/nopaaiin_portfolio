@@ -1,1 +1,133 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MediaPipe Practice</title><style>body{margin:0;background:#fff}a{position:fixed;top:24px;left:24px;text-decoration:none;color:#111;font:24px Arial;padding:8px}a:focus-visible{outline:2px solid #111}</style></head><body><a href="../" aria-label="Back to index">←</a></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Minecraft Zombie Hand</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#fff;color:#111}
+#gl{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+#pip{position:fixed;top:16px;right:16px;width:min(30vw,340px);border-radius:14px;background:#ececec;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+video{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head>
+<body>
+<a class="back" href="../" aria-label="Back to index">←</a>
+<canvas id="gl"></canvas>
+<canvas id="pip"></canvas>
+<video id="v" playsinline muted></video>
+<script type="module">
+import * as THREE from 'three';
+import { MODELS, MOCK, createTask, safeRunner, startCamera, injectCSS, drawCover, clamp, damp } from '../common.js';
+import { loadZombie, setupScene } from '../zombie.js';
+injectCSS();
+
+const video = document.getElementById('v');
+const pip = document.getElementById('pip'), pctx = pip.getContext('2d');
+const { renderer, scene, camera } = setupScene(document.getElementById('gl'), { background: 0xffffff });
+
+// ---------- zombie ----------
+const Z = await loadZombie('../assets/minecraft_zombie.glb');
+scene.add(Z.root);
+const fitCam = () => { const d = Z.size.y * 2.4 / Math.min(1, camera.aspect * 1.1); camera.position.set(0, 0, d); camera.lookAt(0, 0, 0); };
+addEventListener('resize', fitCam); fitCam();
+
+// fixed random twist axes so every part crumples a bit differently
+const twist = {};
+for (const k of Object.keys(Z.rig)) twist[k] = new THREE.Vector3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize();
+const e = new THREE.Euler(), q = new THREE.Quaternion(), q2 = new THREE.Quaternion();
+function pose(c, t) {
+  const s = 1 - 0.55 * c;
+  Z.root.scale.set(s * (1 + 0.2 * c), s * (1 - 0.28 * c), s * (1 + 0.2 * c));
+  const wob = c > 0.55 ? Math.sin(t * 22) * 0.05 * (c - 0.55) : 0;
+  const set = (k, ex, ey, ez) => {
+    e.set(ex, ey, ez); q.setFromEuler(e);
+    q2.setFromAxisAngle(twist[k], 0.55 * c + wob);
+    Z.rig[k].quaternion.copy(Z.rest[k].q).multiply(q).multiply(q2);
+  };
+  set('armR', -0.9 * c, 0, 1.15 * c);
+  set('armL', -0.9 * c, 0, -1.15 * c);
+  set('legR', -1.3 * c, 0, 0.35 * c);
+  set('legL', -1.3 * c, 0, -0.35 * c);
+  set('head', 0.25 * c, 0, 0.35 * c);
+  set('body', 0, 0.35 * c, 0);
+  Z.rig.head.position.copy(Z.rest.head.p); Z.rig.head.position.y -= 0.32 * c;
+}
+
+// ---------- hand tracking ----------
+let hand = null, run = null;
+const CONN = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+if (!MOCK) createTask('HandLandmarker', { baseOptions: { modelAssetPath: MODELS.hand }, runningMode: 'VIDEO', numHands: 1 })
+  .then(h => { hand = h; run = safeRunner(hand, 'detectForVideo'); })
+  .catch(err => console.error('Hand model could not load', err));
+startCamera(video);
+
+function mockHand(t) { // test only
+  const m = new URLSearchParams(location.search).get('mock');
+  const a = m ? 0 : Math.sin(t * 0.7) * 0.6, c = m === 'still' ? 0 : m === 'half' ? 0.5 : Math.sin(t * 1.3) * .5 + .5;
+  const w = { x: .5, y: .78 }, up = { x: Math.sin(a), y: -Math.cos(a) }, sd = { x: Math.cos(a), y: Math.sin(a) };
+  const pts = [w];
+  const base = [[-.09, .06], [-.045, .13], [0, .14], [.04, .13], [.075, .11]];
+  base.forEach(([o, l], f) => {
+    const m = { x: w.x + up.x * l + sd.x * o, y: w.y + up.y * l + sd.y * o };
+    const len = f === 0 ? .1 : .13;
+    for (let j = 1; j <= 4; j++) {
+      const k = j / 4, ext = len * k * (1 - c) - len * 0.35 * c * k * (f ? 1 : 0.3);
+      pts.push({ x: m.x + up.x * ext * (j === 1 ? .0 : 1), y: m.y + up.y * ext * (j === 1 ? 0 : 1) });
+    }
+  });
+  return pts;
+}
+
+let yaw = 0, curl = 0, yawT = 0, curlT = 0, lastSeen = -1e9, lastTime = -1, lm = null;
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function analyse(p, now) {
+  const asp = video.videoWidth / video.videoHeight || 16 / 9;
+  // tilt of wrist -> middle finger base, in mirrored screen space
+  const dx = -(p[9].x - p[0].x) * asp, dy = p[9].y - p[0].y;
+  const ang = Math.atan2(dx, -dy);
+  yawT = clamp(ang * 2.4, -Math.PI, Math.PI);
+  // finger curl: tip distance vs base distance from the wrist
+  let s = 0;
+  for (const [mcp, tip] of [[5, 8], [9, 12], [13, 16], [17, 20]]) s += clamp((1.85 - dist(p[tip], p[0]) / (dist(p[mcp], p[0]) || 1)) / 0.8, 0, 1);
+  curlT = s / 4;
+  lastSeen = now;
+}
+
+// ---------- loop ----------
+let prev = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - prev) / 1000); prev = now;
+  if (MOCK) { lm = mockHand(now / 1000); analyse(lm, now); }
+  else if (run && video.readyState >= 2 && video.currentTime !== lastTime) {
+    lastTime = video.currentTime;
+    const r = run(video, now);
+    if (r && r.landmarks && r.landmarks.length) { lm = r.landmarks[0]; analyse(lm, now); } else lm = null;
+  }
+  if (now - lastSeen > 400) { yawT += (0 - yawT) * damp(1.5, dt); curlT += (0 - curlT) * damp(1.5, dt); }
+  yaw += (yawT - yaw) * damp(9, dt);
+  curl += (curlT - curl) * damp(10, dt);
+  Z.root.rotation.y = yaw;
+  pose(curl, now / 1000);
+  renderer.render(scene, camera);
+  drawPip();
+  requestAnimationFrame(frame);
+}
+function drawPip() {
+  if (!video.videoWidth) return;
+  const W = pip.clientWidth * Math.min(devicePixelRatio, 2), H = Math.round(W * video.videoHeight / video.videoWidth);
+  if (pip.width !== W || pip.height !== H) { pip.width = W; pip.height = H; }
+  const map = drawCover(pctx, video, 0, 0, W, H);
+  if (!lm || !map) return;
+  const P = lm.map(map);
+  pctx.strokeStyle = '#fff'; pctx.lineWidth = Math.max(2, W / 160);
+  pctx.beginPath(); for (const [a, b] of CONN) { pctx.moveTo(P[a].x, P[a].y); pctx.lineTo(P[b].x, P[b].y); } pctx.stroke();
+  for (let i = 0; i < P.length; i++) {
+    pctx.fillStyle = [4, 8, 12, 16, 20].includes(i) ? '#ff2f7d' : '#111';
+    pctx.beginPath(); pctx.arc(P[i].x, P[i].y, Math.max(3, W / 110), 0, 7); pctx.fill();
+  }
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

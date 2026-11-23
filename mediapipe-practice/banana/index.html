@@ -1,1 +1,213 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MediaPipe Practice</title><style>body{margin:0;background:#fff}a{position:fixed;top:24px;left:24px;text-decoration:none;color:#111;font:24px Arial;padding:8px}a:focus-visible{outline:2px solid #111}</style></head><body><a href="../" aria-label="Back to index">←</a></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Banana Cat Me</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#f6f1e3;color:#111;-webkit-user-select:none;user-select:none}
+#c{position:fixed;inset:0;width:100vw;height:100vh;display:block;touch-action:manipulation}
+#pip{position:fixed;top:16px;right:16px;width:min(26vw,300px);border-radius:14px;background:#ddd;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+#keys{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:flex;gap:18px;font:700 13px/1 Arial,sans-serif;transition:opacity .6s;pointer-events:none}
+#keys span{display:flex;align-items:center;gap:7px}
+#keys kbd{font:inherit;border:1.5px solid #111;border-bottom-width:3px;border-radius:7px;padding:6px 9px;background:#fff}
+#keys.off{opacity:0}
+video{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<a class="back" href="../" aria-label="Back to index">←</a>
+<canvas id="c"></canvas>
+<canvas id="pip"></canvas>
+<div id="keys" aria-hidden="true"><span><kbd>SPACE</kbd>+</span><span><kbd>⌫</kbd>−</span></div>
+<video id="v" playsinline muted></video>
+<script type="module">
+import { MODELS, MOCK, vision, createTask, safeRunner, startCamera, injectCSS, drawCover, clamp, damp } from '../common.js';
+injectCSS();
+
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const pip = document.getElementById('pip'), pctx = pip.getContext('2d');
+const video = document.getElementById('v');
+const keysEl = document.getElementById('keys');
+let W = 0, H = 0, DPR = 1;
+function resize() { DPR = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight; cv.width = W * DPR; cv.height = H * DPR; }
+addEventListener('resize', resize); resize();
+
+// ---------- assets ----------
+const load = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; });
+const [sprHole, sprFull, track] = await Promise.all([
+  load('../assets/banana_sprite_facehole.png'), load('../assets/banana_sprite.png'),
+  fetch('../assets/banana_face_track.json').then(r => r.json())
+]);
+const FW = track.frameWidth, FH = track.frameHeight, COLS = track.cols;
+
+// ---------- models ----------
+const { mod } = await vision();
+const OVAL = (() => { // ordered face outline from the connection list
+  const next = new Map(mod.FaceLandmarker.FACE_LANDMARKS_FACE_OVAL.map(c => [c.start, c.end]));
+  const start = mod.FaceLandmarker.FACE_LANDMARKS_FACE_OVAL[0].start, out = [start];
+  for (let n = next.get(start); n !== undefined && n !== start && out.length < 100; n = next.get(n)) out.push(n);
+  return out;
+})();
+let face = null, seg = null, runFace = null, runSeg = null;
+if (!MOCK) {
+  createTask('FaceLandmarker', { baseOptions: { modelAssetPath: MODELS.face }, runningMode: 'VIDEO', numFaces: 1 })
+    .then(h => { face = h; runFace = safeRunner(face, 'detectForVideo'); }).catch(e => console.error('Face model could not load', e));
+  createTask('ImageSegmenter', { baseOptions: { modelAssetPath: MODELS.seg }, runningMode: 'VIDEO', outputConfidenceMasks: true, outputCategoryMask: false })
+    .then(h => { seg = h; runSeg = safeRunner(seg, 'segmentForVideo'); }).catch(e => console.error('Segmenter could not load', e));
+}
+startCamera(video);
+
+// ---------- segmentation masks ----------
+const maskCan = document.createElement('canvas'), mctx = maskCan.getContext('2d');   // person alpha (1 - background)
+const pipMask = document.createElement('canvas'), pmctx = pipMask.getContext('2d');  // face skin + hair tint for the PIP
+let hasMask = false, lastSeg = 0;
+function updateMasks(res) {
+  const masks = res && res.confidenceMasks;
+  if (!masks || masks.length < 4) return;
+  const w = masks[0].width, h = masks[0].height;
+  if (maskCan.width !== w) { maskCan.width = pipMask.width = w; maskCan.height = pipMask.height = h; }
+  const bg = masks[0].getAsFloat32Array(), hair = masks[1].getAsFloat32Array(), skin = masks[3].getAsFloat32Array();
+  const a = mctx.createImageData(w, h), b = pmctx.createImageData(w, h);
+  for (let i = 0, j = 0; i < bg.length; i++, j += 4) {
+    a.data[j] = a.data[j + 1] = a.data[j + 2] = 255; a.data[j + 3] = (1 - bg[i]) * 255;
+    const s = skin[i], hr = hair[i];
+    if (s > hr) { b.data[j] = 255; b.data[j + 1] = 47; b.data[j + 2] = 125; b.data[j + 3] = s * 170; }
+    else { b.data[j] = 40; b.data[j + 1] = 200; b.data[j + 2] = 255; b.data[j + 3] = hr * 170; }
+  }
+  mctx.putImageData(a, 0, 0); pmctx.putImageData(b, 0, 0);
+  hasMask = true;
+}
+
+// ---------- my face texture ----------
+const TEX = 256;
+const faceTex = document.createElement('canvas'); faceTex.width = faceTex.height = TEX;
+const fctx = faceTex.getContext('2d');
+let hasFace = false, faceWTex = 120, lastFaceAt = -1e9;
+const pose = { yaw: 0, pitch: 0, roll: 0 }, poseHist = [];
+let pitchBase = null;
+function buildFace(lm, now) {
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const P = i => ({ x: lm[i].x * vw, y: lm[i].y * vh });
+  let cx = 0, cy = 0; for (const i of OVAL) { const p = P(i); cx += p.x; cy += p.y; } cx /= OVAL.length; cy /= OVAL.length;
+  const eR = P(33), eL = P(263), top = P(10), chin = P(152), cl = P(234), cr = P(454), nose = P(1);
+  const ang = Math.atan2(eL.y - eR.y, eL.x - eR.x);
+  const fh = Math.hypot(chin.x - top.x, chin.y - top.y), fw = Math.hypot(cr.x - cl.x, cr.y - cl.y);
+  const k = TEX / (fh * 1.18);
+  faceWTex = fw * k;
+  fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.clearRect(0, 0, TEX, TEX);
+  fctx.save();
+  fctx.translate(TEX / 2, TEX / 2); fctx.scale(-1, 1); fctx.rotate(-ang); fctx.scale(k, k); fctx.translate(-cx, -cy);
+  fctx.beginPath(); OVAL.forEach((i, n) => { const p = P(i); n ? fctx.lineTo(p.x, p.y) : fctx.moveTo(p.x, p.y); }); fctx.closePath(); fctx.clip();
+  fctx.drawImage(video, 0, 0, vw, vh);
+  if (hasMask) { fctx.globalCompositeOperation = 'destination-in'; fctx.drawImage(maskCan, 0, 0, vw, vh); }
+  fctx.restore();
+  hasFace = true; lastFaceAt = now;
+  // head pose, mirrored so the cats move the same way you see yourself
+  const yaw = -((nose.x - (cl.x + cr.x) / 2) / (fw || 1));
+  const pr = (nose.y - (top.y + chin.y) / 2) / (fh || 1);
+  pitchBase = pitchBase === null ? pr : pitchBase + (pr - pitchBase) * 0.01;
+  pose.yaw = clamp(yaw * 2.6, -1, 1); pose.pitch = clamp((pr - pitchBase) * 6, -1, 1); pose.roll = clamp(-ang, -0.8, 0.8);
+}
+
+function mockFace(t) { // test only: an oval of points
+  const lm = Array.from({ length: 478 }, () => ({ x: .5, y: .45, z: 0 }));
+  const asp = (video.videoWidth / video.videoHeight) || 16 / 9;
+  const cx = .5 + Math.sin(t * .6) * .03, cy = .45, rx = .09 / asp * 1.8, ry = .16, roll = Math.sin(t * .9) * .25;
+  const pt = (dx, dy) => ({ x: cx + (dx * Math.cos(roll) - dy * Math.sin(roll)) / asp * asp, y: cy + dx * Math.sin(roll) + dy * Math.cos(roll), z: 0 });
+  OVAL.forEach((i, n) => { const a = n / OVAL.length * Math.PI * 2 - Math.PI / 2; lm[i] = pt(Math.cos(a) * rx, Math.sin(a) * ry); });
+  lm[10] = pt(0, -ry); lm[152] = pt(0, ry); lm[234] = pt(-rx, 0); lm[454] = pt(rx, 0);
+  lm[33] = pt(-rx * .45, -ry * .2); lm[263] = pt(rx * .45, -ry * .2); lm[1] = pt(Math.sin(t * 1.3) * rx * .35, 0);
+  return lm;
+}
+
+// ---------- cats ----------
+const cats = [{ born: -1e9 }];
+let touched = false;
+function addCat() { if (cats.length < 30) cats.push({ born: performance.now() }); hideKeys(); }
+function removeCat() { if (cats.length > 1) cats.pop(); hideKeys(); }
+function hideKeys() { if (!touched) { touched = true; keysEl.classList.add('off'); } }
+addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) addCat(); }
+  else if (e.code === 'Backspace' || e.code === 'Delete') { e.preventDefault(); removeCat(); }
+  else if (e.code === 'KeyS') savePNG();
+});
+cv.addEventListener('pointerdown', addCat);
+function savePNG() {
+  cv.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'banana-cat-me.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); });
+}
+const easeBack = t => { const c = 1.9; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+function poseAt(t) { // delayed head pose for the cats in the back
+  for (let i = poseHist.length - 1; i >= 0; i--) if (poseHist[i].t <= t) return poseHist[i];
+  return poseHist[0] || { yaw: 0, pitch: 0, roll: 0 };
+}
+
+// ---------- loop ----------
+let prev = performance.now(), lastTime = -1, flm = null;
+const sm = { yaw: 0, pitch: 0, roll: 0 };
+function frame(now) {
+  const dt = Math.min(0.05, (now - prev) / 1000); prev = now;
+  if (video.readyState >= 2) {
+    if (MOCK) { flm = mockFace(now / 1000); buildFace(flm, now); }
+    else if (video.currentTime !== lastTime) {
+      lastTime = video.currentTime;
+      if (runSeg && now - lastSeg > 66) { lastSeg = now; const r = runSeg(video, now); if (r) { updateMasks(r); if (r.close) r.close(); } }
+      if (runFace) { const r = runFace(video, now); if (r && r.faceLandmarks && r.faceLandmarks.length) { flm = r.faceLandmarks[0]; buildFace(flm, now); } else flm = null; }
+    }
+  }
+  const lost = now - lastFaceAt > 800;
+  for (const k of ['yaw', 'pitch', 'roll']) sm[k] += ((lost ? 0 : pose[k]) - sm[k]) * damp(10, dt);
+  poseHist.push({ t: now, ...sm }); while (poseHist.length && poseHist[0].t < now - 4000) poseHist.shift();
+
+  draw(now);
+  drawPip();
+  requestAnimationFrame(frame);
+}
+
+function draw(now) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#f6f1e3'; ctx.fillRect(0, 0, W, H);
+  const f = Math.floor(now / track.frameDurationMs) % track.frameCount;
+  const sx = (f % COLS) * FW, sy = Math.floor(f / COLS) * FH;
+  const hole = track.faces[f];
+  const base = Math.min(H * 0.62, W * 0.55) / FH;       // front cat scale
+  const groundY = H * 0.99, vanishY = H * 0.3;
+  const showFace = hasFace && now - lastFaceAt < 1500;
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  for (let i = cats.length - 1; i >= 0; i--) {
+    const d = Math.pow(0.85, i);
+    const p = poseAt(now - i * 80);
+    let s = base * d;
+    const age = now - cats[i].born;
+    if (age < 380) s *= Math.max(0.01, easeBack(age / 380));
+    const zig = i === 0 ? 0 : (i % 2 ? 1 : -1) * W * 0.03 * d;
+    const x = W * 0.42 + (1 - d) * W * 0.36 + zig + p.yaw * W * 0.09 * d;   // queue recedes to the back right
+    const y = vanishY + (groundY - vanishY) * d - p.pitch * 28 * d;
+    ctx.save();
+    ctx.translate(x, y); ctx.rotate(p.roll * 0.8 + p.yaw * 0.12); ctx.scale(s, s);
+    ctx.translate(-100, -188);                    // anchor: feet of the 200x200 frame
+    if (showFace) {
+      ctx.save();
+      ctx.beginPath(); ctx.ellipse(hole.cx + 1, hole.cy, hole.rx * 1.06, hole.ry * 1.1, 0, 0, Math.PI * 2); ctx.clip();
+      ctx.fillStyle = '#e9c9a8'; ctx.fill();
+      const fs = (hole.rx * 2 * 1.3) / faceWTex;   // face width fills the hood opening
+      ctx.drawImage(faceTex, hole.cx - TEX * fs / 2, hole.cy - TEX * fs / 2 + 2, TEX * fs, TEX * fs);
+      ctx.restore();
+      ctx.drawImage(sprHole, sx, sy, FW, FH, 0, 0, FW, FH);
+    } else ctx.drawImage(sprFull, sx, sy, FW, FH, 0, 0, FW, FH);
+    ctx.restore();
+  }
+}
+
+function drawPip() {
+  if (!video.videoWidth) return;
+  const w = Math.round(pip.clientWidth * Math.min(devicePixelRatio, 2)), h = Math.round(w * video.videoHeight / video.videoWidth);
+  if (pip.width !== w || pip.height !== h) { pip.width = w; pip.height = h; }
+  const map = drawCover(pctx, video, 0, 0, w, h, hasMask ? pipMask : null, 1);
+  if (!flm || !map) return;
+  pctx.strokeStyle = '#fff'; pctx.lineWidth = Math.max(2, w / 150);
+  pctx.beginPath(); OVAL.forEach((i, n) => { const p = map(flm[i]); n ? pctx.lineTo(p.x, p.y) : pctx.moveTo(p.x, p.y); }); pctx.closePath(); pctx.stroke();
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
