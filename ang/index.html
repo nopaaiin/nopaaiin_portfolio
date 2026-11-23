@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ANG</title>
+<meta name="description" content="Close your mouth to chew the screen. MediaPipe Face Landmarker web app.">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-family:"Helvetica Neue",Arial,sans-serif;-webkit-user-select:none;user-select:none}
+canvas#stage{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+#panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:min(600px,88vw);z-index:5;transition:opacity .35s;background:rgba(10,0,4,.72);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-radius:28px;padding:30px 26px 22px}
+#panel.hide{opacity:0;pointer-events:none}
+#panel h1{font-size:clamp(64px,14vw,150px);line-height:.85;margin:0 0 14px;letter-spacing:-.06em;font-weight:900;color:#fff;text-shadow:0 4px 0 #ff2f7d,0 0 40px rgba(255,47,125,.45)}
+#panel p{margin:0 0 26px;font-size:clamp(14px,2vw,18px);color:#fff;text-shadow:0 1px 3px #000}
+.btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+button.big{font:700 16px/1 "Helvetica Neue",Arial,sans-serif;padding:16px 22px;border-radius:999px;border:0;cursor:pointer;background:#fff;color:#111;box-shadow:0 6px 0 #ff2f7d;transition:transform .1s,box-shadow .1s}
+button.big:hover{transform:translateY(2px);box-shadow:0 4px 0 #ff2f7d}
+button.big:active{transform:translateY(6px);box-shadow:0 0 0 #ff2f7d}
+button.big.ghost{background:#111;color:#fff;box-shadow:0 6px 0 #fff}
+#msg{min-height:20px;margin-top:18px;font-size:13px;color:#ffd1e1;text-shadow:0 1px 2px #000}
+#hint{position:fixed;left:50%;bottom:calc(26vh + 14px);transform:translateX(-50%);font:700 15px "Helvetica Neue",Arial,sans-serif;letter-spacing:.02em;background:rgba(0,0,0,.72);padding:9px 16px;border-radius:999px;z-index:4;opacity:0;transition:opacity .4s;white-space:nowrap;pointer-events:none}
+#hint.on{opacity:1}
+#tools{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:6;opacity:0;transition:opacity .3s}
+#tools.on{opacity:1}
+#tools button{width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;display:grid;place-items:center;padding:0}
+#tools button:hover{background:rgba(255,47,125,.85)}
+#tools svg{width:20px;height:20px}
+#toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);font-size:13px;padding:8px 14px;border-radius:999px;z-index:7;opacity:0;transition:opacity .3s;pointer-events:none}
+#toast.on{opacity:1}
+video{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+
+<div id="panel">
+  <h1>ANG</h1>
+  <p>Close your mouth to chew the screen.</p>
+  <div class="btns">
+    <button class="big" id="btnScreen">Choose a screen to chew</button>
+    <button class="big ghost" id="btnDesk">Just chew this</button>
+  </div>
+  <div id="msg"></div>
+</div>
+
+<div id="tools">
+  <button id="btnRepick" title="Choose another screen" aria-label="Choose another screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></button>
+  <button id="btnSound" title="Sound on/off" aria-label="Sound on/off"><svg id="icoSound" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg></button>
+</div>
+<div id="hint"></div>
+<div id="toast"></div>
+
+<video id="cam" playsinline muted autoplay></video>
+<video id="scr" playsinline muted autoplay></video>
+
+<script type="module">
+/* ANG : close your mouth, chew the screen.
+   MediaPipe Face Landmarker (jawOpen blendshape + inner lip distance) */
+
+const MP_VER = "0.10.14";
+const MP_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}`;
+const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+const params = new URLSearchParams(location.search);
+const LIB_URL = params.get("lib") || MP_URL; // local testing override
+
+/* ---------- elements ---------- */
+const cv = document.getElementById("stage");
+const ctx = cv.getContext("2d");
+const camV = document.getElementById("cam");
+const scrV = document.getElementById("scr");
+const panel = document.getElementById("panel");
+const msg = document.getElementById("msg");
+const hintEl = document.getElementById("hint");
+const tools = document.getElementById("tools");
+const toastEl = document.getElementById("toast");
+const btnScreen = document.getElementById("btnScreen");
+const btnDesk = document.getElementById("btnDesk");
+
+const canShare = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+if (!canShare) btnScreen.style.display = "none";
+
+/* ---------- assets ---------- */
+const imgTop = new Image(); imgTop.src = "./assets/teeth_top.png";
+const imgBot = new Image(); imgBot.src = "./assets/teeth_bottom.png";
+// soft skin strips used to fill above the upper lip / below the lower lip
+function makeStrip(img, fromBottom) {
+  const c = document.createElement("canvas"); c.width = 18; c.height = 1;
+  const x = c.getContext("2d"); x.imageSmoothingEnabled = true;
+  const sy = fromBottom ? img.naturalHeight - 6 : 0;
+  x.drawImage(img, 0, sy, img.naturalWidth, 6, 0, 0, 18, 1);
+  return c;
+}
+let stripTop = null, stripBot = null;
+imgTop.onload = () => { stripTop = makeStrip(imgTop, false); };
+imgBot.onload = () => { stripBot = makeStrip(imgBot, true); };
+
+/* ---------- canvas size ---------- */
+let W = 0, H = 0, DPR = 1;
+const desk = document.createElement("canvas"); const dctx = desk.getContext("2d");
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (state === "broken" || state === "shattering" || state === "rewinding") { state = "live"; shards = []; }
+}
+window.addEventListener("resize", resize);
+
+/* ---------- state ---------- */
+let state = "intro";           // intro | live | shattering | broken | rewinding
+let source = "desk";           // desk | screen
+let open = 1, target = 1;      // mouth 0 closed .. 1 open
+let everOpened = false, closedSince = 0, lastFace = 0;
+let mouseMode = params.has("mouse");
+let mouseOpen = 1;
+let soundOn = true;
+let landmarks = null;
+
+/* ---------- face model ---------- */
+let faceLM = null, FaceLandmarker = null, modelReady = false, modelErr = null, usingCPU = false, visionFiles = null;
+async function loadModel() {
+  try {
+    const mod = await import(`${LIB_URL}/vision_bundle.mjs`);
+    FaceLandmarker = mod.FaceLandmarker;
+    visionFiles = await mod.FilesetResolver.forVisionTasks(`${LIB_URL}/wasm`);
+    faceLM = await createLM("GPU").catch(() => { usingCPU = true; return createLM("CPU"); });
+    modelReady = true;
+  } catch (e) { modelErr = e; console.error(e); }
+}
+function createLM(delegate) {
+  return FaceLandmarker.createFromOptions(visionFiles, {
+    baseOptions: { modelAssetPath: params.get("model") || MODEL_URL, delegate },
+    runningMode: "VIDEO", numFaces: 1,
+    outputFaceBlendshapes: true, outputFacialTransformationMatrixes: false
+  });
+}
+if (!mouseMode) loadModel();
+
+/* ---------- mouth calibration ---------- */
+let openRef = 0.17, closedRef = 0.02, jawMax = 0.45;
+let lastVideoTime = -1;
+function detect(now) {
+  if (!modelReady || camV.readyState < 2 || camV.currentTime === lastVideoTime) return;
+  lastVideoTime = camV.currentTime;
+  let res;
+  try { res = faceLM.detectForVideo(camV, now); }
+  catch (e) {
+    console.warn(e);
+    if (!usingCPU) { usingCPU = true; modelReady = false; createLM("CPU").then(f => { faceLM = f; modelReady = true; }); }
+    return;
+  }
+  if (!res.faceLandmarks || !res.faceLandmarks.length) { landmarks = null; return; }
+  const lm = res.faceLandmarks[0]; landmarks = lm; lastFace = now;
+  const d = (a, b) => Math.hypot(lm[a].x - lm[b].x, lm[a].y - lm[b].y);
+  const faceH = d(10, 152) || 1;
+  const ratio = d(13, 14) / faceH;
+  let jaw = 0;
+  const bs = res.faceBlendshapes && res.faceBlendshapes[0];
+  if (bs) { const c = bs.categories.find(c => c.categoryName === "jawOpen"); if (c) jaw = c.score; }
+  // auto calibration: remember widest open, relax slowly
+  openRef = Math.max(openRef, ratio); openRef += (0.17 - openRef) * 0.0008;
+  closedRef = Math.min(closedRef, ratio); closedRef += (0.02 - closedRef) * 0.0008;
+  jawMax = Math.max(jawMax, jaw); jawMax += (0.45 - jawMax) * 0.0008;
+  const nLip = clamp((ratio - closedRef) / Math.max(0.05, openRef - closedRef), 0, 1);
+  const nJaw = clamp((jaw - 0.04) / Math.max(0.15, jawMax - 0.04), 0, 1);
+  target = clamp(nLip * 0.6 + nJaw * 0.4, 0, 1);
+}
+
+/* ---------- media ---------- */
+let camStream = null, scrStream = null;
+async function startCamera() {
+  camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+  camV.srcObject = camStream; await camV.play().catch(() => {});
+}
+async function pickScreen() {
+  const s = await navigator.mediaDevices.getDisplayMedia({
+    video: { frameRate: { ideal: 30 } }, audio: false,
+    selfBrowserSurface: "exclude", surfaceSwitching: "include"
+  });
+  stopScreen();
+  scrStream = s; scrV.srcObject = s; await scrV.play().catch(() => {});
+  source = "screen";
+  s.getVideoTracks()[0].addEventListener("ended", () => { stopScreen(); source = "desk"; toast("Screen sharing stopped. Chewing the desktop."); });
+}
+function stopScreen() { if (scrStream) scrStream.getTracks().forEach(t => t.stop()); scrStream = null; }
+
+async function begin(withScreen) {
+  ensureAudio();
+  msg.textContent = "";
+  if (withScreen && canShare) {
+    try { await pickScreen(); }
+    catch (e) { source = "desk"; toast("No screen picked. Chewing the desktop instead."); }
+  } else source = "desk";
+  if (!mouseMode) {
+    try { await startCamera(); }
+    catch (e) {
+      console.warn(e);
+      msg.innerHTML = 'Camera is needed to read your mouth. Allow it and try again,<br>or <a href="#" id="useMouse" style="color:#fff">play with the mouse</a> (move up and down).';
+      document.getElementById("useMouse").onclick = ev => { ev.preventDefault(); mouseMode = true; go(); };
+      return;
+    }
+  }
+  go();
+}
+function go() {
+  state = "live"; panel.classList.add("hide"); tools.classList.add("on");
+  hintSeq = 0; hintT = performance.now();
+}
+btnScreen.addEventListener("click", () => begin(true));
+btnDesk.addEventListener("click", () => begin(false));
+document.getElementById("btnRepick").addEventListener("click", async () => {
+  if (!canShare) { toast("Screen sharing is not supported here."); return; }
+  try { await pickScreen(); } catch (e) {}
+});
+document.getElementById("btnSound").addEventListener("click", () => {
+  soundOn = !soundOn; document.getElementById("icoSound").style.opacity = soundOn ? 1 : .35; ensureAudio();
+});
+window.addEventListener("mousemove", e => { mouseOpen = clamp(1 - (e.clientY / H - 0.08) / 0.84, 0, 1); });
+window.addEventListener("touchmove", e => { const t = e.touches[0]; if (t) mouseOpen = clamp(1 - (t.clientY / H - 0.08) / 0.84, 0, 1); }, { passive: true });
+window.addEventListener("beforeunload", () => { stopScreen(); if (camStream) camStream.getTracks().forEach(t => t.stop()); });
+
+/* ---------- audio (synthesized, no files) ---------- */
+let ac = null;
+function ensureAudio() {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === "suspended") ac.resume();
+  } catch (e) {}
+}
+function noiseBuf(sec) {
+  const b = ac.createBuffer(1, Math.floor(ac.sampleRate * sec), ac.sampleRate);
+  const d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b;
+}
+function playShatter() {
+  if (!ac || !soundOn) return;
+  const t0 = ac.currentTime + 0.01;
+  const out = ac.createDynamicsCompressor(); out.connect(ac.destination);
+  // crash body
+  const n = ac.createBufferSource(); n.buffer = noiseBuf(1.4);
+  const hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 2200;
+  const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.9, t0 + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.1);
+  n.connect(hp).connect(g).connect(out); n.start(t0); n.stop(t0 + 1.4);
+  // thump
+  const o = ac.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(140, t0); o.frequency.exponentialRampToValueAtTime(45, t0 + 0.18);
+  const og = ac.createGain(); og.gain.setValueAtTime(0.7, t0); og.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.22);
+  o.connect(og).connect(out); o.start(t0); o.stop(t0 + 0.25);
+  // tinkles
+  for (let i = 0; i < 22; i++) {
+    const ts = t0 + 0.03 + Math.pow(Math.random(), 1.6) * 1.1;
+    const f = 2400 + Math.random() * 5200;
+    const p = ac.createOscillator(); p.type = Math.random() < .5 ? "sine" : "triangle"; p.frequency.value = f;
+    const pg = ac.createGain(); const v = 0.05 + Math.random() * 0.14;
+    pg.gain.setValueAtTime(0.0001, ts); pg.gain.exponentialRampToValueAtTime(v, ts + 0.004); pg.gain.exponentialRampToValueAtTime(0.0001, ts + 0.06 + Math.random() * 0.22);
+    p.connect(pg).connect(out); p.start(ts); p.stop(ts + 0.35);
+  }
+}
+let lastClack = 0;
+function playClack() {
+  if (!ac || !soundOn) return;
+  const now = performance.now(); if (now - lastClack < 250) return; lastClack = now;
+  const t0 = ac.currentTime + 0.005;
+  const n = ac.createBufferSource(); n.buffer = noiseBuf(0.06);
+  const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1800; bp.Q.value = 3;
+  const g = ac.createGain(); g.gain.setValueAtTime(0.5, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.05);
+  n.connect(bp).connect(g).connect(ac.destination); n.start(t0);
+}
+function playRewind() {
+  if (!ac || !soundOn) return;
+  const t0 = ac.currentTime + 0.01;
+  const o = ac.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(300, t0); o.frequency.exponentialRampToValueAtTime(2400, t0 + 0.7);
+  const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.12, t0 + 0.1); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.75);
+  o.connect(g).connect(ac.destination); o.start(t0); o.stop(t0 + 0.8);
+}
+
+/* ---------- geometry ---------- */
+const TOP_H = 245, BOT_H = 277; // source px heights
+function layout(o) {
+  const s = (H * 0.24) / TOP_H;
+  const hT = TOP_H * s, hB = BOT_H * s;
+  const bite = 0.07 * hT;                       // teeth overlap when fully closed
+  const uY = lerp(H / 2 + bite, hT, o);         // bottom edge of the top image
+  const lY = lerp(H / 2 - bite, H - hB, o);     // top edge of the bottom image
+  const fullTop = hT - hT * 0.42, fullBot = H - hB + hB * 0.32;   // content band when fully open
+  const cTop = uY - hT * 0.42, cBot = lY + hB * 0.32;
+  return { hT, hB, uY, lY, cTop, cBot, fullTop, fullBot };
+}
+
+/* ---------- fake desktop (made up, not any real OS) ---------- */
+const files = ["homework", "final_FINAL.psd", "DO NOT OPEN", "memes", "portfolio_v38", "taxes??", "ang.png", "deadline.txt"];
+const note = "to do:\n1. finish assignment\n2. do not close mouth\n3. seriously do not close mouth\n4. ...\n5. why are you closing it";
+let logo = { x: 80, y: 80, vx: 140, vy: 110, hue: 330 };
+let cur = { x: 300, y: 200, tx: 300, ty: 200 };
+function drawDesk(w, h, t, dt) {
+  if (desk.width !== Math.round(w * DPR) || desk.height !== Math.round(h * DPR)) { desk.width = Math.round(w * DPR); desk.height = Math.round(h * DPR); }
+  const c = dctx; c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const g = c.createLinearGradient(0, 0, w, h);
+  g.addColorStop(0, "#ffb3cf"); g.addColorStop(.5, "#c7b8ff"); g.addColorStop(1, "#9fe3ff");
+  c.fillStyle = g; c.fillRect(0, 0, w, h);
+  // dotted grid
+  c.fillStyle = "rgba(255,255,255,.35)";
+  for (let x = 20; x < w; x += 28) for (let y = 20; y < h; y += 28) c.fillRect(x, y, 2, 2);
+  // icons
+  const iz = clamp(h * 0.09, 36, 64);
+  c.font = `600 ${Math.max(11, iz * 0.2)}px Helvetica Neue, Arial`; c.textAlign = "center";
+  files.forEach((f, i) => {
+    const col = i % 2, row = Math.floor(i / 2);
+    const x = 30 + col * (iz * 1.9), y = 26 + row * (iz * 1.55);
+    if (y + iz > h - 10) return;
+    c.fillStyle = "#ffd25a"; roundRect(c, x, y + iz * .12, iz * 1.2, iz * .85, 6); c.fill();
+    c.fillStyle = "#ffbf1f"; roundRect(c, x, y, iz * .5, iz * .25, 4); c.fill();
+    c.fillStyle = "#222"; c.fillText(f, x + iz * .6, y + iz * 1.22);
+  });
+  // window 1: notes
+  const w1 = { x: w * 0.36, y: h * 0.12, w: Math.min(w * 0.36, 460), h: h * 0.5 };
+  drawWin(c, w1, "notes.txt");
+  c.fillStyle = "#222"; c.textAlign = "left"; c.font = `${clamp(h * 0.028, 12, 20)}px Menlo, monospace`;
+  const shown = note.slice(0, Math.floor((t / 70) % (note.length + 40)));
+  shown.split("\n").forEach((ln, i) => c.fillText(ln, w1.x + 18, w1.y + 58 + i * clamp(h * 0.042, 18, 30)));
+  // window 2: clock
+  const w2 = { x: w * 0.6, y: h * 0.42, w: Math.min(w * 0.32, 380), h: h * 0.36 };
+  drawWin(c, w2, "clock");
+  const d = new Date();
+  c.fillStyle = "#ff2f7d"; c.textAlign = "center"; c.font = `900 ${clamp(Math.min(w2.h * 0.34, w2.w * 0.19), 18, 96)}px Helvetica Neue, Arial`;
+  c.fillText(`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`, w2.x + w2.w / 2, w2.y + w2.h * 0.66);
+  // bouncing logo
+  const lw = clamp(w * 0.12, 80, 170), lh = lw * 0.45;
+  logo.x += logo.vx * dt; logo.y += logo.vy * dt;
+  if (logo.x < 0 || logo.x + lw > w) { logo.vx *= -1; logo.hue = (logo.hue + 67) % 360; logo.x = clamp(logo.x, 0, w - lw); }
+  if (logo.y < 0 || logo.y + lh > h) { logo.vy *= -1; logo.hue = (logo.hue + 67) % 360; logo.y = clamp(logo.y, 0, h - lh); }
+  c.fillStyle = `hsl(${logo.hue} 90% 55%)`; roundRect(c, logo.x, logo.y, lw, lh, lh / 2); c.fill();
+  c.fillStyle = "#fff"; c.font = `900 ${lh * 0.6}px Helvetica Neue, Arial`; c.fillText("ANG", logo.x + lw / 2, logo.y + lh * 0.72);
+  // wandering cursor
+  if (Math.hypot(cur.tx - cur.x, cur.ty - cur.y) < 8) { cur.tx = Math.random() * w; cur.ty = Math.random() * h; }
+  cur.x += (cur.tx - cur.x) * Math.min(1, dt * 2.2); cur.y += (cur.ty - cur.y) * Math.min(1, dt * 2.2);
+  c.save(); c.translate(cur.x, cur.y); c.fillStyle = "#fff"; c.strokeStyle = "#000"; c.lineWidth = 1.5;
+  c.beginPath(); c.moveTo(0, 0); c.lineTo(0, 22); c.lineTo(6, 16); c.lineTo(10, 25); c.lineTo(14, 23); c.lineTo(10, 15); c.lineTo(17, 15); c.closePath(); c.fill(); c.stroke(); c.restore();
+}
+function drawWin(c, r, title) {
+  c.save(); c.shadowColor = "rgba(0,0,0,.25)"; c.shadowBlur = 24; c.shadowOffsetY = 8;
+  c.fillStyle = "#fff"; roundRect(c, r.x, r.y, r.w, r.h, 12); c.fill(); c.restore();
+  c.fillStyle = "#f0eef5"; roundRect(c, r.x, r.y, r.w, 34, 12); c.fill(); c.fillRect(r.x, r.y + 20, r.w, 14);
+  ["#ff6b6b", "#ffd25a", "#57d977"].forEach((col, i) => { c.fillStyle = col; c.beginPath(); c.arc(r.x + 18 + i * 18, r.y + 17, 5.5, 0, 7); c.fill(); });
+  c.fillStyle = "#555"; c.font = "600 13px Helvetica Neue, Arial"; c.textAlign = "center"; c.fillText(title, r.x + r.w / 2, r.y + 22);
+}
+
+/* ---------- drawing ---------- */
+function drawSource(L) {
+  const fullH = L.fullBot - L.fullTop;
+  const curH = Math.max(0, L.cBot - L.cTop);
+  if (curH < 0.5) return;
+  if (source === "screen" && scrV.readyState >= 2 && scrV.videoWidth) {
+    const vw = scrV.videoWidth, vh = scrV.videoHeight;
+    // contain fit horizontally into W x fullH, letterbox with black
+    const sc = Math.min(W / vw, fullH / vh);
+    const dw = vw * sc, dh = vh * sc;
+    const k = curH / fullH;
+    ctx.fillStyle = "#111"; ctx.fillRect(0, L.cTop, W, curH);
+    ctx.drawImage(scrV, 0, 0, vw, vh, (W - dw) / 2, L.cTop + (fullH - dh) / 2 * k, dw, dh * k);
+  } else {
+    ctx.drawImage(desk, 0, 0, desk.width, desk.height, 0, L.cTop, W, curH);
+  }
+  // depth shadow near the teeth
+  const sh = Math.min(curH * 0.5, 90);
+  let g = ctx.createLinearGradient(0, L.uY - 10, 0, L.uY + sh);
+  g.addColorStop(0, "rgba(40,0,10,.55)"); g.addColorStop(1, "rgba(40,0,10,0)");
+  ctx.fillStyle = g; ctx.fillRect(0, L.cTop, W, Math.min(curH, L.uY + sh - L.cTop));
+  g = ctx.createLinearGradient(0, L.lY + 10, 0, L.lY - sh);
+  g.addColorStop(0, "rgba(40,0,10,.55)"); g.addColorStop(1, "rgba(40,0,10,0)");
+  const y0 = Math.max(L.cTop, L.lY - sh); ctx.fillStyle = g; ctx.fillRect(0, y0, W, L.cBot - y0);
+}
+function drawTeeth(L) {
+  if (!imgTop.complete || !imgBot.complete || !imgTop.naturalWidth) return;
+  const tw = imgTop.naturalWidth, bw = imgBot.naturalWidth;
+  // skin above the upper lip: stretch the first pixel row
+  const topY = L.uY - L.hT;
+  if (topY > 0 && stripTop) ctx.drawImage(stripTop, 0, 0, 18, 1, 0, 0, W, topY + 2);
+  ctx.drawImage(imgTop, 0, topY, W, L.hT);
+  const botEnd = L.lY + L.hB;
+  ctx.drawImage(imgBot, 0, L.lY, W, L.hB);
+  if (botEnd < H && stripBot) ctx.drawImage(stripBot, 0, 0, 18, 1, 0, botEnd - 2, W, H - botEnd + 2);
+}
+function drawPIP(now) {
+  if (mouseMode || !camStream || camV.readyState < 2) return;
+  const r = clamp(Math.min(W, H) * 0.075, 42, 74);
+  const cx = W - r - 18, cy = H - r - 18;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.closePath();
+  ctx.fillStyle = "#000"; ctx.fill(); ctx.clip();
+  const vw = camV.videoWidth, vh = camV.videoHeight, sc = Math.max(2 * r / vw, 2 * r / vh);
+  ctx.translate(cx, cy); ctx.scale(-1, 1);
+  ctx.globalAlpha = 0.85; ctx.drawImage(camV, -vw * sc / 2, -vh * sc / 2, vw * sc, vh * sc); ctx.globalAlpha = 1;
+  if (landmarks && FaceLandmarker && FaceLandmarker.FACE_LANDMARKS_LIPS) {
+    ctx.strokeStyle = "#ff2f7d"; ctx.lineWidth = 2; ctx.beginPath();
+    for (const e of FaceLandmarker.FACE_LANDMARKS_LIPS) {
+      const a = landmarks[e.start], b = landmarks[e.end];
+      ctx.moveTo((a.x - .5) * vw * sc, (a.y - .5) * vh * sc); ctx.lineTo((b.x - .5) * vw * sc, (b.y - .5) * vh * sc);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+  // open meter ring
+  ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(cx, cy, r + 5, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = "#ff2f7d"; ctx.beginPath(); ctx.arc(cx, cy, r + 5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * open); ctx.stroke();
+}
+
+/* ---------- shatter ---------- */
+const snap = document.createElement("canvas"); const sctx = snap.getContext("2d");
+let shards = [], cracks = [], shT = 0, rewindFrom = 0, rewindStart = 0, impact = { x: 0, y: 0 };
+const GRAV = 2600, HOLD = 0.14;
+function shatter() {
+  snap.width = cv.width; snap.height = cv.height;
+  sctx.drawImage(cv, 0, 0);
+  impact = { x: W / 2 + (Math.random() - .5) * W * 0.1, y: H / 2 + (Math.random() - .5) * H * 0.06 };
+  const diag = Math.hypot(W, H);
+  const nR = 13 + Math.floor(Math.random() * 6);
+  const angs = []; for (let i = 0; i < nR; i++) angs.push((i + 0.25 + Math.random() * 0.5) / nR * Math.PI * 2);
+  const radii = [0]; let r = 26 + Math.random() * 30;
+  while (r < diag) { radii.push(r); r *= 1.45 + Math.random() * 0.4; }
+  radii.push(diag * 1.05);
+  // shared jittered vertex grid so the pieces tile perfectly
+  const V = radii.map((rr, i) => angs.map(a => {
+    if (i === 0) return { x: impact.x, y: impact.y };
+    const jr = rr * (1 + (Math.random() - .5) * 0.22), ja = a + (Math.random() - .5) * 0.12;
+    return { x: impact.x + Math.cos(ja) * jr, y: impact.y + Math.sin(ja) * jr };
+  }));
+  shards = []; cracks = [];
+  for (let i = 0; i < radii.length - 1; i++) for (let j = 0; j < nR; j++) {
+    const j2 = (j + 1) % nR;
+    const poly = i === 0 ? [V[0][0], V[1][j], V[1][j2]] : [V[i][j], V[i + 1][j], V[i + 1][j2], V[i][j2]];
+    const minX = Math.min(...poly.map(p => p.x)), maxX = Math.max(...poly.map(p => p.x));
+    const minY = Math.min(...poly.map(p => p.y)), maxY = Math.max(...poly.map(p => p.y));
+    if (maxX < 0 || minX > W || maxY < 0 || minY > H) continue;
+    const c = { x: poly.reduce((s, p) => s + p.x, 0) / poly.length, y: poly.reduce((s, p) => s + p.y, 0) / poly.length };
+    const dx = c.x - impact.x, dy = c.y - impact.y, dl = Math.hypot(dx, dy) || 1;
+    const sp = 60 + Math.random() * 380 * (1 - Math.min(1, dl / diag));
+    shards.push({ poly, c, vx: dx / dl * sp + (Math.random() - .5) * 80, vy: dy / dl * sp - 120 - Math.random() * 200,
+      w: (Math.random() - .5) * 7, delay: HOLD + dl / diag * 0.35 + Math.random() * 0.05 });
+    cracks.push(poly);
+  }
+  shT = 0; state = "shattering";
+  playShatter(); shake = 1;
+  hintSeq = 9; showHint("Open wide to fix it");
+}
+function shardPose(s, t) {
+  const tt = Math.max(0, t - s.delay);
+  return { dx: s.vx * tt, dy: s.vy * tt + 0.5 * GRAV * tt * tt, rot: s.w * tt };
+}
+function drawShards(t, fade) {
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+  // crack marks left on the dark "glass"
+  ctx.strokeStyle = `rgba(255,255,255,${0.22 * fade})`; ctx.lineWidth = 1;
+  ctx.beginPath(); for (const p of cracks) { ctx.moveTo(p[0].x, p[0].y); for (let k = 1; k < p.length; k++) ctx.lineTo(p[k].x, p[k].y); ctx.closePath(); } ctx.stroke();
+  for (const s of shards) {
+    const q = shardPose(s, t);
+    if (s.c.y + q.dy > H + 400) continue;
+    ctx.save();
+    ctx.translate(s.c.x + q.dx, s.c.y + q.dy); ctx.rotate(q.rot); ctx.translate(-s.c.x, -s.c.y);
+    ctx.beginPath(); ctx.moveTo(s.poly[0].x, s.poly[0].y); for (let k = 1; k < s.poly.length; k++) ctx.lineTo(s.poly[k].x, s.poly[k].y); ctx.closePath();
+    ctx.save(); ctx.clip(); ctx.drawImage(snap, 0, 0, snap.width, snap.height, 0, 0, W, H); ctx.restore();
+    ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.restore();
+  }
+  // white flash at impact
+  if (state === "shattering" && t < HOLD + 0.08) {
+    ctx.fillStyle = `rgba(255,255,255,${0.5 * (1 - t / (HOLD + 0.08))})`; ctx.fillRect(0, 0, W, H);
+  }
+}
+
+/* ---------- hints & toast ---------- */
+let hintSeq = -1, hintT = 0, hintCur = "";
+function showHint(t) { if (t === hintCur) return; hintCur = t; hintEl.textContent = t; hintEl.classList.toggle("on", !!t); }
+function updateHints(now) {
+  if (state === "intro") return;
+  if (!mouseMode && modelErr) { mouseMode = true; everOpened = false; hintSeq = 0; toast("Face model didn't load, so the mouse controls the mouth now (move up and down)."); return; }
+  if (!mouseMode && !modelReady) { showHint("Loading face model..."); return; }
+  if (!mouseMode && now - lastFace > 1500 && state === "live") { showHint("Show me your face"); return; }
+  if (hintSeq === 0) { showHint(mouseMode ? "Move the mouse down to close the mouth" : "Open your mouth wide"); if (everOpened) { hintSeq = 1; hintT = now; } }
+  else if (hintSeq === 1) { showHint("Now close it slowly..."); if (open < 0.45 || now - hintT > 4000) { hintSeq = 2; hintT = now; } }
+  else if (hintSeq === 2) { showHint("Bite hard?"); }
+  else if (hintSeq === 9) { if (state === "live") { hintSeq = 10; hintT = now; showHint("Again?"); } }
+  else if (hintSeq === 10) { if (now - hintT > 2500) showHint(""); }
+}
+let toastTimer = 0;
+function toast(t) { toastEl.textContent = t; toastEl.classList.add("on"); clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove("on"), 3200); }
+
+/* ---------- main loop ---------- */
+let last = performance.now(), shake = 0, wasClosed = false;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (state !== "intro") {
+    if (mouseMode) { target = mouseOpen; lastFace = now; }
+    else {
+      detect(now);
+      if (now - lastFace > 1200) target = 1; // face lost: relax open
+    }
+    // fast close, softer open
+    open += (target - open) * (target < open ? Math.min(1, dt * 16) : Math.min(1, dt * 9));
+    if (open > 0.55) everOpened = true;
+  } else { open += (1 - open) * Math.min(1, dt * 6); }
+
+  // clack when teeth meet
+  const closedNow = open < 0.1;
+  if (closedNow && !wasClosed && state === "live") playClack();
+  wasClosed = closedNow;
+
+  // bite detection
+  if (state === "live" && everOpened) {
+    if (open < 0.07) { if (!closedSince) closedSince = now; if (now - closedSince > 420) { closedSince = 0; render(now, dt); shatter(); } }
+    else closedSince = 0;
+  }
+  if (state === "shattering") { shT += dt; if (shT > 2.6) state = "broken"; }
+  if ((state === "shattering" || state === "broken") && open > 0.7 && shT > 0.6) {
+    state = "rewinding"; rewindFrom = Math.min(shT, 2.6); rewindStart = now; playRewind();
+  }
+  render(now, dt);
+  updateHints(now);
+  requestAnimationFrame(frame);
+}
+function render(now, dt) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (state === "shattering" || state === "broken") {
+    ctx.save();
+    if (shake > 0) { ctx.translate((Math.random() - .5) * 22 * shake, (Math.random() - .5) * 22 * shake); shake = Math.max(0, shake - dt * 2.5); }
+    drawShards(shT, 1); ctx.restore(); drawPIP(now); return;
+  }
+  if (state === "rewinding") {
+    const k = clamp((now - rewindStart) / 750, 0, 1), e = 1 - Math.pow(1 - k, 3);
+    const t = rewindFrom * (1 - e);
+    drawShards(t, 1 - e); drawPIP(now);
+    if (k >= 1) { state = "live"; shards = []; cracks = []; everOpened = true; }
+    return;
+  }
+  const L = layout(open);
+  ctx.fillStyle = "#1a0006"; ctx.fillRect(0, 0, W, H);
+  if (source === "desk") drawDesk(W, L.fullBot - L.fullTop, now, dt);
+  drawSource(L);
+  drawTeeth(L);
+  drawPIP(now);
+}
+
+/* ---------- utils ---------- */
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function pad(n) { return String(n).padStart(2, "0"); }
+function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
