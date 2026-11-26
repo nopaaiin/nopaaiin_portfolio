@@ -201,58 +201,103 @@ const drawTicks=(phase)=>{
   }
 };
 
-let reserve=.62;  // virtual mechanical reserve, not MacBook battery
+
+/* Four seconds of initial motion; exactly three independent hinge strokes
+   unlock a fresh ten-second period. No stored energy or automatic refill. */
+let runUntil=performance.now()+4000;
 let watchTime=Date.now();
 let lastFrame=performance.now();
 let lastHinge=null;
-let audio=null,noise=null,accMotion=0,dragging=false,lastDragY=0;
+let movementCount=0;
+let strokeDir=0,strokeTravel=0,strokeCounted=false,lastMotionAt=0;
+const MIN_STROKE_DEG=4;
+const STROKE_GAP_MS=1400;
+let audio=null,noise=null,lastCreakAt=0;
+let dragging=false,lastDragY=0,dragDistance=0;
 let sensor=null,pollTimer=null,bridge=null,hasLiveSensor=false;
 
 function audioReady(){
-  try {
+  try{
     const Context=window.AudioContext||window.webkitAudioContext;
     if(!Context)return;
-    audio ??= new Context();audio.resume().catch(()=>{});
+    audio??=new Context();
+    if(audio.state!=='running')audio.resume().catch(()=>{});
     if(!noise){
-      noise=audio.createBuffer(1,Math.ceil(audio.sampleRate*.055),audio.sampleRate);
-      const a=noise.getChannelData(0);
-      for(let k=0;k<a.length;k++)a[k]=Math.random()*2-1;
+      noise=audio.createBuffer(1,Math.ceil(audio.sampleRate*.15),audio.sampleRate);
+      const data=noise.getChannelData(0);
+      for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
     }
   }catch(e){}
 }
-function clickRatchet(count=1){
+
+// Frictional "끼릭끼릭": two gritty pulses and a short bending squeak.
+// Called only for measured hinge changes (or explicit manual testing).
+function creakStep(magnitude,direction){
   if(!audio||audio.state!=='running'||!noise)return;
-  const now=audio.currentTime;
-  for(let i=0;i<Math.min(5,count);i++){
-    const at=now+i*.025;
-    const src=audio.createBufferSource();src.buffer=noise;
-    const band=audio.createBiquadFilter();band.type='bandpass';band.frequency.value=1650+220*(i%3);band.Q.value=1.1;
-    const gain=audio.createGain();
-    gain.gain.setValueAtTime(.0001,at);
-    gain.gain.exponentialRampToValueAtTime(.10,at+.0018);
-    gain.gain.exponentialRampToValueAtTime(.0001,at+.035);
-    src.connect(band).connect(gain).connect(audio.destination);
-    src.start(at);src.stop(at+.041);
+  const now=performance.now();
+  if(now-lastCreakAt<55)return;
+  lastCreakAt=now;
+  const t=audio.currentTime;
+  const duration=Math.min(.12,.075+Math.abs(magnitude)*.003);
+  const src=audio.createBufferSource();src.buffer=noise;
+  const scratch=audio.createBiquadFilter();scratch.type='bandpass';
+  scratch.frequency.setValueAtTime(direction>0?1650:1350,t);
+  scratch.Q.value=.9;
+  const env=audio.createGain();
+  env.gain.setValueAtTime(.0001,t);
+  env.gain.exponentialRampToValueAtTime(.048,t+.005);
+  env.gain.exponentialRampToValueAtTime(.004,t+.027);
+  env.gain.exponentialRampToValueAtTime(.037,t+.039);
+  env.gain.exponentialRampToValueAtTime(.0001,t+duration);
+  src.connect(scratch).connect(env).connect(audio.destination);
+  src.start(t);src.stop(t+duration+.01);
+
+  const osc=audio.createOscillator();
+  osc.type='sawtooth';
+  const f=direction>0?220:310;
+  osc.frequency.setValueAtTime(f,t);
+  osc.frequency.exponentialRampToValueAtTime(direction>0?375:185,t+duration);
+  const tonal=audio.createBiquadFilter();tonal.type='bandpass';
+  tonal.frequency.value=550;tonal.Q.value=2.5;
+  const gain=audio.createGain();
+  gain.gain.setValueAtTime(.0001,t);
+  gain.gain.exponentialRampToValueAtTime(.009,t+.009);
+  gain.gain.exponentialRampToValueAtTime(.0001,t+duration);
+  osc.connect(tonal).connect(gain).connect(audio.destination);
+  osc.start(t);osc.stop(t+duration+.01);
+}
+
+function registerStroke(){
+  movementCount++;
+  if(movementCount>=3){
+    movementCount=0;
+    runUntil=performance.now()+10000;
   }
 }
-function windBy(delta){
-  const motion=Math.abs(delta);
-  if(!Number.isFinite(motion)||motion<.12||motion>38)return;
-  reserve=Math.min(1,reserve+motion/610);
-  accMotion+=motion;
-  if(accMotion>=2.0){
-    const n=Math.min(5,Math.floor(accMotion/2));
-    accMotion=accMotion%2;
-    clickRatchet(n);
-  }
-}
-function useAngle(a){
-  if(!Number.isFinite(a)||a<0||a>180)return;
-  if(lastHinge!==null)windBy(a-lastHinge);
-  lastHinge=a;
+function useAngle(angle){
+  if(!Number.isFinite(angle)||angle<0||angle>180)return;
   hasLiveSensor=true;
-  sensorLight.setAttribute('fill','#3b7692');sensorLight.setAttribute('opacity','.75');
+  sensorLight.setAttribute('fill','#3b7692');
+  sensorLight.setAttribute('opacity','.75');
+  if(lastHinge===null){lastHinge=angle;return;}
+  const delta=angle-lastHinge;
+  lastHinge=angle;
+  const motion=Math.abs(delta);
+  if(motion<.35||motion>28)return; // reject jitter or corrupted reports
+  const now=performance.now();
+  const dir=Math.sign(delta);
+  if(strokeDir!==dir||now-lastMotionAt>STROKE_GAP_MS){
+    strokeDir=dir;strokeTravel=0;strokeCounted=false;
+  }
+  strokeTravel+=motion;
+  lastMotionAt=now;
+  if(!strokeCounted&&strokeTravel>=MIN_STROKE_DEG){
+    strokeCounted=true;
+    registerStroke();
+  }
+  creakStep(motion,dir);
 }
+
 function decodeAngle(data){
   // WebHID DataView excludes reportId; native IOKit report may include it.
   if(!data||data.byteLength<2)return null;
@@ -327,55 +372,88 @@ function connectBridge(){
 }
 connectBridge();setInterval(()=>{if(!hasLiveSensor)connectBridge()},4000);
 
+
 function tick(now){
-  const dt=Math.max(0,Math.min(.10,(now-lastFrame)/1000));lastFrame=now;
-  if(reserve>0){
-    watchTime+=dt*1000;
-    reserve=Math.max(0,reserve-dt/(180));
-  }
+  // Advance no more than the remaining running time, even across a suspended tab.
+  const elapsed=Math.max(0,Math.min(now,runUntil)-Math.min(lastFrame,runUntil));
+  lastFrame=now;
+  if(elapsed>0)watchTime+=elapsed;
   const time=new Date(watchTime);
   const s=time.getSeconds()+time.getMilliseconds()/1000;
   const m=time.getMinutes()+s/60;
   const h=time.getHours()%12+m/60;
-  hr.setAttribute('transform',`translate(800 500) rotate(${(h*30).toFixed(5)})`);
-  mn.setAttribute('transform',`translate(800 500) rotate(${(m*6).toFixed(5)})`);
-  sc.setAttribute('transform',`translate(800 500) rotate(${(s*6).toFixed(5)})`);
-  // Smoothly advances one complete orbit in 60 s while charged.
-  if(reserve>0)drawTicks(s/60);
+  hr.setAttribute('transform','translate(800 500) rotate('+(h*30).toFixed(5)+')');
+  mn.setAttribute('transform','translate(800 500) rotate('+(m*6).toFixed(5)+')');
+  sc.setAttribute('transform','translate(800 500) rotate('+(s*6).toFixed(5)+')');
+  if(elapsed>0)drawTicks(s/60);
   requestAnimationFrame(tick);
 }
-drawTicks((watchTime/1000)%60/60);
+drawTicks(((watchTime/1000)%60)/60);
 requestAnimationFrame(tick);
 
-// No text or visible controls. Drag/scroll are quiet fallback inputs for preview.
+
+// No written UI. Drag/scroll are *testing fallbacks* until the real sensor works.
 svg.addEventListener('pointerdown',e=>{
   if(e.target.closest('#sensorButton'))return;
-  audioReady();dragging=true;lastDragY=e.clientY;svg.setPointerCapture(e.pointerId);
+  audioReady();
+  if(hasLiveSensor)return;
+  dragging=true;lastDragY=e.clientY;dragDistance=0;
+  svg.setPointerCapture(e.pointerId);
 });
 svg.addEventListener('pointermove',e=>{
-  if(!dragging)return;windBy((e.clientY-lastDragY)*.65);lastDragY=e.clientY;
+  if(!dragging||hasLiveSensor)return;
+  const delta=e.clientY-lastDragY;
+  lastDragY=e.clientY;
+  dragDistance+=Math.abs(delta);
+  if(Math.abs(delta)>1)creakStep(Math.abs(delta)*.35,Math.sign(delta));
 });
-svg.addEventListener('pointerup',()=>dragging=false);
-svg.addEventListener('pointercancel',()=>dragging=false);
+function endDrag(){
+  if(dragging&&dragDistance>=25&&!hasLiveSensor)registerStroke();
+  dragging=false;dragDistance=0;
+}
+svg.addEventListener('pointerup',endDrag);
+svg.addEventListener('pointercancel',endDrag);
+
+let wheelLastAt=0,wheelTravel=0,wheelCounted=false;
 svg.addEventListener('wheel',e=>{
-  e.preventDefault();audioReady();windBy(e.deltaY*.055);
+  e.preventDefault();audioReady();
+  if(hasLiveSensor)return;
+  const now=performance.now();
+  if(now-wheelLastAt>480){wheelTravel=0;wheelCounted=false;}
+  wheelLastAt=now;wheelTravel+=Math.abs(e.deltaY);
+  if(Math.abs(e.deltaY)>.2)creakStep(Math.abs(e.deltaY)*.04,Math.sign(e.deltaY));
+  if(!wheelCounted&&wheelTravel>=45){wheelCounted=true;registerStroke();}
 },{passive:false});
-svg.addEventListener('dblclick',()=>{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()});
+
+svg.addEventListener('dblclick',()=>{
+  document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+});
 document.addEventListener('keydown',e=>{
   const key=e.key.toLowerCase();
-  if(['arrowup','arrowdown',' '].includes(key)){e.preventDefault();audioReady();windBy(8)}
+  if(['arrowup','arrowdown',' '].includes(key)){
+    e.preventDefault();
+    if(!e.repeat&&!hasLiveSensor){
+      audioReady();
+      creakStep(5,key==='arrowdown'?-1:1);
+      registerStroke();
+    }
+  }
   if(key==='h')requestHinge();
-  if(key==='d')reserve=0;
-  if(key==='f'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  if(key==='d'){runUntil=performance.now();movementCount=0;}
+  if(key==='f'){
+    document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+  }
   if(key==='s'){
     const clone=svg.cloneNode(true);
     clone.removeAttribute('style');
     clone.querySelector('#sensorButton')?.remove();
     const blob=new Blob(['<?xml version="1.0" encoding="utf-8"?>\n'+new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'});
     const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download='tank-dial.svg';a.click();setTimeout(()=>URL.revokeObjectURL(url),1200);
+    const a=document.createElement('a');a.href=url;a.download='tank-dial.svg';
+    a.click();setTimeout(()=>URL.revokeObjectURL(url),1200);
   }
 });
+
 </script>
 </body>
 </html>
