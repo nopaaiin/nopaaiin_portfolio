@@ -16,6 +16,13 @@
   .track-outline {fill:none;stroke:#15171c;stroke-width:2.45;shape-rendering:geometricPrecision;stroke-linejoin:miter}
   .rail-mark {stroke:#141519;stroke-width:1.65;shape-rendering:geometricPrecision;stroke-linecap:butt}
   #sensorButton {cursor:pointer}
+  #sensorDiagnostics{position:fixed;z-index:20;right:18px;bottom:18px;width:min(340px,calc(100vw - 36px));padding:14px 16px;background:rgba(19,24,30,.94);color:#f3f1eb;border:1px solid rgba(255,255,255,.22);border-radius:10px;box-shadow:0 12px 36px #0003;font:12px/1.55 -apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;pointer-events:auto}
+  #sensorDiagnostics[hidden]{display:none}
+  #sensorDiagnostics strong{font-size:13px}
+  #sensorDiagnostics pre{white-space:pre-wrap;margin:8px 0 0;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace}
+  #sensorDiagnostics button{border:1px solid #aaa8;background:#fff1;color:#fff;border-radius:5px;padding:5px 9px;font:inherit;cursor:pointer}
+  #sensorDiagnostics .actions{display:flex;justify-content:space-between;align-items:center;gap:10px}
+
   #sensorButton:focus-visible {outline:none}
   @media(prefers-reduced-motion:reduce){#face{scroll-behavior:auto}}
 </style>
@@ -162,6 +169,7 @@
     <circle id="sensorLight" cx="1564" cy="965" r="3.6" fill="#a3a59e" opacity=".55"/>
   </g>
 </svg>
+<div id="sensorDiagnostics" hidden role="status" aria-live="polite"><div class="actions"><strong>힌지 센서 진단</strong><span><button id="retryHinge" type="button">센서 연결</button> <button id="hideDiagnostics" type="button">닫기</button></span></div><pre id="sensorDebugOutput"></pre></div>
 <script>
 'use strict';
 const NS='http://www.w3.org/2000/svg';
@@ -219,7 +227,20 @@ const MIN_STROKE_DEG=4;
 const STROKE_GAP_MS=1400;
 let audio=null,noise=null,lastCreakAt=0;
 let dragging=false,lastDragY=0,dragDistance=0;
-let sensor=null,pollTimer=null,bridge=null,hasLiveSensor=false;
+let sensor=null,bridge=null,hasLiveSensor=false;
+let reportCount=0,lastReportAt=0,lastRaw='없음',sensorStatus='연결되지 않음';
+const diagPanel=$('#sensorDiagnostics'),diagText=$('#sensorDebugOutput');
+function setStatus(message){sensorStatus=message;updateDiagnostics();}
+function showDiagnostics(){diagPanel.hidden=false;updateDiagnostics();}
+function updateDiagnostics(){
+  if(diagPanel.hidden)return;
+  const remaining=Math.max(0,(runUntil-performance.now())/1000).toFixed(1);
+  const age=lastReportAt?((performance.now()-lastReportAt)/1000).toFixed(1)+'초 전':'없음';
+  diagText.textContent='상태: '+sensorStatus+'\nHID 지원: '+(!!navigator.hid)+'\n장치 열린 상태: '+(!!sensor?.opened)+'\n수신 리포트: '+reportCount+'개 ('+age+')\n마지막 데이터: '+lastRaw+'\n힌지 각도: '+(lastHinge===null?'없음':lastHinge.toFixed(1)+'°')+'\n와인딩: '+movementCount+'/3\n시계 남은 시간: '+remaining+'초\n\nH: 연결 요청 / I: 진단창 / 드래그 3회: 수동 시험';
+}
+setInterval(updateDiagnostics,200);
+$('#hideDiagnostics').addEventListener('click',()=>{diagPanel.hidden=true});
+$('#retryHinge').addEventListener('click',()=>requestHinge());
 
 function audioReady(){
   try{
@@ -274,6 +295,7 @@ function creakStep(magnitude,direction){
 
 function registerStroke(){
   movementCount++;
+  updateDiagnostics();
   if(movementCount>=3){
     movementCount=0;
     runUntil=performance.now()+10000;
@@ -288,7 +310,7 @@ function useAngle(angle){
   const delta=angle-lastHinge;
   lastHinge=angle;
   const motion=Math.abs(delta);
-  if(motion<.35||motion>28)return; // reject jitter or corrupted reports
+  if(motion<.35||motion>120)return; // filter tiny jitter, allow slower WebHID reports across large lid movements
   const now=performance.now();
   const dir=Math.sign(delta);
   if(strokeDir!==dir||now-lastMotionAt>STROKE_GAP_MS){
@@ -303,63 +325,75 @@ function useAngle(angle){
   creakStep(motion,dir);
 }
 
+
 function decodeAngle(data){
-  // WebHID DataView excludes reportId; native IOKit report may include it.
+  // WebHID strips reportId from the DataView. Input Report 1 is a 9-bit
+  // little-endian integer in degrees, not a feature report or a percentage.
   if(!data||data.byteLength<2)return null;
-  const tries=[];
-  for(const pos of [0,1]){
-    if(pos+1>=data.byteLength)continue;
-    const a=data.getUint16(pos,true);
-    if(a>=10&&a<=180)tries.push(a);
-    if(a>=1000&&a<=18000)tries.push(a/100);
-  }
-  if(!tries.length)return null;
-  if(lastHinge!==null)tries.sort((a,b)=>Math.abs(a-lastHinge)-Math.abs(b-lastHinge));
-  return tries[0];
+  const raw=data.getUint16(0,true)&0x01ff;
+  return raw>=0&&raw<=180?raw:null;
 }
 function listenInput(e){
-  if(e.reportId!==1)return;
-  const ang=decodeAngle(e.data);
-  if(ang!==null)useAngle(ang);
-}
-async function openHidDevice(device){
-  if(sensor&&sensor!==device&&sensor.opened){try{await sensor.close()}catch(e){}}
-  sensor=device;
-  if(!device.opened)await device.open();
-  device.addEventListener('inputreport',listenInput);
-  if(pollTimer)clearInterval(pollTimer);
-  let polling=false;
-  pollTimer=setInterval(async()=>{
-    if(polling||!device.opened)return;
-    polling=true;
-    try{
-      const report=await device.receiveFeatureReport(1);
-      const angle=decodeAngle(report);
-      if(angle!==null)useAngle(angle);
-    }catch(e){ /* Input report event still works on supported devices */ }
-    finally{polling=false}
-  },65);
+  reportCount++;
+  lastReportAt=performance.now();
+  lastRaw='ID '+e.reportId+' · '+Array.from(new Uint8Array(e.data.buffer,e.data.byteOffset,e.data.byteLength)).map(x=>x.toString(16).padStart(2,'0')).join(' ');
+  if(e.reportId!==1){setStatus('연결됨 / 예상 외 리포트 '+e.reportId);return;}
+  const angle=decodeAngle(e.data);
+  if(angle===null){setStatus('연결됨 / 데이터 해석 실패');return;}
+  setStatus('센서 데이터 수신 중');
+  useAngle(angle);
+  updateDiagnostics();
 }
 function isLidSensor(d){
-  return d.vendorId===0x05ac && d.productId===0x8104 &&
-         d.collections.some(c=>c.usagePage===0x20&&c.usage===0x8a);
+  if(!d||d.vendorId!==0x05ac||d.productId!==0x8104)return false;
+  const walk=collections=>collections.some(c=>
+    (c.usagePage===0x20&&c.usage===0x8a)||walk(c.children||[])
+  );
+  return walk(d.collections||[]);
+}
+async function openHidDevice(device){
+  if(sensor&&sensor!==device){
+    sensor.removeEventListener('inputreport',listenInput);
+    if(sensor.opened){try{await sensor.close()}catch(_){}}
+  }
+  sensor=device;
+  if(!device.opened)await device.open();
+  device.removeEventListener('inputreport',listenInput);
+  device.addEventListener('inputreport',listenInput);
+  setStatus('HID 연결됨 — 화면을 천천히 여닫아 주세요 (Input Report 대기)');
+  // Do not poll receiveFeatureReport(): this sensor does not advertise any
+  // feature reports in the Chrome WebHID descriptor.
+  setTimeout(()=>{
+    if(sensor===device&&reportCount===0)
+      setStatus('HID 연결됨 / 입력 데이터 없음 — 천천히 여닫거나 호환성을 확인하세요');
+  },5000);
 }
 async function autoConnectHinge(){
-  if(!navigator.hid)return;
+  if(!navigator.hid){setStatus('Chrome WebHID 사용 불가');return;}
   try{
     const devices=await navigator.hid.getDevices();
     const found=devices.find(isLidSensor);
     if(found)await openHidDevice(found);
-  }catch(e){}
+    else setStatus('권한이 없음 — H 키 또는 연결 버튼을 누르세요');
+  }catch(e){setStatus('자동 연결 오류: '+(e?.message||e));}
 }
 async function requestHinge(){
-  audioReady();
-  if(!navigator.hid)return;
+  // Called directly in a user key/click handler to preserve user activation.
+  audioReady();showDiagnostics();
+  if(!navigator.hid){setStatus('브라우저가 WebHID를 지원하지 않음');return;}
+  setStatus('Chrome 장치 선택창을 여는 중');
   try{
-    const devices=await navigator.hid.requestDevice({filters:[{vendorId:0x05ac,productId:0x8104,usagePage:0x20,usage:0x8a}]});
-    const device=devices.find(isLidSensor)||devices[0];
-    if(device)await openHidDevice(device);
-  }catch(e){console.debug('No hinge device permission',e)}
+    const devices=await navigator.hid.requestDevice({filters:[
+      {vendorId:0x05ac,productId:0x8104,usagePage:0x20,usage:0x8a}
+    ]});
+    if(!devices.length){setStatus('선택 취소 또는 센서가 목록에 없음');return;}
+    const device=devices.find(isLidSensor);
+    if(!device){setStatus('힌지 센서가 아닌 장치입니다');return;}
+    await openHidDevice(device);
+  }catch(e){
+    setStatus('센서 연결 실패: '+(e?.name||'')+' '+(e?.message||e));
+    console.warn('Hinge WebHID connection failed',e);
+  }
 }
 $('#sensorButton').addEventListener('pointerdown',e=>e.stopPropagation());
 $('#sensorButton').addEventListener('click',e=>{e.stopPropagation();requestHinge();});
@@ -444,6 +478,7 @@ document.addEventListener('keydown',e=>{
     }
   }
   if(key==='h')requestHinge();
+  if(key==='i'){diagPanel.hidden=!diagPanel.hidden;updateDiagnostics();}
   if(key==='d'){runUntil=performance.now();movementCount=0;}
   if(key==='f'){
     document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
