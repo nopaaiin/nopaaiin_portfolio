@@ -220,6 +220,7 @@ function drawTicks(phase){
 let runUntil=performance.now()+4000;
 let watchTime=Date.now();
 let lastTickSecond=Math.floor(watchTime/1000);
+let audioUserActivated=false;
 let lastFrame=performance.now();
 let lastHinge=null;
 let movementCount=0;
@@ -236,8 +237,9 @@ function showDiagnostics(){diagPanel.hidden=false;updateDiagnostics();}
 function updateDiagnostics(){
   if(diagPanel.hidden)return;
   const remaining=Math.max(0,(runUntil-performance.now())/1000).toFixed(1);
+  const audioState=audio?.state||'비활성';
   const age=lastReportAt?((performance.now()-lastReportAt)/1000).toFixed(1)+'초 전':'없음';
-  diagText.textContent='상태: '+sensorStatus+'\nHID 지원: '+(!!navigator.hid)+'\n장치 열린 상태: '+(!!sensor?.opened)+'\n수신 리포트: '+reportCount+'개 ('+age+')\n마지막 데이터: '+lastRaw+'\n힌지 각도: '+(lastHinge===null?'없음':lastHinge.toFixed(1)+'°')+'\n와인딩: '+movementCount+'/3\n시계 남은 시간: '+remaining+'초\n\nH: 연결 요청 / I: 진단창 / 드래그 3회: 수동 시험';
+  diagText.textContent='상태: '+sensorStatus+'\nHID 지원: '+(!!navigator.hid)+'\n장치 열린 상태: '+(!!sensor?.opened)+'\n수신 리포트: '+reportCount+'개 ('+age+')\n마지막 데이터: '+lastRaw+'\n힌지 각도: '+(lastHinge===null?'없음':lastHinge.toFixed(1)+'°')+'\n와인딩: '+movementCount+'/3\n시계 남은 시간: '+remaining+'초\n오디오 상태: '+audioState+'\n\nH: 연결 요청 / I: 진단창 / T: 틱 소리 시험 / 드래그 3회: 수동 시험';
 }
 setInterval(updateDiagnostics,200);
 $('#hideDiagnostics').addEventListener('click',()=>{diagPanel.hidden=true});
@@ -248,13 +250,15 @@ function audioReady(){
     const Context=window.AudioContext||window.webkitAudioContext;
     if(!Context)return;
     audio??=new Context();
-    if(audio.state!=='running')audio.resume().catch(()=>{});
+    const ready=audio.state==='running'?Promise.resolve():audio.resume();
+    ready.catch(()=>{});
     if(!noise){
       noise=audio.createBuffer(1,Math.ceil(audio.sampleRate*.15),audio.sampleRate);
       const data=noise.getChannelData(0);
       for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
     }
-  }catch(e){}
+    return audio.state==='running'?Promise.resolve():audio.resume().catch(()=>{});
+  }catch(e){return Promise.resolve();}
 }
 
 
@@ -268,14 +272,14 @@ function playWatchTick(secondIndex){
   const src=audio.createBufferSource();src.buffer=noise;
   const band=audio.createBiquadFilter();
   band.type='bandpass';
-  band.frequency.value=alternate?1920:2520;
-  band.Q.value=1.15;
+  band.frequency.value=alternate?1800:2380;
+  band.Q.value=.8;
   const env=audio.createGain();
   env.gain.setValueAtTime(.0001,t);
-  env.gain.exponentialRampToValueAtTime(alternate?.028:.034,t+.0012);
-  env.gain.exponentialRampToValueAtTime(.0001,t+.030);
+  env.gain.exponentialRampToValueAtTime(alternate?.095:.11,t+.0012);
+  env.gain.exponentialRampToValueAtTime(.0001,t+.052);
   src.connect(band).connect(env).connect(audio.destination);
-  src.start(t);src.stop(t+.035);
+  src.start(t);src.stop(t+.06);
 
   const osc=audio.createOscillator();
   osc.type='triangle';
@@ -283,14 +287,28 @@ function playWatchTick(secondIndex){
   osc.frequency.exponentialRampToValueAtTime(alternate?820:1080,t+.022);
   const tonal=audio.createGain();
   tonal.gain.setValueAtTime(.0001,t);
-  tonal.gain.exponentialRampToValueAtTime(.010,t+.001);
+  tonal.gain.exponentialRampToValueAtTime(.028,t+.001);
   tonal.gain.exponentialRampToValueAtTime(.0001,t+.024);
   osc.connect(tonal).connect(audio.destination);
   osc.start(t);osc.stop(t+.028);
 }
-// Browsers require one genuine interaction before starting any audio playback.
-document.addEventListener('pointerdown',audioReady,{capture:true});
-document.addEventListener('keydown',audioReady,{capture:true});
+// Chrome blocks Web Audio until a real user gesture. Ensure the first gesture
+// makes the clock tick audibly for four seconds, even if the page sat idle.
+function unlockAudioFromGesture(){
+  if(audioUserActivated)return;
+  audioUserActivated=true;
+  const now=performance.now();
+  runUntil=Math.max(runUntil,now+4000);
+  const unlock=audioReady();
+  Promise.resolve(unlock).then(()=>{
+    if(audio?.state==='running'){
+      playWatchTick(Math.floor(watchTime/1000));
+    }
+    updateDiagnostics();
+  });
+}
+document.addEventListener('pointerdown',unlockAudioFromGesture,{capture:true});
+document.addEventListener('keydown',unlockAudioFromGesture,{capture:true});
 
 // Frictional "끼릭끼릭": two gritty pulses and a short bending squeak.
 // Called only for measured hinge changes (or explicit manual testing).
@@ -520,6 +538,14 @@ document.addEventListener('keydown',e=>{
     }
   }
   if(key==='h')requestHinge();
+  if(key==='t'){
+    const p=audioReady();
+    Promise.resolve(p).then(()=>{
+      if(audio?.state!=='running')return;
+      playWatchTick(0);
+      setTimeout(()=>playWatchTick(1),350);
+    });
+  }
   if(key==='i'){diagPanel.hidden=!diagPanel.hidden;updateDiagnostics();}
   if(key==='d'){runUntil=performance.now();movementCount=0;}
   if(key==='f'){
