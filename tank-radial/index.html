@@ -1,351 +1,381 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Radial Tank — SVG Dial</title>
-  <style>
-    html,body { margin:0; width:100%; height:100%; overflow:hidden; background:#f4f1e8; }
-    body { display:grid; place-items:center; }
-    svg { display:block; width:100vw; height:100vh; touch-action:none; cursor:grab; }
-    svg:active { cursor:grabbing; }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f3f0e9">
+<title>Tank · Hinge Wound</title>
+<style>
+  :root {color-scheme:light}
+  * {box-sizing:border-box}
+  html,body {padding:0;margin:0;width:100%;height:100%;overflow:hidden;background:#eeeae1}
+  body {display:grid;place-items:center}
+  #face {display:block;width:100vw;height:100dvh;max-width:100vw;max-height:100dvh;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+  #face:active {cursor:grabbing}
+  .dial-ink {fill:#101114}
+  .track-outline {fill:none;stroke:#15171c;stroke-width:2.45;shape-rendering:geometricPrecision;stroke-linejoin:miter}
+  .rail-mark {stroke:#141519;stroke-width:1.65;shape-rendering:geometricPrecision;stroke-linecap:butt}
+  #sensorButton {cursor:pointer}
+  #sensorButton:focus-visible {outline:none}
+  @media(prefers-reduced-motion:reduce){#face{scroll-behavior:auto}}
+</style>
 </head>
 <body>
-  <svg id="dial" xmlns="http://www.w3.org/2000/svg"
-       viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid meet"
-       aria-label="가로형 방사형 로마 숫자 다이얼">
-    <defs>
-      <radialGradient id="ivory" cx="48%" cy="43%" r="80%">
-        <stop offset="0" stop-color="#fcfbf6"/>
-        <stop offset=".65" stop-color="#f5f3ec"/>
-        <stop offset="1" stop-color="#eae7df"/>
-      </radialGradient>
-      <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#081934"/>
-        <stop offset=".22" stop-color="#397ba0"/>
-        <stop offset=".48" stop-color="#b0d4df"/>
-        <stop offset=".66" stop-color="#1c5686"/>
-        <stop offset="1" stop-color="#07172f"/>
-      </linearGradient>
-      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="2" dy="3" stdDeviation="2" flood-opacity=".22"/>
-      </filter>
-    </defs>
-    <rect width="1600" height="1000" fill="url(#ivory)"/>
-    <rect x="12" y="12" width="1576" height="976" fill="none"
-          stroke="#d5d2ca" stroke-width="1"/>
-    <g id="numerals" fill="#0b0c0f" fill-rule="evenodd"></g>
-    <g id="rail" fill="none" stroke="#111216">
-      <rect x="226" y="226" width="1148" height="548" stroke-width="2.2"/>
-      <rect x="255" y="255" width="1090" height="490" stroke-width="2.2"/>
-      <g id="ticks" stroke-width="1.8"></g>
-    </g>
-    <g id="hands" filter="url(#shadow)">
-      <g id="hour" transform="translate(800 500)">
-        <path d="M0 18 L-6 -22 L-5 -64 L0 -151 L5 -64 L6 -22 Z"
-              fill="url(#steel)" stroke="#0b2442" stroke-width="1"/>
-        <path d="M0 -137 L-2 -66 L-2 -22 L0 -12 L2 -22 L2 -66 Z"
-              fill="#edf3ef" opacity=".87"/>
-      </g>
-      <g id="minute" transform="translate(800 500)">
-        <path d="M0 22 L-6 -26 L-5 -94 L0 -222 L5 -94 L6 -26 Z"
-              fill="url(#steel)" stroke="#082440" stroke-width="1"/>
-        <path d="M0 -208 L-2 -96 L-2 -29 L0 -14 L2 -29 L2 -96 Z"
-              fill="#edf3ef" opacity=".88"/>
-      </g>
-      <g id="second" transform="translate(800 500)">
-        <path d="M-1.7 39 L-1.7 -203 L0 -233 L1.7 -203 L1.7 39Z" fill="#17456f"/>
-        <circle cy="34" r="8" fill="none" stroke="#17456f" stroke-width="2"/>
-      </g>
-    </g>
-    <circle cx="800" cy="500" r="10" fill="#0b2749"/>
-    <circle cx="800" cy="500" r="4.2" fill="#397da4" stroke="#c4dde3" stroke-width=".7"/>
-  </svg>
+<svg id="face" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid meet" role="img" aria-label="맥북 힌지 태엽 시계">
+  <defs>
+    <style><![CDATA[.dial-ink{fill:#101114}.track-outline{fill:none;stroke:#15171c;stroke-width:2.45;stroke-linejoin:miter}.rail-mark{stroke:#141519;stroke-width:1.65;stroke-linecap:butt}]]></style>
+    <radialGradient id="porcelain" cx="49%" cy="42%" r="83%">
+      <stop offset="0%" stop-color="#fffdf7"/>
+      <stop offset="55%" stop-color="#f7f5ef"/>
+      <stop offset="84%" stop-color="#f0eee7"/>
+      <stop offset="100%" stop-color="#e7e4dc"/>
+    </radialGradient>
+    <linearGradient id="bluedSteel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#04152a"/>
+      <stop offset="12%" stop-color="#0d325a"/>
+      <stop offset="34%" stop-color="#3875a1"/>
+      <stop offset="46%" stop-color="#92bed3"/>
+      <stop offset="54%" stop-color="#22517b"/>
+      <stop offset="82%" stop-color="#092b55"/>
+      <stop offset="100%" stop-color="#031429"/>
+    </linearGradient>
+    <linearGradient id="secondBlue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#04112e"/>
+      <stop offset="50%" stop-color="#357ba3"/>
+      <stop offset="100%" stop-color="#081d43"/>
+    </linearGradient>
+    <filter id="pointerShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="1.9" dy="2.7" stdDeviation="2" flood-color="#77766d" flood-opacity=".28"/>
+    </filter>
+    <pattern id="microGrain" width="3" height="3" patternUnits="userSpaceOnUse">
+      <rect width="3" height="3" fill="none"/>
+      <circle cx=".75" cy="1.1" r=".18" fill="#8e8d86" opacity=".105"/>
+    </pattern>
+  </defs>
 
-  <script>
-    'use strict';
-    const $ = (selector) => document.querySelector(selector);
-    const NS = 'http://www.w3.org/2000/svg';
-    const svg = $('#dial');
+  <rect width="1600" height="1000" fill="url(#porcelain)"/>
+  <rect width="1600" height="1000" fill="url(#microGrain)" opacity=".36"/>
+  <rect x="9.5" y="9.5" width="1581" height="981" fill="none" stroke="#ccc9bf" stroke-opacity=".33" stroke-width="1"/>
+  <rect x="14.5" y="14.5" width="1571" height="971" fill="none" stroke="white" stroke-opacity=".73" stroke-width="1"/>
 
-    // 두 사각형은 중심이 같고, 사방에서 일정 거리만큼 인셋되어 있다.
-    const outerRect = { x:20, y:20, width:1560, height:960 };
-    const innerRect = { x:208, y:208, width:1184, height:584 };
-    const roman = ['I','II','III','IIII','V','VI','VII','VIII','IX','X','XI','XII'];
-    const widths = [4.8,8.8,12.6,14.1,8.4,12.6,13.6,14.4,11.7,8.8,12.6,13.9];
-    const deg = Math.PI / 180;
-    const lerp = (a,b,t) => a + (b-a)*t;
+  <g id="roman" class="dial-ink">
+  <g data-hour="1"><path d="M1003.286,202.733 L985.307,202.733 L1081.994,35.267 L1099.973,35.267 L1104.746,27.000 L1041.428,27.000 L1036.655,35.267 L1054.830,35.267 L958.143,202.733 L939.968,202.733 L935.195,211.000 L998.513,211.000 Z"/></g>
+<g data-hour="2" transform="translate(62 0) scale(.95 1)"><path d="M1303.547,207.538 L1267.395,204.809 L1515.207,37.343 L1551.360,40.071 L1563.593,31.805 L1436.273,22.195 L1424.041,30.462 L1460.586,33.220 L1212.773,200.687 L1176.228,197.929 L1163.995,206.195 L1291.314,215.805 Z"/><path d="M1415.660,248.241 L1405.215,226.148 L1572.681,144.650 L1583.127,166.743 L1591.394,162.720 L1554.606,84.915 L1546.340,88.938 L1556.899,111.271 L1389.432,192.769 L1378.873,170.436 L1370.606,174.459 L1407.394,252.264 Z"/></g>
+<g data-hour="3"><path d="M1397.267,459.850 L1397.267,439.000 L1564.733,417.448 L1564.733,438.298 L1573.000,437.234 L1573.000,363.804 L1564.733,364.868 L1564.733,385.945 L1397.267,407.497 L1397.267,386.420 L1389.000,387.484 L1389.000,460.914 Z"/><path d="M1397.267,536.115 L1397.267,515.605 L1564.733,515.605 L1564.733,536.115 L1573.000,536.115 L1573.000,463.885 L1564.733,463.885 L1564.733,484.618 L1397.267,484.618 L1397.267,463.885 L1389.000,463.885 L1389.000,536.115 Z"/><path d="M1397.267,613.580 L1397.267,592.729 L1564.733,614.281 L1564.733,635.132 L1573.000,636.196 L1573.000,562.766 L1564.733,561.702 L1564.733,582.779 L1397.267,561.227 L1397.267,540.150 L1389.000,539.086 L1389.000,612.516 Z"/></g>
+<g data-hour="4" transform="translate(126 0) scale(.91 1)"><path d="M1397.267,752.867 L1397.267,731.379 L1564.733,791.670 L1564.733,813.158 L1573.000,816.134 L1573.000,740.460 L1564.733,737.484 L1564.733,759.205 L1397.267,698.913 L1397.267,677.192 L1389.000,674.216 L1389.000,749.890 Z"/><path d="M1367.319,824.681 L1377.883,806.920 L1556.162,896.196 L1545.598,913.957 L1554.399,918.364 L1591.601,855.815 L1582.801,851.409 L1572.122,869.362 L1393.843,780.086 L1404.521,762.133 L1395.721,757.726 L1358.519,820.274 Z"/><path d="M1197.131,802.254 L1227.626,799.422 L1481.602,966.889 L1451.107,969.721 L1463.644,977.988 L1571.040,968.012 L1558.503,959.746 L1527.676,962.609 L1273.700,795.142 L1304.526,792.279 L1291.989,784.012 L1184.594,793.988 Z"/><path d="M1106.611,797.267 L1132.256,797.267 L1330.426,964.733 L1304.781,964.733 L1314.563,973.000 L1404.876,973.000 L1395.094,964.733 L1369.171,964.733 L1171.001,797.267 L1196.924,797.267 L1187.142,789.000 L1096.829,789.000 Z"/></g>
+<g data-hour="5"><path d="M1028.774,973.000 L1054.742,973.000 L1050.078,964.921 C1045.432,964.921 1042.479,964.139 1041.100,962.575 C1039.721,961.011 1038.429,959.187 1037.075,956.841 C1034.517,952.411 1031.589,945.895 1028.172,937.295 L984.058,827.051 L1085.456,964.921 L1075.927,964.921 L1080.591,973.000 L1117.399,973.000 L1112.734,964.921 L1103.681,964.921 L974.359,789.000 L963.400,789.000 L1023.407,937.295 C1028.849,950.847 1031.401,959.187 1031.031,962.054 C1030.837,964.399 1028.429,965.181 1024.110,964.921 Z"/></g>
+<g data-hour="6"><path d="M801.387,973.000 L820.129,973.000 L819.559,964.921 C816.206,964.921 814.345,964.139 813.891,962.575 C813.437,961.011 813.136,959.187 812.971,956.841 C812.658,952.411 812.800,945.895 813.311,937.295 L819.633,827.051 L845.092,964.921 L838.214,964.921 L838.784,973.000 L865.350,973.000 L864.780,964.921 L858.246,964.921 L825.804,789.000 L817.895,789.000 L809.872,937.295 C809.109,950.847 808.064,959.187 806.805,962.054 C805.852,964.399 803.844,965.181 800.817,964.921 Z"/><path d="M747.520,797.267 L760.281,797.267 L743.374,964.733 L730.614,964.733 L729.779,973.000 L774.718,973.000 L775.553,964.733 L762.654,964.733 L779.560,797.267 L792.459,797.267 L793.294,789.000 L748.355,789.000 Z"/></g>
+<g data-hour="7"><path d="M568.249,973.000 L588.062,973.000 L591.444,964.921 C587.899,964.921 586.318,964.139 586.608,962.575 C586.899,961.011 587.481,959.187 588.463,956.841 C590.317,952.411 593.679,945.895 598.460,937.295 L659.500,827.051 L618.437,964.921 L611.166,964.921 L607.785,973.000 L635.869,973.000 L639.250,964.921 L632.342,964.921 L684.785,789.000 L676.424,789.000 L594.825,937.295 C587.336,950.847 582.119,959.187 579.374,962.054 C577.211,964.399 574.702,965.181 571.630,964.921 Z"/><path d="M589.680,797.267 L605.416,797.267 L502.541,964.733 L486.805,964.733 L481.727,973.000 L537.143,973.000 L542.221,964.733 L526.315,964.733 L629.190,797.267 L645.096,797.267 L650.175,789.000 L594.759,789.000 Z"/><path d="M527.325,797.267 L546.181,797.267 L411.274,964.733 L392.418,964.733 L385.758,973.000 L452.165,973.000 L458.824,964.733 L439.763,964.733 L574.670,797.267 L593.732,797.267 L600.391,789.000 L533.985,789.000 Z"/></g>
+<g data-hour="8" transform="translate(28 0) scale(.73 1)"><path d="M174.154,973.000 L206.081,973.000 L215.840,964.921 C210.128,964.921 207.997,964.139 209.300,962.575 C210.604,961.011 212.514,959.187 215.348,956.841 C220.700,952.411 229.596,945.895 241.889,937.295 L399.077,827.051 L259.337,964.921 L247.620,964.921 L237.861,973.000 L283.115,973.000 L292.874,964.921 L281.744,964.921 L460.126,789.000 L446.652,789.000 L236.030,937.295 C216.731,950.847 203.874,959.187 197.921,962.054 C193.184,964.399 188.724,965.181 183.913,964.921 Z"/><path d="M282.095,788.138 L304.280,793.322 L34.523,960.789 L12.339,955.605 L-0.977,963.872 L77.152,982.128 L90.468,973.862 L68.042,968.621 L337.799,801.155 L360.225,806.395 L373.541,798.128 L295.412,779.872 Z"/><path d="M192.177,755.866 L198.172,771.758 L30.705,851.347 L24.710,835.454 L16.443,839.383 L37.557,895.352 L45.823,891.423 L39.763,875.358 L207.230,795.770 L213.290,811.835 L221.557,807.906 L200.443,751.937 Z"/><path d="M202.733,674.993 L202.733,692.449 L35.267,750.134 L35.267,732.678 L27.000,735.525 L27.000,797.000 L35.267,794.153 L35.267,776.507 L202.733,718.822 L202.733,736.468 L211.000,733.621 L211.000,672.146 Z"/></g>
+<g data-hour="9"><path d="M202.733,523.591 L202.733,545.158 L35.267,562.421 L35.267,540.854 L27.000,541.706 L27.000,617.659 L35.267,616.807 L35.267,595.005 L202.733,577.743 L202.733,599.544 L211.000,598.692 L211.000,522.739 Z"/><path d="M202.733,401.840 L202.733,411.986 L104.333,445.137 L55.267,419.111 C47.533,414.682 42.200,411.137 39.533,408.351 C36.600,405.401 35.267,401.544 35.267,396.471 L27.000,395.920 L27.000,429.835 L35.267,430.386 L35.267,425.169 C35.800,423.755 37.133,422.539 39.000,421.359 C39.800,420.978 40.867,420.759 42.200,420.848 C45.667,421.079 49.667,422.650 54.200,425.562 L95.533,448.029 C75.533,454.377 55.533,460.870 35.267,467.345 L35.267,456.475 L27.000,455.924 L27.000,503.607 L35.267,504.159 L35.267,493.868 L124.067,464.715 L181.667,495.368 C188.867,499.907 193.667,503.415 196.600,506.075 C200.600,509.965 202.733,514.020 202.733,518.513 L211.000,519.064 L211.000,484.280 L202.733,483.729 L202.733,488.367 C202.200,489.635 200.867,490.851 198.733,492.158 C197.933,492.829 196.600,493.175 195.000,493.069 C191.800,492.855 187.800,491.429 183.267,488.953 C158.467,475.704 141.400,466.595 132.600,461.660 L202.733,439.233 L202.733,451.118 L211.000,451.669 L211.000,402.391 Z"/></g>
+<g data-hour="10" transform="translate(50 0)"><path d="M338.928,178.022 L329.932,182.529 L149.021,116.050 L96.550,63.999 C88.570,55.650 83.500,49.675 81.865,46.236 C79.964,42.506 81.332,39.692 85.830,37.439 L73.590,30.372 L43.515,45.436 L55.755,52.503 L60.382,50.185 C62.457,49.997 65.588,50.558 69.509,51.574 C71.079,52.065 72.915,52.848 74.889,53.988 C80.022,56.951 84.788,60.950 89.187,65.984 L132.907,110.073 C96.483,96.388 59.930,82.767 22.982,68.918 L32.621,64.090 L20.381,57.024 L-21.903,78.203 L-9.664,85.270 L-0.538,80.699 L162.045,141.031 L223.553,202.179 C230.615,210.137 234.894,215.656 237.053,219.258 C239.762,224.287 239.451,227.849 235.466,229.844 L247.706,236.911 L278.552,221.461 L266.312,214.394 L262.199,216.454 C260.253,216.578 257.122,216.017 252.678,214.837 C250.851,214.475 248.491,213.529 246.122,212.161 C241.384,209.425 236.490,205.491 231.706,200.650 C205.268,174.300 187.067,156.170 177.893,146.716 L305.769,194.631 L295.230,199.910 L307.470,206.977 L351.168,185.089 Z"/></g>
+<g data-hour="11"><path d="M648.884,202.733 L640.383,202.733 L540.901,104.333 L526.957,55.267 C525.034,47.533 524.117,42.200 524.509,39.533 C524.843,36.600 527.104,35.267 531.355,35.267 L525.793,27.000 L497.373,27.000 L502.935,35.267 L507.307,35.267 C508.881,35.800 510.871,37.133 513.220,39.000 C514.122,39.800 515.083,40.867 515.980,42.200 C518.312,45.667 519.910,49.667 520.774,54.200 L532.066,95.533 C512.173,75.533 492.158,55.533 471.965,35.267 L481.074,35.267 L475.512,27.000 L435.554,27.000 L441.116,35.267 L449.739,35.267 L538.875,124.067 L555.159,181.667 C556.603,188.867 557.160,193.667 557.069,196.600 C556.724,200.600 554.880,202.733 551.115,202.733 L556.677,211.000 L585.825,211.000 L580.264,202.733 L576.377,202.733 C574.925,202.200 572.935,200.867 570.285,198.733 C569.140,197.933 567.878,196.600 566.802,195.000 C564.649,191.800 562.929,187.800 561.701,183.267 C554.732,158.467 549.929,141.400 547.652,132.600 L617.550,202.733 L607.590,202.733 L613.152,211.000 L654.446,211.000 Z"/><path d="M694.032,202.733 L679.286,202.733 L604.961,35.267 L619.707,35.267 L616.038,27.000 L564.109,27.000 L567.778,35.267 L582.683,35.267 L657.008,202.733 L642.103,202.733 L645.772,211.000 L697.701,211.000 Z"/></g>
+<g data-hour="12"><path d="M793.751,202.733 L788.490,202.733 L755.815,104.333 L761.590,55.267 C762.670,47.533 763.668,42.200 764.694,39.533 C765.761,36.600 767.552,35.267 770.182,35.267 L769.167,27.000 L751.581,27.000 L752.596,35.267 L755.301,35.267 C756.118,35.800 756.958,37.133 757.864,39.000 C758.188,39.800 758.469,40.867 758.633,42.200 C759.058,45.667 758.873,49.667 758.077,54.200 L752.931,95.533 C746.492,75.533 739.978,55.533 733.431,35.267 L739.067,35.267 L738.052,27.000 L713.326,27.000 L714.341,35.267 L719.677,35.267 L748.768,124.067 L741.937,181.667 C740.716,188.867 739.652,193.667 738.735,196.600 C737.347,200.600 735.580,202.733 733.250,202.733 L734.265,211.000 L752.302,211.000 L751.287,202.733 L748.882,202.733 C748.140,202.200 747.300,200.867 746.287,198.733 C745.813,197.933 745.424,196.600 745.227,195.000 C744.834,191.800 744.944,187.800 745.515,183.267 C748.483,158.467 750.521,141.400 751.695,132.600 L774.360,202.733 L768.198,202.733 L769.213,211.000 L794.766,211.000 Z"/><path d="M829.167,202.733 L818.203,202.733 L823.759,35.267 L834.723,35.267 L834.997,27.000 L796.385,27.000 L796.111,35.267 L807.194,35.267 L801.638,202.733 L790.555,202.733 L790.281,211.000 L828.893,211.000 Z"/><path d="M866.310,202.733 L855.089,202.733 L881.313,35.267 L892.534,35.267 L893.829,27.000 L854.311,27.000 L853.016,35.267 L864.359,35.267 L838.135,202.733 L826.792,202.733 L825.497,211.000 L865.015,211.000 Z"/></g>
+  </g>
 
-    // (1) 정확한 방사형 사각형 매핑. rotate() 미사용.
-    function warpPoint(u, v, theta, w, innerRect, outerRect) {
-      const cx = outerRect.x + outerRect.width / 2;
-      const cy = outerRect.y + outerRect.height / 2;
-      const a = theta - w + 2 * w * u;
-      const dx = Math.sin(a);
-      const dy = -Math.cos(a);
+  <!-- Both steel rails are closed SVG paths with four joined corners: never move or redraw them. -->
+  <g id="rail" aria-hidden="true">
+    <rect class="track-outline" x="244" y="244" width="1112" height="512"/>
+    <rect class="track-outline" x="270" y="270" width="1060" height="460"/>
+    <g id="railTicks"><line class="rail-mark" x1="257.000" y1="244.800" x2="257.000" y2="269.200" stroke-width="2.3"/>
+<line class="rail-mark" x1="309.400" y1="244.800" x2="309.400" y2="269.200"/>
+<line class="rail-mark" x1="361.800" y1="244.800" x2="361.800" y2="269.200"/>
+<line class="rail-mark" x1="414.200" y1="244.800" x2="414.200" y2="269.200"/>
+<line class="rail-mark" x1="466.600" y1="244.800" x2="466.600" y2="269.200"/>
+<line class="rail-mark" x1="519.000" y1="244.800" x2="519.000" y2="269.200" stroke-width="2.3"/>
+<line class="rail-mark" x1="571.400" y1="244.800" x2="571.400" y2="269.200"/>
+<line class="rail-mark" x1="623.800" y1="244.800" x2="623.800" y2="269.200"/>
+<line class="rail-mark" x1="676.200" y1="244.800" x2="676.200" y2="269.200"/>
+<line class="rail-mark" x1="728.600" y1="244.800" x2="728.600" y2="269.200"/>
+<line class="rail-mark" x1="781.000" y1="244.800" x2="781.000" y2="269.200" stroke-width="2.3"/>
+<line class="rail-mark" x1="833.400" y1="244.800" x2="833.400" y2="269.200"/>
+<line class="rail-mark" x1="885.800" y1="244.800" x2="885.800" y2="269.200"/>
+<line class="rail-mark" x1="938.200" y1="244.800" x2="938.200" y2="269.200"/>
+<line class="rail-mark" x1="990.600" y1="244.800" x2="990.600" y2="269.200"/>
+<line class="rail-mark" x1="1043.000" y1="244.800" x2="1043.000" y2="269.200" stroke-width="2.3"/>
+<line class="rail-mark" x1="1095.400" y1="244.800" x2="1095.400" y2="269.200"/>
+<line class="rail-mark" x1="1147.800" y1="244.800" x2="1147.800" y2="269.200"/>
+<line class="rail-mark" x1="1200.200" y1="244.800" x2="1200.200" y2="269.200"/>
+<line class="rail-mark" x1="1252.600" y1="244.800" x2="1252.600" y2="269.200"/>
+<line class="rail-mark" x1="1305.000" y1="244.800" x2="1305.000" y2="269.200" stroke-width="2.3"/>
+<line class="rail-mark" x1="1355.200" y1="271.400" x2="1330.800" y2="271.400"/>
+<line class="rail-mark" x1="1355.200" y1="323.800" x2="1330.800" y2="323.800"/>
+<line class="rail-mark" x1="1355.200" y1="376.200" x2="1330.800" y2="376.200"/>
+<line class="rail-mark" x1="1355.200" y1="428.600" x2="1330.800" y2="428.600"/>
+<line class="rail-mark" x1="1355.200" y1="481.000" x2="1330.800" y2="481.000" stroke-width="2.3"/>
+<line class="rail-mark" x1="1355.200" y1="533.400" x2="1330.800" y2="533.400"/>
+<line class="rail-mark" x1="1355.200" y1="585.800" x2="1330.800" y2="585.800"/>
+<line class="rail-mark" x1="1355.200" y1="638.200" x2="1330.800" y2="638.200"/>
+<line class="rail-mark" x1="1355.200" y1="690.600" x2="1330.800" y2="690.600"/>
+<line class="rail-mark" x1="1343.000" y1="755.200" x2="1343.000" y2="730.800" stroke-width="2.3"/>
+<line class="rail-mark" x1="1290.600" y1="755.200" x2="1290.600" y2="730.800"/>
+<line class="rail-mark" x1="1238.200" y1="755.200" x2="1238.200" y2="730.800"/>
+<line class="rail-mark" x1="1185.800" y1="755.200" x2="1185.800" y2="730.800"/>
+<line class="rail-mark" x1="1133.400" y1="755.200" x2="1133.400" y2="730.800"/>
+<line class="rail-mark" x1="1081.000" y1="755.200" x2="1081.000" y2="730.800" stroke-width="2.3"/>
+<line class="rail-mark" x1="1028.600" y1="755.200" x2="1028.600" y2="730.800"/>
+<line class="rail-mark" x1="976.200" y1="755.200" x2="976.200" y2="730.800"/>
+<line class="rail-mark" x1="923.800" y1="755.200" x2="923.800" y2="730.800"/>
+<line class="rail-mark" x1="871.400" y1="755.200" x2="871.400" y2="730.800"/>
+<line class="rail-mark" x1="819.000" y1="755.200" x2="819.000" y2="730.800" stroke-width="2.3"/>
+<line class="rail-mark" x1="766.600" y1="755.200" x2="766.600" y2="730.800"/>
+<line class="rail-mark" x1="714.200" y1="755.200" x2="714.200" y2="730.800"/>
+<line class="rail-mark" x1="661.800" y1="755.200" x2="661.800" y2="730.800"/>
+<line class="rail-mark" x1="609.400" y1="755.200" x2="609.400" y2="730.800"/>
+<line class="rail-mark" x1="557.000" y1="755.200" x2="557.000" y2="730.800" stroke-width="2.3"/>
+<line class="rail-mark" x1="504.600" y1="755.200" x2="504.600" y2="730.800"/>
+<line class="rail-mark" x1="452.200" y1="755.200" x2="452.200" y2="730.800"/>
+<line class="rail-mark" x1="399.800" y1="755.200" x2="399.800" y2="730.800"/>
+<line class="rail-mark" x1="347.400" y1="755.200" x2="347.400" y2="730.800"/>
+<line class="rail-mark" x1="295.000" y1="755.200" x2="295.000" y2="730.800" stroke-width="2.3"/>
+<line class="rail-mark" x1="244.800" y1="728.600" x2="269.200" y2="728.600"/>
+<line class="rail-mark" x1="244.800" y1="676.200" x2="269.200" y2="676.200"/>
+<line class="rail-mark" x1="244.800" y1="623.800" x2="269.200" y2="623.800"/>
+<line class="rail-mark" x1="244.800" y1="571.400" x2="269.200" y2="571.400"/>
+<line class="rail-mark" x1="244.800" y1="519.000" x2="269.200" y2="519.000" stroke-width="2.3"/>
+<line class="rail-mark" x1="244.800" y1="466.600" x2="269.200" y2="466.600"/>
+<line class="rail-mark" x1="244.800" y1="414.200" x2="269.200" y2="414.200"/>
+<line class="rail-mark" x1="244.800" y1="361.800" x2="269.200" y2="361.800"/>
+<line class="rail-mark" x1="244.800" y1="309.400" x2="269.200" y2="309.400"/></g>
+    <path d="M244 244L270 270M1356 244L1330 270M1356 756L1330 730M244 756L270 730"
+      stroke="#1a1b1d" stroke-opacity=".65" stroke-width="1.15" fill="none" />
+  </g>
 
-      function rayHit(rect) {
-        const hw = rect.width / 2;
-        const hh = rect.height / 2;
-        const t = Math.min(
-          hw / Math.max(Math.abs(dx), 1e-12),
-          hh / Math.max(Math.abs(dy), 1e-12)
-        );
-        return { x: cx + t * dx, y: cy + t * dy };
-      }
+  <g id="hourHand" transform="translate(800 500) rotate(305)" filter="url(#pointerShadow)">
+    <path d="M0 21 Q-5 8 -6 -15L-6 -57 Q-5 -87 -2 -110 L0 -151 Q2 -110 5 -87L6 -57L6 -15Q5 8 0 21Z" fill="url(#bluedSteel)" stroke="#0a2645" stroke-width=".7"/>
+    <path d="M0 -132L-2.05 -62L-2.05 -24Q-1.5 -15 0 -10Q1.5 -15 2.05 -24L2.05 -62Z" fill="#f3f7f7" opacity=".93"/>
+  </g>
+  <g id="minuteHand" transform="translate(800 500) rotate(60)" filter="url(#pointerShadow)">
+    <path d="M0 29 Q-6 10 -6 -28L-5.5 -92 Q-5 -117 -2.2 -157L0 -234 L2.2 -157 Q5 -117 5.5 -92L6 -28Q6 10 0 29Z" fill="url(#bluedSteel)" stroke="#0b274a" stroke-width=".7"/>
+    <path d="M0 -212L-2.0 -105L-2.2 -30Q-1.6 -20 0 -14Q1.6 -20 2.2 -30L2.0 -105Z" fill="#e7f0f1" opacity=".94"/>
+  </g>
+  <g id="secondHand" transform="translate(800 500) rotate(210)" filter="url(#pointerShadow)">
+    <path d="M-.95 46L-1.15 -195L0 -252L1.15 -195L.95 46Z" fill="url(#secondBlue)"/>
+    <circle cx="0" cy="44" r="8" fill="none" stroke="#1c5278" stroke-width="1.8"/>
+  </g>
+  <circle cx="800" cy="500" r="10.8" fill="#0a2545" stroke="#02203d" stroke-width=".6"/>
+  <circle cx="800" cy="500" r="5.1" fill="#18547e" stroke="#b1d4e1" stroke-width=".9"/>
+  <circle cx="798.3" cy="498.6" r="1.1" fill="#d6edf3" opacity=".85"/>
 
-      const pin = rayHit(innerRect);
-      const pout = rayHit(outerRect);
-      return {
-        x: pin.x + (pout.x - pin.x) * v,
-        y: pin.y + (pout.y - pin.y) * v
-      };
-    }
+  <!-- Minimal, unlabeled sensor activation target; invisible interactive hit area. -->
+  <g id="sensorButton" role="button" tabindex="0" aria-label="맥북 힌지 센서 연결" focusable="true">
+    <circle cx="1564" cy="965" r="23" fill="transparent"/>
+    <circle id="sensorLight" cx="1564" cy="965" r="3.6" fill="#a3a59e" opacity=".55"/>
+  </g>
+</svg>
+<script>
+'use strict';
+const NS='http://www.w3.org/2000/svg';
+const $=s=>document.querySelector(s);
+const svg=$('#face');
+const hr=$('#hourHand'),mn=$('#minuteHand'),sc=$('#secondHand');
+const sensorLight=$('#sensorLight');
 
-    // (2) opentype.js의 M/L/Q/C/Z 명령을 직선 표본으로 분해.
-    // 곡선 한 세그먼트를 충분히 촘촘히 샘플링하여 path로 재구성한다.
-    function flattenOutline(commands) {
-      const contours = [];
-      let points = [];
-      let x = 0, y = 0, sx = 0, sy = 0;
-      const add = (px,py) => points.push([px,py]);
-      const finish = () => {
-        if (points.length > 2) contours.push(points);
-        points = [];
-      };
-      for (const c of commands) {
-        if (c.type === 'M') {
-          finish(); x = sx = c.x; y = sy = c.y; add(x,y);
-        } else if (c.type === 'L') {
-          x = c.x; y = c.y; add(x,y);
-        } else if (c.type === 'Q') {
-          const x0=x, y0=y;
-          const span = Math.hypot(c.x-x0, c.y-y0) + Math.hypot(c.x1-x0,c.y1-y0);
-          const n = Math.max(12, Math.ceil(span / 11));
-          for (let j=1; j<=n; j++) {
-            const t=j/n, q=1-t;
-            add(q*q*x0 + 2*q*t*c.x1 + t*t*c.x,
-                q*q*y0 + 2*q*t*c.y1 + t*t*c.y);
-          }
-          x=c.x; y=c.y;
-        } else if (c.type === 'C') {
-          const x0=x, y0=y;
-          const span = Math.hypot(c.x-x0,c.y-y0) + Math.hypot(c.x1-x0,c.y1-y0)
-                     + Math.hypot(c.x2-c.x1,c.y2-c.y1);
-          const n = Math.max(16, Math.ceil(span / 11));
-          for (let j=1; j<=n; j++) {
-            const t=j/n, q=1-t;
-            add(q*q*q*x0 + 3*q*q*t*c.x1 + 3*q*t*t*c.x2 + t*t*t*c.x,
-                q*q*q*y0 + 3*q*q*t*c.y1 + 3*q*t*t*c.y2 + t*t*t*c.y);
-          }
-          x=c.x; y=c.y;
-        } else if (c.type === 'Z') {
-          finish(); x=sx; y=sy;
-        }
-      }
-      finish();
-      return contours;
-    }
+// Track is a perfect, closed two-rectangle drawing. Only the cross-ties travel.
+const ticks=$('#railTicks');
+const tickItems=Array.from(ticks.querySelectorAll('line'));
+const railCenter={x:257,y:257,w:1086,h:486};
+const railPerimeter=2*(railCenter.w+railCenter.h);
+const rectPath=(distance)=>{
+  const r=railCenter, p=railPerimeter;
+  let s=((distance%p)+p)%p;
+  if(s<r.w)return {x:r.x+s,y:r.y,nx:0,ny:1};
+  s-=r.w;
+  if(s<r.h)return {x:r.x+r.w,y:r.y+s,nx:-1,ny:0};
+  s-=r.h;
+  if(s<r.w)return {x:r.x+r.w-s,y:r.y+r.h,nx:0,ny:-1};
+  s-=r.w;
+  return {x:r.x,y:r.y+r.h-s,nx:1,ny:0};
+};
+const drawTicks=(phase)=>{
+  const offset=phase*railPerimeter;
+  for(let i=0;i<60;i++){
+    const d=(i*railPerimeter/60+offset);
+    const p=rectPath(d);
+    const line=tickItems[i];
+    const inset=0.8;
+    line.setAttribute('x1',(p.x-p.nx*(13-inset)).toFixed(3));
+    line.setAttribute('y1',(p.y-p.ny*(13-inset)).toFixed(3));
+    line.setAttribute('x2',(p.x+p.nx*(13-inset)).toFixed(3));
+    line.setAttribute('y2',(p.y+p.ny*(13-inset)).toFixed(3));
+  }
+};
 
-    // (3) Playfair Display의 글리프를 path로 추출하고 정규화한 뒤 왜곡.
-    function drawRomanNumerals(font) {
-      const group = $('#numerals');
-      group.replaceChildren();
-      roman.forEach((label, index) => {
-        const i = index + 1;
-        const theta = i * 30 * deg; // XII = 360° = 0°, 시계방향
-        const w = widths[index] * deg;
-        const glyphPath = font.getPath(label, 0, 0, 1000, { kerning:true });
-        const box = glyphPath.getBoundingBox();
-        const bw = Math.max(1,box.x2-box.x1);
-        const bh = Math.max(1,box.y2-box.y1);
-        const contours = flattenOutline(glyphPath.commands);
-        const d = contours.map(contour => {
-          const points = contour.map(([x,y]) => {
-            const u = (x-box.x1) / bw;
-            const v = (box.y2-y) / bh; // 아래=0, 위=1
-            const p = warpPoint(u,v,theta,w,innerRect,outerRect);
-            return `${p.x.toFixed(2)} ${p.y.toFixed(2)}`;
-          });
-          return `M ${points.join(' L ')} Z`;
-        }).join(' ');
-        const path = document.createElementNS(NS,'path');
-        path.setAttribute('d',d);
-        path.setAttribute('fill-rule','evenodd');
-        path.dataset.hour = String(i);
-        group.appendChild(path);
-      });
-    }
+let reserve=.62;  // virtual mechanical reserve, not MacBook battery
+let watchTime=Date.now();
+let lastFrame=performance.now();
+let lastHinge=null;
+let audio=null,noise=null,accMotion=0,dragging=false,lastDragY=0;
+let sensor=null,pollTimer=null,bridge=null,hasLiveSensor=false;
 
-    const FONT_URL =
-      'https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5.3.0/files/playfair-display-latin-700-normal.woff';
-    async function initFont() {
-      try {
-        if (!window.opentype) throw new Error('opentype.js 라이브러리 로딩 실패');
-        const res = await fetch(FONT_URL);
-        if (!res.ok) throw new Error('폰트 다운로드 실패: '+res.status);
-        const font = window.opentype.parse(await res.arrayBuffer());
-        drawRomanNumerals(font);
-      } catch (e) {
-        console.error('방사형 글리프를 생성하지 못했습니다.',e);
-      }
+function audioReady(){
+  try {
+    const Context=window.AudioContext||window.webkitAudioContext;
+    if(!Context)return;
+    audio ??= new Context();audio.resume().catch(()=>{});
+    if(!noise){
+      noise=audio.createBuffer(1,Math.ceil(audio.sampleRate*.055),audio.sampleRate);
+      const a=noise.getChannelData(0);
+      for(let k=0;k<a.length;k++)a[k]=Math.random()*2-1;
     }
-    initFont();
+  }catch(e){}
+}
+function clickRatchet(count=1){
+  if(!audio||audio.state!=='running'||!noise)return;
+  const now=audio.currentTime;
+  for(let i=0;i<Math.min(5,count);i++){
+    const at=now+i*.025;
+    const src=audio.createBufferSource();src.buffer=noise;
+    const band=audio.createBiquadFilter();band.type='bandpass';band.frequency.value=1650+220*(i%3);band.Q.value=1.1;
+    const gain=audio.createGain();
+    gain.gain.setValueAtTime(.0001,at);
+    gain.gain.exponentialRampToValueAtTime(.10,at+.0018);
+    gain.gain.exponentialRampToValueAtTime(.0001,at+.035);
+    src.connect(band).connect(gain).connect(audio.destination);
+    src.start(at);src.stop(at+.041);
+  }
+}
+function windBy(delta){
+  const motion=Math.abs(delta);
+  if(!Number.isFinite(motion)||motion<.12||motion>38)return;
+  reserve=Math.min(1,reserve+motion/610);
+  accMotion+=motion;
+  if(accMotion>=2.0){
+    const n=Math.min(5,Math.floor(accMotion/2));
+    accMotion=accMotion%2;
+    clickRatchet(n);
+  }
+}
+function useAngle(a){
+  if(!Number.isFinite(a)||a<0||a>180)return;
+  if(lastHinge!==null)windBy(a-lastHinge);
+  lastHinge=a;
+  hasLiveSensor=true;
+  sensorLight.setAttribute('fill','#3b7692');sensorLight.setAttribute('opacity','.75');
+}
+function decodeAngle(data){
+  // WebHID DataView excludes reportId; native IOKit report may include it.
+  if(!data||data.byteLength<2)return null;
+  const tries=[];
+  for(const pos of [0,1]){
+    if(pos+1>=data.byteLength)continue;
+    const a=data.getUint16(pos,true);
+    if(a>=10&&a<=180)tries.push(a);
+    if(a>=1000&&a<=18000)tries.push(a/100);
+  }
+  if(!tries.length)return null;
+  if(lastHinge!==null)tries.sort((a,b)=>Math.abs(a-lastHinge)-Math.abs(b-lastHinge));
+  return tries[0];
+}
+function listenInput(e){
+  if(e.reportId!==1)return;
+  const ang=decodeAngle(e.data);
+  if(ang!==null)useAngle(ang);
+}
+async function openHidDevice(device){
+  if(sensor&&sensor!==device&&sensor.opened){try{await sensor.close()}catch(e){}}
+  sensor=device;
+  if(!device.opened)await device.open();
+  device.addEventListener('inputreport',listenInput);
+  if(pollTimer)clearInterval(pollTimer);
+  let polling=false;
+  pollTimer=setInterval(async()=>{
+    if(polling||!device.opened)return;
+    polling=true;
+    try{
+      const report=await device.receiveFeatureReport(1);
+      const angle=decodeAngle(report);
+      if(angle!==null)useAngle(angle);
+    }catch(e){ /* Input report event still works on supported devices */ }
+    finally{polling=false}
+  },65);
+}
+function isLidSensor(d){
+  return d.vendorId===0x05ac && d.productId===0x8104 &&
+         d.collections.some(c=>c.usagePage===0x20&&c.usage===0x8a);
+}
+async function autoConnectHinge(){
+  if(!navigator.hid)return;
+  try{
+    const devices=await navigator.hid.getDevices();
+    const found=devices.find(isLidSensor);
+    if(found)await openHidDevice(found);
+  }catch(e){}
+}
+async function requestHinge(){
+  audioReady();
+  if(!navigator.hid)return;
+  try{
+    const devices=await navigator.hid.requestDevice({filters:[{vendorId:0x05ac,productId:0x8104,usagePage:0x20,usage:0x8a}]});
+    const device=devices.find(isLidSensor)||devices[0];
+    if(device)await openHidDevice(device);
+  }catch(e){console.debug('No hinge device permission',e)}
+}
+$('#sensorButton').addEventListener('pointerdown',e=>e.stopPropagation());
+$('#sensorButton').addEventListener('click',e=>{e.stopPropagation();requestHinge();});
+$('#sensorButton').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();requestHinge();}});
+autoConnectHinge();
 
-    // (4) 철도형 레일: 사각형 안쪽에 60개 눈금. 사각형은 고정,
-    // 눈금만 둘레를 따라 이동한다.
-    const midRail = { x:240.5, y:240.5, width:1119, height:519 };
-    const perimeter = 2*(midRail.width + midRail.height);
-    const tickGroup = $('#ticks');
-    const tickEls = Array.from({length:60},()=>{
-      const line = document.createElementNS(NS,'line');
-      tickGroup.appendChild(line);
-      return line;
-    });
-    function pointOnRail(distance) {
-      const r=midRail, p=perimeter;
-      let s = ((distance + r.width/2) % p + p) % p;
-      if (s < r.width) return {x:r.x+s,y:r.y,nx:0,ny:1};
-      s -= r.width;
-      if (s < r.height) return {x:r.x+r.width,y:r.y+s,nx:-1,ny:0};
-      s -= r.height;
-      if (s < r.width) return {x:r.x+r.width-s,y:r.y+r.height,nx:0,ny:-1};
-      s -= r.width;
-      return {x:r.x,y:r.y+r.height-s,nx:1,ny:0};
-    }
-    function drawTicks(offset) {
-      tickEls.forEach((el,i)=>{
-        const p=pointOnRail(i*perimeter/60+offset);
-        const len=(i%5===0)?27:25;
-        el.setAttribute('x1',(p.x-p.nx*len/2).toFixed(2));
-        el.setAttribute('y1',(p.y-p.ny*len/2).toFixed(2));
-        el.setAttribute('x2',(p.x+p.nx*len/2).toFixed(2));
-        el.setAttribute('y2',(p.y+p.ny*len/2).toFixed(2));
-      });
-    }
-    drawTicks(0);
+// Optional native bridge on loopback port; reconnect if helper comes up later.
+function connectBridge(){
+  try{
+    if(bridge&&(bridge.readyState===0||bridge.readyState===1))return;
+    bridge=new WebSocket('ws://127.0.0.1:8766');
+    bridge.onmessage=e=>{try{useAngle(Number(JSON.parse(e.data).angle))}catch(_){}};
+    bridge.onerror=()=>{};
+  }catch(e){}
+}
+connectBridge();setInterval(()=>{if(!hasLiveSensor)connectBridge()},4000);
 
-    // (5) 이전 시계의 파워리저브, 초침, 와인딩 사운드 보존.
-    let reserve = 0.45; // 0~1
-    let watchTime = Date.now();
-    let travel = 0;
-    let lastTime = performance.now();
-    let lastAngle = null;
-    let audio = null, noise = null;
-    let dragging = false, previousY = 0;
+function tick(now){
+  const dt=Math.max(0,Math.min(.10,(now-lastFrame)/1000));lastFrame=now;
+  if(reserve>0){
+    watchTime+=dt*1000;
+    reserve=Math.max(0,reserve-dt/(180));
+  }
+  const time=new Date(watchTime);
+  const s=time.getSeconds()+time.getMilliseconds()/1000;
+  const m=time.getMinutes()+s/60;
+  const h=time.getHours()%12+m/60;
+  hr.setAttribute('transform',`translate(800 500) rotate(${(h*30).toFixed(5)})`);
+  mn.setAttribute('transform',`translate(800 500) rotate(${(m*6).toFixed(5)})`);
+  sc.setAttribute('transform',`translate(800 500) rotate(${(s*6).toFixed(5)})`);
+  // Smoothly advances one complete orbit in 60 s while charged.
+  if(reserve>0)drawTicks(s/60);
+  requestAnimationFrame(tick);
+}
+drawTicks((watchTime/1000)%60/60);
+requestAnimationFrame(tick);
 
-    function activateAudio() {
-      try {
-        audio ||= new (window.AudioContext || window.webkitAudioContext)();
-        audio.resume();
-        if (!noise) {
-          noise = audio.createBuffer(1, Math.floor(audio.sampleRate*.05),audio.sampleRate);
-          const a=noise.getChannelData(0);
-          for (let i=0;i<a.length;i++) a[i] = Math.random()*2-1;
-        }
-      } catch(e) { console.warn('오디오가 비활성화되어 있습니다.',e); }
-    }
-    function ratchet(n=1) {
-      if (!audio || audio.state!=='running' || !noise) return;
-      const start=audio.currentTime;
-      for(let i=0;i<Math.min(5,n);i++) {
-        const at=start+i*.018;
-        const source=audio.createBufferSource(); source.buffer=noise;
-        const filter=audio.createBiquadFilter();filter.type='bandpass';
-        filter.frequency.value=1600+(i%3)*260;filter.Q.value=.8;
-        const gain=audio.createGain();
-        gain.gain.setValueAtTime(.0001,at);
-        gain.gain.exponentialRampToValueAtTime(.095,at+.002);
-        gain.gain.exponentialRampToValueAtTime(.0001,at+.024);
-        source.connect(filter).connect(gain).connect(audio.destination);
-        source.start(at);source.stop(at+.03);
-      }
-    }
-    function wind(delta) {
-      const motion=Math.abs(delta);
-      if (motion<.25 || motion>50) return;
-      reserve=Math.min(1,reserve+motion/700);
-      travel += motion;
-      if(travel>1.5) {
-        ratchet(Math.min(5,Math.ceil(travel/2.5)));
-        travel=0;
-      }
-    }
-    function onHingeAngle(angle) {
-      if (!Number.isFinite(angle) || angle<0 || angle>180) return;
-      if(lastAngle!==null) wind(angle-lastAngle);
-      lastAngle=angle;
-    }
-    // WebSocket 브리지 선택 사항. macOS 네이티브 헬퍼가 보내는
-    // {"angle": 112.3} 형식의 실시간 데이터를 읽는다.
-    function tryBridge() {
-      try {
-        const ws=new WebSocket('ws://127.0.0.1:8766');
-        ws.addEventListener('message', e=>{
-          try { onHingeAngle(Number(JSON.parse(e.data).angle)); } catch(_) {}
-        });
-        ws.addEventListener('error',()=>{});
-      } catch(_) {}
-    }
-    tryBridge();
-
-    function animate(now) {
-      const dt=Math.min(.08,Math.max(0,(now-lastTime)/1000));
-      lastTime=now;
-      if(reserve>0) {
-        watchTime+=dt*1000;
-        reserve=Math.max(0,reserve-dt/(12*60)); // 만충 시 약 12분
-      }
-      const time=new Date(watchTime);
-      const sec=time.getSeconds()+time.getMilliseconds()/1000;
-      const min=time.getMinutes()+sec/60;
-      const hr=(time.getHours()%12)+min/60;
-      $('#hour').setAttribute('transform',`translate(800 500) rotate(${hr*30})`);
-      $('#minute').setAttribute('transform',`translate(800 500) rotate(${min*6})`);
-      $('#second').setAttribute('transform',`translate(800 500) rotate(${sec*6})`);
-      if(reserve>0) drawTicks(((watchTime/1000)%60)/60*perimeter);
-      requestAnimationFrame(animate);
-    }
-    requestAnimationFrame(animate);
-
-    // 시뮬레이션: 드래그·휠·화살표 / D=동력 소진 / S=SVG 저장 / F=전체화면.
-    svg.addEventListener('pointerdown',e=>{
-      activateAudio();dragging=true;previousY=e.clientY;
-      svg.setPointerCapture(e.pointerId);
-    });
-    svg.addEventListener('pointermove',e=>{
-      if(!dragging)return;
-      wind((e.clientY-previousY)*.5);previousY=e.clientY;
-    });
-    svg.addEventListener('pointerup',()=>dragging=false);
-    svg.addEventListener('pointercancel',()=>dragging=false);
-    svg.addEventListener('wheel',e=>{
-      e.preventDefault();activateAudio();wind(e.deltaY*.045);
-    },{passive:false});
-    document.addEventListener('keydown',e=>{
-      if(['ArrowUp','ArrowDown',' ','d','D','s','S','f','F'].includes(e.key)) {
-        activateAudio();
-        if(['ArrowUp','ArrowDown',' '].includes(e.key)) {
-          e.preventDefault();wind(7);
-        }
-        if(e.key.toLowerCase()==='d') reserve=0;
-        if(e.key.toLowerCase()==='f') document.fullscreenElement
-          ? document.exitFullscreen() : document.documentElement.requestFullscreen();
-        if(e.key.toLowerCase()==='s') saveSvg();
-      }
-    });
-    function saveSvg() {
-      const clone=svg.cloneNode(true);
-      clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
-      const xml='<?xml version="1.0" encoding="UTF-8"?>\n'
-        + new XMLSerializer().serializeToString(clone);
-      const url=URL.createObjectURL(new Blob([xml],{type:'image/svg+xml'}));
-      const a=document.createElement('a');a.href=url;a.download='radial-tank.svg';
-      document.body.appendChild(a);a.click();a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),1000);
-    }
-  </script>
+// No text or visible controls. Drag/scroll are quiet fallback inputs for preview.
+svg.addEventListener('pointerdown',e=>{
+  if(e.target.closest('#sensorButton'))return;
+  audioReady();dragging=true;lastDragY=e.clientY;svg.setPointerCapture(e.pointerId);
+});
+svg.addEventListener('pointermove',e=>{
+  if(!dragging)return;windBy((e.clientY-lastDragY)*.65);lastDragY=e.clientY;
+});
+svg.addEventListener('pointerup',()=>dragging=false);
+svg.addEventListener('pointercancel',()=>dragging=false);
+svg.addEventListener('wheel',e=>{
+  e.preventDefault();audioReady();windBy(e.deltaY*.055);
+},{passive:false});
+svg.addEventListener('dblclick',()=>{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()});
+document.addEventListener('keydown',e=>{
+  const key=e.key.toLowerCase();
+  if(['arrowup','arrowdown',' '].includes(key)){e.preventDefault();audioReady();windBy(8)}
+  if(key==='h')requestHinge();
+  if(key==='d')reserve=0;
+  if(key==='f'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  if(key==='s'){
+    const clone=svg.cloneNode(true);
+    clone.removeAttribute('style');
+    clone.querySelector('#sensorButton')?.remove();
+    const blob=new Blob(['<?xml version="1.0" encoding="utf-8"?>\n'+new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='tank-dial.svg';a.click();setTimeout(()=>URL.revokeObjectURL(url),1200);
+  }
+});
+</script>
 </body>
 </html>
