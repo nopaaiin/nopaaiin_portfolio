@@ -219,6 +219,7 @@ function drawTicks(phase){
 }
 let runUntil=performance.now()+4000;
 let watchTime=Date.now();
+let lastTickSecond=Math.floor(watchTime/1000);
 let lastFrame=performance.now();
 let lastHinge=null;
 let movementCount=0;
@@ -255,6 +256,41 @@ function audioReady(){
     }
   }catch(e){}
 }
+
+
+// Fine, dry mechanical tick: a filtered impulse and a very brief metallic click.
+// A tick occurs only when the virtual second hand actually advances.
+// Use Web Audio rather than an external file; the browser unlocks audio after a gesture.
+function playWatchTick(secondIndex){
+  if(!audio||audio.state!=='running'||!noise)return;
+  const t=audio.currentTime+.002;
+  const alternate=secondIndex%2===1;
+  const src=audio.createBufferSource();src.buffer=noise;
+  const band=audio.createBiquadFilter();
+  band.type='bandpass';
+  band.frequency.value=alternate?1920:2520;
+  band.Q.value=1.15;
+  const env=audio.createGain();
+  env.gain.setValueAtTime(.0001,t);
+  env.gain.exponentialRampToValueAtTime(alternate?.028:.034,t+.0012);
+  env.gain.exponentialRampToValueAtTime(.0001,t+.030);
+  src.connect(band).connect(env).connect(audio.destination);
+  src.start(t);src.stop(t+.035);
+
+  const osc=audio.createOscillator();
+  osc.type='triangle';
+  osc.frequency.setValueAtTime(alternate?1110:1430,t);
+  osc.frequency.exponentialRampToValueAtTime(alternate?820:1080,t+.022);
+  const tonal=audio.createGain();
+  tonal.gain.setValueAtTime(.0001,t);
+  tonal.gain.exponentialRampToValueAtTime(.010,t+.001);
+  tonal.gain.exponentialRampToValueAtTime(.0001,t+.024);
+  osc.connect(tonal).connect(audio.destination);
+  osc.start(t);osc.stop(t+.028);
+}
+// Browsers require one genuine interaction before starting any audio playback.
+document.addEventListener('pointerdown',audioReady,{capture:true});
+document.addEventListener('keydown',audioReady,{capture:true});
 
 // Frictional "끼릭끼릭": two gritty pulses and a short bending squeak.
 // Called only for measured hinge changes (or explicit manual testing).
@@ -416,7 +452,13 @@ function tick(now){
   // Advance no more than the remaining running time, even across a suspended tab.
   const elapsed=Math.max(0,Math.min(now,runUntil)-Math.min(lastFrame,runUntil));
   lastFrame=now;
-  if(elapsed>0)watchTime+=elapsed;
+  if(elapsed>0){
+    watchTime+=elapsed;
+    const wholeSecond=Math.floor(watchTime/1000);
+    // Never emit queued clicks when returning from a background tab.
+    if(wholeSecond>lastTickSecond)playWatchTick(wholeSecond);
+    lastTickSecond=wholeSecond;
+  }
   const time=new Date(watchTime);
   const s=time.getSeconds()+time.getMilliseconds()/1000;
   const m=time.getMinutes()+s/60;
