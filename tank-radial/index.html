@@ -16,6 +16,8 @@
   .track-outline {fill:none;stroke:#15171c;stroke-width:2.45;shape-rendering:geometricPrecision;stroke-linejoin:miter}
   .rail-mark {stroke:#141519;stroke-width:1.65;shape-rendering:geometricPrecision;stroke-linecap:butt}
   #sensorButton {cursor:pointer}
+  #soundCheck{position:fixed;z-index:30;left:14px;bottom:14px;border:1px solid #8889;border-radius:6px;background:#171a20;color:#fff;padding:10px 14px;cursor:pointer;font:13px -apple-system,sans-serif}
+  #soundCheckStatus{position:fixed;z-index:30;left:14px;bottom:62px;background:#171a20e6;color:white;padding:6px 10px;border-radius:5px;font:12px -apple-system,sans-serif;max-width:300px}
   #sensorDiagnostics{position:fixed;z-index:20;right:18px;bottom:18px;width:min(340px,calc(100vw - 36px));padding:14px 16px;background:rgba(19,24,30,.94);color:#f3f1eb;border:1px solid rgba(255,255,255,.22);border-radius:10px;box-shadow:0 12px 36px #0003;font:12px/1.55 -apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;pointer-events:auto}
   #sensorDiagnostics[hidden]{display:none}
   #sensorDiagnostics strong{font-size:13px}
@@ -169,6 +171,7 @@
     <circle id="sensorLight" cx="1564" cy="965" r="3.6" fill="#a3a59e" opacity=".55"/>
   </g>
 </svg>
+<button id="soundCheck" type="button">♪ 소리 테스트</button><div id="soundCheckStatus" aria-live="polite">소리 테스트 버튼을 눌러 주세요</div>
 <div id="sensorDiagnostics" hidden role="status" aria-live="polite"><div class="actions"><strong>힌지 센서 진단</strong><span><button id="retryHinge" type="button">센서 연결</button> <button id="hideDiagnostics" type="button">닫기</button></span></div><pre id="sensorDebugOutput"></pre></div>
 <script>
 'use strict';
@@ -309,6 +312,39 @@ function unlockAudioFromGesture(){
 }
 document.addEventListener('pointerdown',unlockAudioFromGesture,{capture:true});
 document.addEventListener('keydown',unlockAudioFromGesture,{capture:true});
+
+// A standalone, unmistakable audio probe that does not depend on running time.
+// Keep a strong 660 Hz sine for 0.6 s, then exercise the real tick source.
+// This is intentionally a clickable control to satisfy Chrome's audio policy.
+async function testAudioOutput(){
+  const output=$('#soundCheckStatus');
+  try{
+    const Ctx=window.AudioContext||window.webkitAudioContext;
+    if(!Ctx){output.textContent='이 브라우저는 Web Audio를 지원하지 않습니다';return;}
+    if(!audio||audio.state==='closed')audio=new Ctx();
+    await audio.resume();
+    output.textContent='AudioContext: '+audio.state+' · 660 Hz 테스트 재생';
+    const t=audio.currentTime+.015;
+    const osc=audio.createOscillator();
+    osc.type='sine';
+    osc.frequency.setValueAtTime(660,t);
+    const vol=audio.createGain();
+    vol.gain.setValueAtTime(.0001,t);
+    vol.gain.exponentialRampToValueAtTime(.20,t+.02);
+    vol.gain.setValueAtTime(.20,t+.45);
+    vol.gain.exponentialRampToValueAtTime(.0001,t+.60);
+    osc.connect(vol).connect(audio.destination);
+    osc.start(t);osc.stop(t+.62);
+    audioReady();
+    runUntil=Math.max(runUntil,performance.now()+4000);
+    setTimeout(()=>playWatchTick(Math.floor(watchTime/1000)),730);
+    setTimeout(()=>{output.textContent='오디오: '+audio.state+' · 소리가 안 들리면 Chrome 탭 음소거/맥 출력 장치를 확인하세요'},1300);
+  }catch(e){
+    output.textContent='오디오 오류: '+(e?.name||'')+' '+(e?.message||e);
+    console.error('Audio output test failed',e);
+  }
+}
+$('#soundCheck').addEventListener('click',testAudioOutput);
 
 // Frictional "끼릭끼릭": two gritty pulses and a short bending squeak.
 // Called only for measured hinge changes (or explicit manual testing).
